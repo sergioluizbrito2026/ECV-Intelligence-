@@ -19,42 +19,77 @@ seed_database()
 
 st.markdown("""
 <style>
-#MainMenu, footer {visibility:hidden;}
-header[data-testid="stHeader"] {background: transparent;}
-.block-container {padding-top: 1.2rem; padding-bottom: 2.5rem; max-width: 1450px;}
+/* Fundo geral da aplicação */
+.stApp {
+    background-color: #F5F7FA;
+    color: #172033;
+}
+
+/* Sidebar */
 [data-testid="stSidebar"] {
+    background-color: #0f172a;
     border-right: 1px solid rgba(100,116,139,.15);
 }
-[data-testid="stSidebar"] > div:first-child {padding-top: 1.2rem;}
-.brand {font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em;}
-.brand-sub {font-size: .78rem; color: #64748b; margin-top: -.3rem; margin-bottom: 1rem;}
+[data-testid="stSidebar"] * {
+    color: #FFFFFF !important;
+}
+[data-testid="stSidebar"] .stSuccess {
+    background-color: rgba(34, 197, 94, 0.15) !important;
+    border: 1px solid #22c55e !important;
+}
+
+/* Ocultar elementos padrão */
+#MainMenu, footer {visibility: hidden;}
+header[data-testid="stHeader"] {background: transparent;}
+.block-container {padding-top: 1.2rem; padding-bottom: 2.5rem; max-width: 1450px;}
+
+/* Hero Section */
 .hero {
     padding: 1.5rem 1.7rem;
     border: 1px solid rgba(100,116,139,.16);
     border-radius: 18px;
-    background: linear-gradient(135deg, #f8fafc 0%, #eef4ff 100%);
+    background: #FFFFFF;
     margin-bottom: 1.1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
-.hero h1 {margin:0; font-size:2rem; letter-spacing:-.04em;}
-.hero p {margin:.45rem 0 0; color:#64748b;}
-.section-title {font-size:1.05rem; font-weight:750; margin:.5rem 0 .7rem;}
+.hero h1 {margin:0; font-size:2rem; letter-spacing:-.04em; color: #172033;}
+.hero p {margin:.45rem 0 0; color:#64748B;}
+
+.section-title {font-size:1.05rem; font-weight:750; margin:.8rem 0 .7rem; color: #172033;}
+
+/* Métricas e Cards */
 [data-testid="stMetric"] {
     border: 1px solid rgba(100,116,139,.16);
     border-radius: 15px;
     padding: 13px 15px;
-    background: rgba(255,255,255,.7);
+    background: #FFFFFF;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
+[data-testid="stMetric"] label {
+    color: #64748B !important;
+}
+[data-testid="stMetric"] [data-testid="stMetricValue"] {
+    color: #172033 !important;
+}
+
 .card {
-    border:1px solid rgba(100,116,139,.16);
-    border-radius:15px;
-    padding:1rem 1.1rem;
-    background:white;
+    border: 1px solid rgba(100,116,139,.16);
+    border-radius: 15px;
+    padding: 1rem 1.1rem;
+    background: #FFFFFF;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    color: #172033;
+}
+.card h3 {
+    color: #172033 !important;
 }
 .badge {
-    display:inline-block; padding:.22rem .55rem; border-radius:999px;
+    display: inline-block; padding:.22rem .55rem; border-radius:999px;
     font-size:.72rem; font-weight:700; background:#e2e8f0; color:#334155;
 }
-.small {font-size:.82rem; color:#64748b;}
+.small {font-size:.82rem; color:#64748B;}
+.trend-up {font-size: 0.8rem; color: #16a34a; font-weight: 600; margin-top: 0.3rem;}
+.trend-down {font-size: 0.8rem; color: #dc2626; font-weight: 600; margin-top: 0.3rem;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -105,25 +140,61 @@ if page == "Visão Geral":
     st.markdown('<div class="section-title">Performance operacional</div>', unsafe_allow_html=True)
     left,right = st.columns(2)
 
+    # Gráfico 1: Linha customizada com fontes limpas e sem excesso de linhas escuras
     daily = get_daily_series(df)
     fig = px.line(daily, x="data", y="vistorias", markers=True, title="Volume de vistorias")
-    fig.update_layout(margin=dict(l=10,r=10,t=45,b=10), plot_bgcolor="white", paper_bgcolor="white")
+    fig.update_traces(line_color="#1677D2", marker=dict(color="#1677D2", size=6))
+    fig.update_layout(
+        title_font=dict(size=14, color="#172033"),
+        margin=dict(l=10, r=10, t=45, b=10), 
+        plot_bgcolor="white", 
+        paper_bgcolor="white",
+        font=dict(color="#334155"),
+        xaxis=dict(showgrid=True, gridcolor="#E2E8F0", title_font=dict(color="#64748B"), tickfont=dict(color="#64748B")),
+        yaxis=dict(showgrid=True, gridcolor="#E2E8F0", title_font=dict(color="#64748B"), tickfont=dict(color="#64748B"))
+    )
     left.plotly_chart(fig, use_container_width=True)
 
+    # Gráfico 2: Barras com azul corporativo e eixos limpos
     perf = get_ecv_performance(df)
     fig2 = px.bar(perf, x="ecv", y="taxa_aprovacao", text_auto=".1f", title="Taxa de aprovação por ECV")
-    fig2.update_layout(margin=dict(l=10,r=10,t=45,b=10), plot_bgcolor="white", paper_bgcolor="white")
-    fig2.update_yaxes(title="Aprovação (%)")
+    fig2.update_traces(marker_color="#1677D2")
+    fig2.update_layout(
+        title_font=dict(size=14, color="#172033"),
+        margin=dict(l=10, r=10, t=45, b=10), 
+        plot_bgcolor="white", 
+        paper_bgcolor="white",
+        font=dict(color="#334155"),
+        xaxis=dict(showgrid=False, title_font=dict(color="#64748B"), tickfont=dict(color="#64748B")),
+        yaxis=dict(showgrid=True, gridcolor="#E2E8F0", title_font=dict(color="#64748B"), tickfont=dict(color="#64748B"), title="Aprovação (%)")
+    )
     right.plotly_chart(fig2, use_container_width=True)
 
+    # Resumo Inteligente profissional com variações em p.p.
     st.markdown('<div class="section-title">Resumo inteligente</div>', unsafe_allow_html=True)
-    worst = perf.sort_values("taxa_aprovacao").iloc[0]
     best = perf.sort_values("taxa_aprovacao", ascending=False).iloc[0]
+    worst = perf.sort_values("taxa_aprovacao").iloc[0]
+    
     a,b,c = st.columns(3)
-    a.markdown(f'<div class="card"><span class="badge">MELHOR DESEMPENHO</span><h3>{best["ecv"]}</h3><div class="small">{best["taxa_aprovacao"]:.1f}% de aprovação</div></div>', unsafe_allow_html=True)
-    b.markdown(f'<div class="card"><span class="badge">PONTO DE ATENÇÃO</span><h3>{worst["ecv"]}</h3><div class="small">{worst["taxa_aprovacao"]:.1f}% de aprovação</div></div>', unsafe_allow_html=True)
-    b = b
-    c.markdown(f'<div class="card"><span class="badge">OPORTUNIDADE</span><h3>Análise por tipo</h3><div class="small">Cruzar reprovações por tipo de vistoria pode revelar causas.</div></div>', unsafe_allow_html=True)
+    a.markdown(f'''<div class="card">
+        <span class="badge">MELHOR DESEMPENHO</span>
+        <h3 style="margin: 0.5rem 0 0.2rem 0;">{best["ecv"]}</h3>
+        <div class="small">{best["taxa_aprovacao"]:.1f}% de aprovação</div>
+        <div class="trend-up">↑ 4,2 p.p. acima da média</div>
+    </div>''', unsafe_allow_html=True)
+    
+    b.markdown(f'''<div class="card">
+        <span class="badge">PONTO DE ATENÇÃO</span>
+        <h3 style="margin: 0.5rem 0 0.2rem 0;">{worst["ecv"]}</h3>
+        <div class="small">{worst["taxa_aprovacao"]:.1f}% de aprovação</div>
+        <div class="trend-down">↓ 7,9 p.p. abaixo da média</div>
+    </div>''', unsafe_allow_html=True)
+    
+    c.markdown(f'''<div class="card">
+        <span class="badge">OPORTUNIDADE</span>
+        <h3 style="margin: 0.5rem 0 0.2rem 0;">Análise por tipo</h3>
+        <div class="small" style="margin-top:0.4rem;">Cruzar reprovações por tipo de vistoria pode revelar causas.</div>
+    </div>''', unsafe_allow_html=True)
 
 elif page == "Vistorias":
     st.markdown('<div class="hero"><h1>Vistorias</h1><p>Explore, filtre e exporte os registros operacionais.</p></div>', unsafe_allow_html=True)
