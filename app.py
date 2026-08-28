@@ -143,7 +143,7 @@ if page == "Visão Geral":
     </div>
     """, unsafe_allow_html=True)
 
-    c1,c2,c3,c4,c5 = st.columns(5)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Vistorias", f"{kpi['total']:,}".replace(",", "."))
     c2.metric("Aprovação", f"{kpi['taxa_aprovacao']:.1f}%")
     c3.metric("Reprovação", f"{kpi['taxa_reprovacao']:.1f}%")
@@ -153,24 +153,21 @@ if page == "Visão Geral":
     st.markdown('<div class="section-title">Performance operacional</div>', unsafe_allow_html=True)
     left, right = st.columns(2)
 
-   # 1. Certifique-se de que o DataFrame diário está ordenado por data
-    df_diario = get_daily_series(df) # Ou sua função equivalente
+    # 1. Tratamento dos dados diários e tradução dos meses para português
+    df_diario = get_daily_series(df)
     df_diario['data'] = pd.to_datetime(df_diario['data'])
     df_diario = df_diario.sort_values('data')
 
-    # 2. Formata a data para texto e traduz os meses para o português
     df_diario['data_fmt'] = df_diario['data'].dt.strftime('%d %b')
-    
     traducao_meses = {
         'Jan': 'jan', 'Feb': 'fev', 'Mar': 'mar', 'Apr': 'abr',
         'May': 'mai', 'Jun': 'jun', 'Jul': 'jul', 'Aug': 'ago',
         'Sep': 'set', 'Oct': 'out', 'Nov': 'nov', 'Dec': 'dez'
     }
-
     for eng, pt in traducao_meses.items():
         df_diario['data_fmt'] = df_diario['data_fmt'].str.replace(eng, pt, regex=False)
 
-    # 3. Criação do Gráfico de Linha com a coluna formatada em PT
+    # 2. Gráfico de Linha limpo com nticks para não embolar as datas
     fig1 = px.line(
         df_diario, 
         x="data_fmt", 
@@ -181,12 +178,12 @@ if page == "Visão Geral":
     
     fig1.update_traces(
         line=dict(color="#38bdf8", width=2.5),
-        marker=dict(size=6, color="#38bdf8")
+        marker=dict(size=5, color="#38bdf8")
     )
     
     fig1.update_layout(
         title_font=dict(size=15, color="#f8fafc", family="sans-serif"),
-        margin=dict(l=20, r=20, t=50, b=20),
+        margin=dict(l=20, r=20, t=50, b=30),
         plot_bgcolor="#1e293b",
         paper_bgcolor="#1e293b",
         font=dict(color="#94a3b8"),
@@ -194,7 +191,8 @@ if page == "Visão Geral":
             showgrid=False,
             title_font=dict(color="#94a3b8"),
             tickfont=dict(color="#94a3b8"),
-            title="data"
+            title="data",
+            nticks=12
         ),
         yaxis=dict(
             showgrid=True,
@@ -204,11 +202,9 @@ if page == "Visão Geral":
             title="vistorias"
         )
     )
-    
-    # Exibição no Streamlit
     left.plotly_chart(fig1, use_container_width=True)
 
-    # Gráfico de Barras com cores individuais por ECV
+    # 3. Gráfico de Barras com cores individuais por ECV
     perf = get_ecv_performance(df)
     fig2 = px.bar(
         perf, 
@@ -227,7 +223,7 @@ if page == "Visão Geral":
         font=dict(color="#94a3b8"),
         xaxis=dict(showgrid=False, title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8")),
         yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8"), title="Aprovação (%)"),
-        showlegend=False  # Oculta a legenda lateral já que o eixo X identifica cada barra
+        showlegend=False
     )
     right.plotly_chart(fig2, use_container_width=True)
 
@@ -259,7 +255,7 @@ if page == "Visão Geral":
 
 elif page == "Vistorias":
     st.markdown('<div class="hero"><h1>Vistorias</h1><p>Explore, filtre e exporte os registros operacionais.</p></div>', unsafe_allow_html=True)
-    c1,c2,c3 = st.columns(3)
+    c1, c2, c3 = st.columns(3)
     ecv = c1.selectbox("ECV", ["Todas"] + sorted(df.ecv.unique()))
     results = c2.multiselect("Resultado", sorted(df.resultado.unique()), default=sorted(df.resultado.unique()))
     types = c3.multiselect("Tipo de vistoria", sorted(df.tipo_vistoria.unique()), default=sorted(df.tipo_vistoria.unique()))
@@ -274,7 +270,7 @@ elif page == "Vistorias":
 elif page == "Qualidade":
     st.markdown('<div class="hero"><h1>Qualidade dos Dados</h1><p>Diagnóstico rápido para apoiar processos de tratamento e governança.</p></div>', unsafe_allow_html=True)
     report = get_quality_report(df)
-    c1,c2,c3,c4 = st.columns(4)
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric("Registros", report["total"])
     c2.metric("Duplicados", report["duplicados"])
     c3.metric("Campos vazios", report["nulos"])
@@ -291,7 +287,7 @@ elif page == "Automações":
             r = run_pipeline()
         if r["status"] == "success":
             st.success("Pipeline concluído com sucesso.")
-            c1,c2,c3 = st.columns(3)
+            c1, c2, c3 = st.columns(3)
             c1.metric("Processados", r["processed"])
             c2.metric("Duplicidades", r["duplicates"])
             c3.metric("Inconsistências", r["issues"])
