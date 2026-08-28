@@ -21,17 +21,17 @@ st.markdown("""
 <style>
 /* Fundo geral da aplicação */
 .stApp {
-    background-color: #F5F7FA;
-    color: #172033;
+    background-color: #0f172a;
+    color: #f8fafc;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background-color: #0f172a;
-    border-right: 1px solid rgba(100,116,139,.15);
+    background-color: #0b1120;
+    border-right: 1px solid rgba(255,255,255,0.08);
 }
 [data-testid="stSidebar"] * {
-    color: #FFFFFF !important;
+    color: #f8fafc !important;
 }
 [data-testid="stSidebar"] .stSuccess {
     background-color: rgba(34, 197, 94, 0.15) !important;
@@ -46,50 +46,50 @@ header[data-testid="stHeader"] {background: transparent;}
 /* Hero Section */
 .hero {
     padding: 1.5rem 1.7rem;
-    border: 1px solid rgba(100,116,139,.16);
+    border: 1px solid rgba(255,255,255,0.08);
     border-radius: 18px;
-    background: #FFFFFF;
+    background: #1e293b;
     margin-bottom: 1.1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
 }
-.hero h1 {margin:0; font-size:2rem; letter-spacing:-.04em; color: #172033;}
-.hero p {margin:.45rem 0 0; color:#64748B;}
+.hero h1 {margin:0; font-size:2rem; letter-spacing:-.04em; color: #f8fafc;}
+.hero p {margin:.45rem 0 0; color:#94a3b8;}
 
-.section-title {font-size:1.05rem; font-weight:750; margin:.8rem 0 .7rem; color: #172033;}
+.section-title {font-size:1.05rem; font-weight:750; margin:.8rem 0 .7rem; color: #f8fafc;}
 
 /* Métricas e Cards */
 [data-testid="stMetric"] {
-    border: 1px solid rgba(100,116,139,.16);
+    border: 1px solid rgba(255,255,255,0.08);
     border-radius: 15px;
     padding: 13px 15px;
-    background: #FFFFFF;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    background: #1e293b;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
 }
 [data-testid="stMetric"] label {
-    color: #64748B !important;
+    color: #94a3b8 !important;
 }
 [data-testid="stMetric"] [data-testid="stMetricValue"] {
-    color: #172033 !important;
+    color: #f8fafc !important;
 }
 
 .card {
-    border: 1px solid rgba(100,116,139,.16);
+    border: 1px solid rgba(255,255,255,0.08);
     border-radius: 15px;
     padding: 1rem 1.1rem;
-    background: #FFFFFF;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-    color: #172033;
+    background: #1e293b;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    color: #f8fafc;
 }
 .card h3 {
-    color: #172033 !important;
+    color: #f8fafc !important;
 }
 .badge {
     display: inline-block; padding:.22rem .55rem; border-radius:999px;
-    font-size:.72rem; font-weight:700; background:#e2e8f0; color:#334155;
+    font-size:.72rem; font-weight:700; background:#334155; color:#f8fafc;
 }
-.small {font-size:.82rem; color:#64748B;}
-.trend-up {font-size: 0.8rem; color: #16a34a; font-weight: 600; margin-top: 0.3rem;}
-.trend-down {font-size: 0.8rem; color: #dc2626; font-weight: 600; margin-top: 0.3rem;}
+.small {font-size:.82rem; color:#94a3b8;}
+.trend-up {font-size: 0.8rem; color: #4ade80; font-weight: 600; margin-top: 0.3rem;}
+.trend-down {font-size: 0.8rem; color: #f87171; font-weight: 600; margin-top: 0.3rem;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -140,37 +140,37 @@ if page == "Visão Geral":
     st.markdown('<div class="section-title">Performance operacional</div>', unsafe_allow_html=True)
     left,right = st.columns(2)
 
-    # Gráfico 1: Linha customizada com fontes limpas e sem excesso de linhas escuras
+    # Gráfico 1: Linha customizada para tema escuro
     daily = get_daily_series(df)
     fig = px.line(daily, x="data", y="vistorias", markers=True, title="Volume de vistorias")
-    fig.update_traces(line_color="#1677D2", marker=dict(color="#1677D2", size=6))
+    fig.update_traces(line_color="#38bdf8", marker=dict(color="#38bdf8", size=6))
     fig.update_layout(
-        title_font=dict(size=14, color="#172033"),
+        title_font=dict(size=14, color="#f8fafc"),
         margin=dict(l=10, r=10, t=45, b=10), 
-        plot_bgcolor="white", 
-        paper_bgcolor="white",
-        font=dict(color="#334155"),
-        xaxis=dict(showgrid=True, gridcolor="#E2E8F0", title_font=dict(color="#64748B"), tickfont=dict(color="#64748B")),
-        yaxis=dict(showgrid=True, gridcolor="#E2E8F0", title_font=dict(color="#64748B"), tickfont=dict(color="#64748B"))
+        plot_bgcolor="#1e293b", 
+        paper_bgcolor="#1e293b",
+        font=dict(color="#94a3b8"),
+        xaxis=dict(showgrid=True, gridcolor="#334155", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8")),
+        yaxis=dict(showgrid=True, gridcolor="#334155", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8"))
     )
     left.plotly_chart(fig, use_container_width=True)
 
-    # Gráfico 2: Barras com azul corporativo e eixos limpos
+    # Gráfico 2: Barras customizadas para tema escuro
     perf = get_ecv_performance(df)
     fig2 = px.bar(perf, x="ecv", y="taxa_aprovacao", text_auto=".1f", title="Taxa de aprovação por ECV")
-    fig2.update_traces(marker_color="#1677D2")
+    fig2.update_traces(marker_color="#38bdf8")
     fig2.update_layout(
-        title_font=dict(size=14, color="#172033"),
+        title_font=dict(size=14, color="#f8fafc"),
         margin=dict(l=10, r=10, t=45, b=10), 
-        plot_bgcolor="white", 
-        paper_bgcolor="white",
-        font=dict(color="#334155"),
-        xaxis=dict(showgrid=False, title_font=dict(color="#64748B"), tickfont=dict(color="#64748B")),
-        yaxis=dict(showgrid=True, gridcolor="#E2E8F0", title_font=dict(color="#64748B"), tickfont=dict(color="#64748B"), title="Aprovação (%)")
+        plot_bgcolor="#1e293b", 
+        paper_bgcolor="#1e293b",
+        font=dict(color="#94a3b8"),
+        xaxis=dict(showgrid=False, title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8")),
+        yaxis=dict(showgrid=True, gridcolor="#334155", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8"), title="Aprovação (%)")
     )
     right.plotly_chart(fig2, use_container_width=True)
 
-    # Resumo Inteligente profissional com variações em p.p.
+    # Resumo Inteligente profissional
     st.markdown('<div class="section-title">Resumo inteligente</div>', unsafe_allow_html=True)
     best = perf.sort_values("taxa_aprovacao", ascending=False).iloc[0]
     worst = perf.sort_values("taxa_aprovacao").iloc[0]
