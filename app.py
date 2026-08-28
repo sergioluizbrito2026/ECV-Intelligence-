@@ -150,7 +150,7 @@ if page == "Visão Geral":
     c4.metric("Tempo médio", f"{kpi['tempo_medio']:.1f} min")
     c5.metric("Faturamento", f"R$ {kpi['faturamento']:,.0f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
-   st.markdown('<div class="section-title">Performance operacional</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Performance operacional</div>', unsafe_allow_html=True)
     left, right = st.columns(2)
 
     # 1. Tratamento dos dados diários e tradução dos meses para português
@@ -176,10 +176,9 @@ if page == "Visão Geral":
         title="Volume de vistorias diárias"
     )
     
-    # Adiciona efeito de área sombreada translúcida embaixo da linha
     fig1.update_traces(
         fill='tozeroy',
-        fillcolor='rgba(56, 189, 248, 0.08)',  # Sombra azulada bem suave
+        fillcolor='rgba(56, 189, 248, 0.08)',
         line=dict(color="#38bdf8", width=3),
         marker=dict(size=5, color="#38bdf8", line=dict(width=1, color="#0f172a"))
     )
