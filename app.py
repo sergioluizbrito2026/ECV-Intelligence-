@@ -150,7 +150,7 @@ if page == "Visão Geral":
     c4.metric("Tempo médio", f"{kpi['tempo_medio']:.1f} min")
     c5.metric("Faturamento", f"R$ {kpi['faturamento']:,.0f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
-    st.markdown('<div class="section-title">Performance operacional</div>', unsafe_allow_html=True)
+   st.markdown('<div class="section-title">Performance operacional</div>', unsafe_allow_html=True)
     left, right = st.columns(2)
 
     # 1. Tratamento dos dados diários e tradução dos meses para português
@@ -167,7 +167,7 @@ if page == "Visão Geral":
     for eng, pt in traducao_meses.items():
         df_diario['data_fmt'] = df_diario['data_fmt'].str.replace(eng, pt, regex=False)
 
-    # 2. Gráfico de Linha limpo com nticks para não embolar as datas
+    # 2. Gráfico de Linha com efeito de preenchimento/sombra suave embaixo
     fig1 = px.line(
         df_diario, 
         x="data_fmt", 
@@ -176,9 +176,12 @@ if page == "Visão Geral":
         title="Volume de vistorias diárias"
     )
     
+    # Adiciona efeito de área sombreada translúcida embaixo da linha
     fig1.update_traces(
-        line=dict(color="#38bdf8", width=2.5),
-        marker=dict(size=5, color="#38bdf8")
+        fill='tozeroy',
+        fillcolor='rgba(56, 189, 248, 0.08)',  # Sombra azulada bem suave
+        line=dict(color="#38bdf8", width=3),
+        marker=dict(size=5, color="#38bdf8", line=dict(width=1, color="#0f172a"))
     )
     
     fig1.update_layout(
@@ -204,7 +207,7 @@ if page == "Visão Geral":
     )
     left.plotly_chart(fig1, use_container_width=True)
 
-    # 3. Gráfico de Barras com cores individuais por ECV
+    # 3. Gráfico de Barras com efeito nas bordas e visual moderno
     perf = get_ecv_performance(df)
     fig2 = px.bar(
         perf, 
@@ -214,7 +217,10 @@ if page == "Visão Geral":
         text_auto=".1f", 
         title="Taxa de aprovação por ECV (%)"
     )
-    fig2.update_traces(marker_line_width=0)
+    fig2.update_traces(
+        marker_line_width=0,
+        opacity=0.9
+    )
     fig2.update_layout(
         title_font=dict(size=15, color="#f8fafc", family="sans-serif"),
         margin=dict(l=20, r=20, t=50, b=20), 
