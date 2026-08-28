@@ -169,10 +169,17 @@ if page == "Visão Geral":
     )
     left.plotly_chart(fig, use_container_width=True)
 
-    # Gráfico de Barras (Profissional e Fluido)
+    # Gráfico de Barras com cores individuais por ECV
     perf = get_ecv_performance(df)
-    fig2 = px.bar(perf, x="ecv", y="taxa_aprovacao", text_auto=".1f", title="Taxa de aprovação por ECV (%)")
-    fig2.update_traces(marker_color="#38bdf8", marker_line_width=0)
+    fig2 = px.bar(
+        perf, 
+        x="ecv", 
+        y="taxa_aprovacao", 
+        color="ecv", 
+        text_auto=".1f", 
+        title="Taxa de aprovação por ECV (%)"
+    )
+    fig2.update_traces(marker_line_width=0)
     fig2.update_layout(
         title_font=dict(size=15, color="#f8fafc", family="sans-serif"),
         margin=dict(l=20, r=20, t=50, b=20), 
@@ -180,7 +187,8 @@ if page == "Visão Geral":
         paper_bgcolor="#1e293b",
         font=dict(color="#94a3b8"),
         xaxis=dict(showgrid=False, title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8")),
-        yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8"), title="Aprovação (%)")
+        yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8"), title="Aprovação (%)"),
+        showlegend=False  # Oculta a legenda lateral já que o eixo X identifica cada barra
     )
     right.plotly_chart(fig2, use_container_width=True)
 
