@@ -25,10 +25,11 @@ st.markdown("""
     color: #f8fafc;
 }
 
-/* Sidebar */
+/* Sidebar Fixa e Expandida */
 [data-testid="stSidebar"] {
     background-color: #0b1120;
     border-right: 1px solid rgba(255,255,255,0.08);
+    min-width: 260px !important;
 }
 [data-testid="stSidebar"] * {
     color: #f8fafc !important;
@@ -37,31 +38,43 @@ st.markdown("""
     background-color: rgba(34, 197, 94, 0.15) !important;
     border: 1px solid #22c55e !important;
 }
+/* Ocultar botão de recolher da sidebar para mantê-la sempre aberta */
+[data-testid="collapsedControl"] {
+    display: none;
+}
 
 /* Ocultar elementos padrão */
 #MainMenu, footer {visibility: hidden;}
 header[data-testid="stHeader"] {background: transparent;}
-.block-container {padding-top: 1.2rem; padding-bottom: 2.5rem; max-width: 1450px;}
+
+/* Ocupar 100% da largura da tela de forma fluida */
+.block-container {
+    padding-top: 1.5rem; 
+    padding-bottom: 2.5rem; 
+    padding-left: 2rem;
+    padding-right: 2rem;
+    max-width: 100% !important;
+}
 
 /* Hero Section */
 .hero {
-    padding: 1.5rem 1.7rem;
+    padding: 1.5rem 1.8rem;
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 18px;
+    border-radius: 16px;
     background: #1e293b;
-    margin-bottom: 1.1rem;
+    margin-bottom: 1.2rem;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
 }
 .hero h1 {margin:0; font-size:2rem; letter-spacing:-.04em; color: #f8fafc;}
 .hero p {margin:.45rem 0 0; color:#94a3b8;}
 
-.section-title {font-size:1.05rem; font-weight:750; margin:.8rem 0 .7rem; color: #f8fafc;}
+.section-title {font-size:1.1rem; font-weight:700; margin:1.2rem 0 .8rem; color: #f8fafc;}
 
 /* Métricas e Cards */
 [data-testid="stMetric"] {
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 15px;
-    padding: 13px 15px;
+    border-radius: 14px;
+    padding: 14px 16px;
     background: #1e293b;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
 }
@@ -74,8 +87,8 @@ header[data-testid="stHeader"] {background: transparent;}
 
 .card {
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 15px;
-    padding: 1rem 1.1rem;
+    border-radius: 14px;
+    padding: 1.2rem 1.3rem;
     background: #1e293b;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
     color: #f8fafc;
@@ -104,8 +117,8 @@ def load_vistorias():
     conn.close()
     return df
 
-st.sidebar.markdown('<div class="brand">🚗 ECV Intelligence</div>', unsafe_allow_html=True)
-st.sidebar.markdown('<div class="brand-sub">Automation • BI • AI</div>', unsafe_allow_html=True)
+st.sidebar.markdown('<div class="brand" style="font-size:1.1rem; font-weight:bold;">🚗 ECV Intelligence</div>', unsafe_allow_html=True)
+st.sidebar.markdown('<div class="brand-sub" style="font-size:0.85rem; color:#94a3b8;">Automation • BI • AI</div>', unsafe_allow_html=True)
 
 page = st.sidebar.radio(
     "Workspace",
@@ -138,35 +151,36 @@ if page == "Visão Geral":
     c5.metric("Faturamento", f"R$ {kpi['faturamento']:,.0f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
     st.markdown('<div class="section-title">Performance operacional</div>', unsafe_allow_html=True)
-    left,right = st.columns(2)
+    left, right = st.columns(2)
 
-    # Gráfico 1: Linha customizada para tema escuro
+    # Gráfico de Linha (Profissional e Fluido)
     daily = get_daily_series(df)
-    fig = px.line(daily, x="data", y="vistorias", markers=True, title="Volume de vistorias")
-    fig.update_traces(line_color="#38bdf8", marker=dict(color="#38bdf8", size=6))
+    fig = px.line(daily, x="data", y="vistorias", markers=True, title="Volume de vistorias diárias")
+    fig.update_traces(line_color="#38bdf8", line_width=2.5, marker=dict(color="#38bdf8", size=6))
     fig.update_layout(
-        title_font=dict(size=14, color="#f8fafc"),
-        margin=dict(l=10, r=10, t=45, b=10), 
+        title_font=dict(size=15, color="#f8fafc", family="sans-serif"),
+        margin=dict(l=20, r=20, t=50, b=20), 
         plot_bgcolor="#1e293b", 
         paper_bgcolor="#1e293b",
         font=dict(color="#94a3b8"),
-        xaxis=dict(showgrid=True, gridcolor="#334155", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8")),
-        yaxis=dict(showgrid=True, gridcolor="#334155", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8"))
+        xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8")),
+        yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8")),
+        hovermode="x unified"
     )
     left.plotly_chart(fig, use_container_width=True)
 
-    # Gráfico 2: Barras customizadas para tema escuro
+    # Gráfico de Barras (Profissional e Fluido)
     perf = get_ecv_performance(df)
-    fig2 = px.bar(perf, x="ecv", y="taxa_aprovacao", text_auto=".1f", title="Taxa de aprovação por ECV")
-    fig2.update_traces(marker_color="#38bdf8")
+    fig2 = px.bar(perf, x="ecv", y="taxa_aprovacao", text_auto=".1f", title="Taxa de aprovação por ECV (%)")
+    fig2.update_traces(marker_color="#38bdf8", marker_line_width=0)
     fig2.update_layout(
-        title_font=dict(size=14, color="#f8fafc"),
-        margin=dict(l=10, r=10, t=45, b=10), 
+        title_font=dict(size=15, color="#f8fafc", family="sans-serif"),
+        margin=dict(l=20, r=20, t=50, b=20), 
         plot_bgcolor="#1e293b", 
         paper_bgcolor="#1e293b",
         font=dict(color="#94a3b8"),
         xaxis=dict(showgrid=False, title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8")),
-        yaxis=dict(showgrid=True, gridcolor="#334155", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8"), title="Aprovação (%)")
+        yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8"), title="Aprovação (%)")
     )
     right.plotly_chart(fig2, use_container_width=True)
 
@@ -175,7 +189,7 @@ if page == "Visão Geral":
     best = perf.sort_values("taxa_aprovacao", ascending=False).iloc[0]
     worst = perf.sort_values("taxa_aprovacao").iloc[0]
     
-    a,b,c = st.columns(3)
+    a, b, c = st.columns(3)
     a.markdown(f'''<div class="card">
         <span class="badge">MELHOR DESEMPENHO</span>
         <h3 style="margin: 0.5rem 0 0.2rem 0;">{best["ecv"]}</h3>
