@@ -153,21 +153,53 @@ if page == "Visão Geral":
     st.markdown('<div class="section-title">Performance operacional</div>', unsafe_allow_html=True)
     left, right = st.columns(2)
 
-    # Gráfico de Linha (Profissional e Fluido)
-    daily = get_daily_series(df)
-    fig = px.line(daily, x="data", y="vistorias", markers=True, title="Volume de vistorias diárias")
-    fig.update_traces(line_color="#38bdf8", line_width=2.5, marker=dict(color="#38bdf8", size=6))
-    fig.update_layout(
+    # Gráfico de Linha - Volume de Vistorias Diárias (com meses em português)
+    df_diario = get_daily_series(df) # Ou sua função equivalente que retorna a série temporal
+    
+    # Dicionário de tradução dos meses
+    meses_pt = {'May': 'mai', 'Jun': 'jun', 'Jul': 'jul', 'Aug': 'ago', 'Sep': 'set', 'Oct': 'out', 'Nov': 'nov', 'Dec': 'dez', 'Jan': 'jan', 'Feb': 'fev', 'Mar': 'mar', 'Apr': 'abr'}
+    
+    # Se a coluna de data estiver formatada como texto com meses em inglês, podemos ajustar ou garantir o formato:
+    # (Caso sua função já retorne datas em datetime, o Plotly aceita formatação de ticks)
+    
+    fig1 = px.line(
+        df_diario, 
+        x="data", 
+        y="vistorias", 
+        markers=True,
+        title="Volume de vistorias diárias"
+    )
+    
+    # Personalização para o padrão profissional e datas limpas
+    fig1.update_traces(
+        line=dict(color="#38bdf8", width=2.5),
+        marker=dict(size=6, color="#38bdf8")
+    )
+    
+    fig1.update_layout(
         title_font=dict(size=15, color="#f8fafc", family="sans-serif"),
-        margin=dict(l=20, r=20, t=50, b=20), 
-        plot_bgcolor="#1e293b", 
+        margin=dict(l=20, r=20, t=50, b=20),
+        plot_bgcolor="#1e293b",
         paper_bgcolor="#1e293b",
         font=dict(color="#94a3b8"),
-        xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8")),
-        yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8")),
-        hovermode="x unified"
+        xaxis=dict(
+            showgrid=False,
+            title_font=dict(color="#94a3b8"),
+            tickfont=dict(color="#94a3b8"),
+            tickformat="%d %b",  # Exemplo: 14 jun
+            dtick="M1"           # Intervalo mensal nos ticks para não poluir
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="rgba(255,255,255,0.06)",
+            title_font=dict(color="#94a3b8"),
+            tickfont=dict(color="#94a3b8"),
+            title="vistorias"
+        )
     )
-    left.plotly_chart(fig, use_container_width=True)
+    
+    # Exibição no Streamlit (ex: left.plotly_chart ou container principal)
+    left.plotly_chart(fig1, use_container_width=True)
 
     # Gráfico de Barras com cores individuais por ECV
     perf = get_ecv_performance(df)
