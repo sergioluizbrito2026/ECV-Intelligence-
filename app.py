@@ -153,24 +153,32 @@ if page == "Visão Geral":
     st.markdown('<div class="section-title">Performance operacional</div>', unsafe_allow_html=True)
     left, right = st.columns(2)
 
-    # Gráfico de Linha - Volume de Vistorias Diárias (com meses em português)
-    df_diario = get_daily_series(df) # Ou sua função equivalente que retorna a série temporal
+   # 1. Certifique-se de que o DataFrame diário está ordenado por data
+    df_diario = get_daily_series(df) # Ou sua função equivalente
+    df_diario['data'] = pd.to_datetime(df_diario['data'])
+    df_diario = df_diario.sort_values('data')
+
+    # 2. Formata a data para texto e traduz os meses para o português
+    df_diario['data_fmt'] = df_diario['data'].dt.strftime('%d %b')
     
-    # Dicionário de tradução dos meses
-    meses_pt = {'May': 'mai', 'Jun': 'jun', 'Jul': 'jul', 'Aug': 'ago', 'Sep': 'set', 'Oct': 'out', 'Nov': 'nov', 'Dec': 'dez', 'Jan': 'jan', 'Feb': 'fev', 'Mar': 'mar', 'Apr': 'abr'}
-    
-    # Se a coluna de data estiver formatada como texto com meses em inglês, podemos ajustar ou garantir o formato:
-    # (Caso sua função já retorne datas em datetime, o Plotly aceita formatação de ticks)
-    
+    traducao_meses = {
+        'Jan': 'jan', 'Feb': 'fev', 'Mar': 'mar', 'Apr': 'abr',
+        'May': 'mai', 'Jun': 'jun', 'Jul': 'jul', 'Aug': 'ago',
+        'Sep': 'set', 'Oct': 'out', 'Nov': 'nov', 'Dec': 'dez'
+    }
+
+    for eng, pt in traducao_meses.items():
+        df_diario['data_fmt'] = df_diario['data_fmt'].str.replace(eng, pt, regex=False)
+
+    # 3. Criação do Gráfico de Linha com a coluna formatada em PT
     fig1 = px.line(
         df_diario, 
-        x="data", 
+        x="data_fmt", 
         y="vistorias", 
         markers=True,
         title="Volume de vistorias diárias"
     )
     
-    # Personalização para o padrão profissional e datas limpas
     fig1.update_traces(
         line=dict(color="#38bdf8", width=2.5),
         marker=dict(size=6, color="#38bdf8")
@@ -186,8 +194,7 @@ if page == "Visão Geral":
             showgrid=False,
             title_font=dict(color="#94a3b8"),
             tickfont=dict(color="#94a3b8"),
-            tickformat="%d %b",  # Exemplo: 14 jun
-            dtick="M1"           # Intervalo mensal nos ticks para não poluir
+            title="data"
         ),
         yaxis=dict(
             showgrid=True,
@@ -198,7 +205,7 @@ if page == "Visão Geral":
         )
     )
     
-    # Exibição no Streamlit (ex: left.plotly_chart ou container principal)
+    # Exibição no Streamlit
     left.plotly_chart(fig1, use_container_width=True)
 
     # Gráfico de Barras com cores individuais por ECV
