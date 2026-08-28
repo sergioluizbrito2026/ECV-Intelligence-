@@ -12,7 +12,21 @@ def get_connection():
 
 def init_db():
     conn = get_connection()
+    # Executa o schema principal
     conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+    
+    # Garantia extra para criar a tabela de logs caso o banco já exista sem ela
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS logs_automacao (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            processo TEXT NOT NULL,
+            executado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+            status TEXT NOT NULL,
+            registros_processados INTEGER DEFAULT 0,
+            mensagem TEXT
+        )
+    """)
+    
     conn.commit()
     conn.close()
 
