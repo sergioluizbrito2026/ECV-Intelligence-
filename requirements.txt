@@ -9,3 +9,4 @@ streamlit
 pandas
 plotly
 google-genai
+uvicorn[standard]>=0.30,<1.0
