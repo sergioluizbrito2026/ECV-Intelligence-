@@ -116,9 +116,14 @@ def load_vistorias():
     conn.close()
     return df
 
-st.sidebar.markdown('<div class="brand" style="font-size:1.1rem; font-weight:bold;">🚗 ECV Intelligence</div>', unsafe_allow_html=True)
-st.sidebar.markdown('<div class="brand-sub" style="font-size:0.85rem; color:#94a3b8;">Automação e Análise Inteligente de Vistorias
-</div>', unsafe_allow_html=True)
+st.sidebar.markdown("""
+    <div style="padding: 10px 0;">
+        <h3 style="margin: 0; color: #ffffff; font-size: 1.1rem;">📊 ECV Intelligence</h3>
+        <p style="margin: 4px 0 0 0; color: #a0aec0; font-size: 0.8rem; line-height: 1.2;">
+            Automação e Análise Inteligente de Vistorias
+        </p>
+    </div>
+""", unsafe_allow_html=True)
 
 page = st.sidebar.radio(
     "Workspace",
