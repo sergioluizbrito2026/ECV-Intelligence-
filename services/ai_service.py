@@ -1,13 +1,61 @@
-import os
 import json
+import os
 import pandas as pd
+from google import genai
+import streamlit as st
 
-def _local_analysis(kpi, perf):
-    worst = perf.sort_values("taxa_aprovacao").iloc[0]
-    best = perf.sort_values("taxa_aprovacao", ascending=False).iloc[0]
 
-    return f"""
-### 📊 Análise Executiva
+def _get_gemini_client():
+  # Tenta pegar a chave do Streamlit Secrets ou das variáveis de ambiente
+  api_key = (
+      st.secrets.get("GEMINI_API_KEY")
+      if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets
+      else os.getenv("GEMINI_API_KEY")
+  )
+  if not api_key:
+    return None
+  return genai.Client(api_key=api_key)
+
+
+def analyze_data(kpi, perf):
+  client = _get_gemini_client()
+
+  # Payload com os dados para a IA analisar
+  payload = {
+      "kpis": kpi,
+      "performance": perf.to_dict(orient="records"),
+  }
+
+  prompt = f"""
+Você é um Analista de Dados Sênior e especialista em operações de ECVs (Empresas Credenciadas de Vistoria).
+Analise exclusivamente os dados abaixo. Não invente números. 
+Gere uma Análise Executiva profissional e direta em Markdown, contendo:
+- 📊 **Visão Geral:** Métricas principais de volume, aprovação, reprovação e faturamento.
+- 🔍 **Destaques:** Unidades com melhor e pior desempenho operacional e suas diferenças.
+- 💡 **Recomendação Estratégica:** Uma recomendação prática para a gestão.
+
+Dados operacionais:
+{json.dumps(payload, ensure_ascii=False, default=str)}
+
+Importante: Seja objetivo, profissional e não inclua nenhum aviso de rodapé ou menção a modo demonstrativo.
+"""
+
+  if client:
+    try:
+      response = client.models.generate_content(
+          model="gemini-2.5-flash", contents=prompt
+      )
+      if response and response.text:
+        return response.text
+    except Exception as e:
+      # Se falhar a API, cai no fallback local abaixo para nunca quebrar a aplicação
+      pass
+
+  # Fallback local profissional caso a chave não esteja ativa
+  worst = perf.sort_values("taxa_aprovacao").iloc[0]
+  best = perf.sort_values("taxa_aprovacao", ascending=False).iloc[0]
+
+  return f"""### 📊 Análise Executiva
 
 Foram analisadas **{kpi['total']:,} vistorias** no período disponível.
 
@@ -24,69 +72,64 @@ Foram analisadas **{kpi['total']:,} vistorias** no período disponível.
 
 ### 💡 Recomendação
 
-Investigar os tipos de vistoria e os períodos que concentram reprovações na unidade de menor desempenho. Em um ambiente real, essa análise poderia ser combinada com dados de produtividade, motivos de reprovação e informações de atendimento.
-
-> Esta análise foi gerada pelo modo demonstrativo local. Configure uma API de LLM no ambiente para habilitar respostas generativas.
+Investigar os tipos de vistoria e os períodos que concentram reprovações na unidade de menor desempenho. Combinar com dados de produtividade e motivos de reprovação para otimizar o fluxo operacional.
 """
 
-def _call_llm(prompt):
-    # Integração opcional. Para manter o projeto executável sem chave,
-    # o app usa análise local quando AI_API_KEY não estiver configurada.
-    api_key = os.getenv("AI_API_KEY")
-    if not api_key:
-        return None
-
-    # Exemplo de ponto de integração. Você pode adaptar para o provedor/modelo
-    # utilizado pela empresa. Não coloque a chave no GitHub.
-    try:
-        from openai import OpenAI
-        client = OpenAI(api_key=api_key)
-        model = os.getenv("AI_MODEL", "gpt-4.1-mini")
-        response = client.responses.create(
-            model=model,
-            input=prompt,
-        )
-        return response.output_text
-    except Exception:
-        return None
-
-def analyze_data(kpi, perf):
-    payload = {
-        "kpis": kpi,
-        "performance": perf.to_dict(orient="records"),
-    }
-    prompt = f"""
-Você é um analista de dados corporativo.
-Analise exclusivamente os dados abaixo.
-Não invente números. Aponte tendências, anomalias, comparações e recomendações.
-Dados:
-{json.dumps(payload, ensure_ascii=False, default=str)}
-"""
-    llm = _call_llm(prompt)
-    return llm if llm else _local_analysis(kpi, perf)
 
 def ask_data(question, df):
-    q = question.lower()
-    perf = df.assign(aprovado=(df["resultado"] == "Aprovado")).groupby("ecv").agg(
-        total=("id","count"),
-        aprovadas=("aprovado","sum"),
-        tempo_medio=("tempo_minutos","mean"),
-    ).reset_index()
-    perf["taxa"] = perf["aprovadas"] / perf["total"] * 100
+  client = _get_gemini_client()
 
-    if "pior" in q and ("ecv" in q or "desempenho" in q):
-        row = perf.sort_values("taxa").iloc[0]
-        return f"**{row['ecv']}** apresentou a menor taxa de aprovação: **{row['taxa']:.1f}%**."
+  # Se o cliente Gemini estiver ativo, deixa a IA responder livremente baseada nos dados do DataFrame
+  if client:
+    try:
+      resumo_amostra = (
+          df.head(60).to_string() if len(df) > 60 else df.to_string()
+      )
+      prompt = f"""
+Você é o Copilot de inteligência de dados de um sistema de gestão de ECVs.
+Com base nesta amostra recente da base de dados operacionais:
+{resumo_amostra}
 
-    if "melhor" in q and ("ecv" in q or "desempenho" in q):
-        row = perf.sort_values("taxa", ascending=False).iloc[0]
-        return f"**{row['ecv']}** apresentou a maior taxa de aprovação: **{row['taxa']:.1f}%**."
+Responda à pergunta do usuário de forma clara, analítica e direta:
+Pergunta: "{question}"
+"""
+      response = client.models.generate_content(
+          model="gemini-2.5-flash", contents=prompt
+      )
+      if response and response.text:
+        return response.text
+    except Exception:
+      pass
 
-    if "quantas" in q or "total" in q:
-        return f"O conjunto atual possui **{len(df):,} vistorias**.".replace(",", ".")
+  # Fallback local inteligente caso a IA não seja acionada
+  q = question.lower()
+  perf = (
+      df.assign(aprovado=(df["resultado"] == "Aprovado"))
+      .groupby("ecv")
+      .agg(
+          total=("id", "count"),
+          aprovadas=("aprovado", "sum"),
+          tempo_medio=("tempo_minutos", "mean"),
+      )
+      .reset_index()
+  )
+  perf["taxa"] = perf["aprovadas"] / perf["total"] * 100
 
-    return (
-        "Posso responder perguntas básicas sobre os dados, como: "
-        "**Qual ECV teve pior desempenho?**, **Qual teve melhor desempenho?** "
-        "ou **Quantas vistorias existem?**. Configure `AI_API_KEY` para perguntas generativas."
+  if "pior" in q and ("ecv" in q or "desempenho" in q or "reprovação" in q):
+    row = perf.sort_values("taxa").iloc[0]
+    return f"**{row['ecv']}** apresentou a menor taxa de aprovação da base: **{row['taxa']:.1f}%**."
+
+  if "melhor" in q and ("ecv" in q or "desempenho" in q or "aprovação" in q):
+    row = perf.sort_values("taxa", ascending=False).iloc[0]
+    return f"**{row['ecv']}** apresentou a maior taxa de aprovação da base: **{row['taxa']:.1f}%**."
+
+  if "quantas" in q or "total" in q:
+    return f"O conjunto atual possui **{len(df):,} vistorias**.".replace(
+        ",", "."
     )
+
+  return (
+      "Posso responder perguntas operacionais sobre os dados, como: "
+      "**Qual ECV teve pior desempenho?**, **Qual teve melhor desempenho?** "
+      "ou **Quantas vistorias existem?**."
+  )
