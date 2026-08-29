@@ -38,7 +38,6 @@ st.markdown("""
     background-color: rgba(34, 197, 94, 0.15) !important;
     border: 1px solid #22c55e !important;
 }
-/* Ocultar botão de recolher da sidebar para mantê-la sempre aberta */
 [data-testid="collapsedControl"] {
     display: none;
 }
@@ -153,7 +152,6 @@ if page == "Visão Geral":
     st.markdown('<div class="section-title">Performance operacional</div>', unsafe_allow_html=True)
     left, right = st.columns(2)
 
-    # 1. Tratamento dos dados diários e tradução dos meses para português
     df_diario = get_daily_series(df)
     df_diario['data'] = pd.to_datetime(df_diario['data'])
     df_diario = df_diario.sort_values('data')
@@ -167,7 +165,6 @@ if page == "Visão Geral":
     for eng, pt in traducao_meses.items():
         df_diario['data_fmt'] = df_diario['data_fmt'].str.replace(eng, pt, regex=False)
 
-    # 2. Gráfico de Linha com efeito de preenchimento/sombra suave embaixo
     fig1 = px.line(
         df_diario, 
         x="data_fmt", 
@@ -189,24 +186,11 @@ if page == "Visão Geral":
         plot_bgcolor="#1e293b",
         paper_bgcolor="#1e293b",
         font=dict(color="#94a3b8"),
-        xaxis=dict(
-            showgrid=False,
-            title_font=dict(color="#94a3b8"),
-            tickfont=dict(color="#94a3b8"),
-            title="data",
-            nticks=12
-        ),
-        yaxis=dict(
-            showgrid=True,
-            gridcolor="rgba(255,255,255,0.06)",
-            title_font=dict(color="#94a3b8"),
-            tickfont=dict(color="#94a3b8"),
-            title="vistorias"
-        )
+        xaxis=dict(showgrid=False, title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8"), title="data", nticks=12),
+        yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", title_font=dict(color="#94a3b8"), tickfont=dict(color="#94a3b8"), title="vistorias")
     )
     left.plotly_chart(fig1, use_container_width=True)
 
-    # 3. Gráfico de Barras com efeito nas bordas e visual moderno
     perf = get_ecv_performance(df)
     fig2 = px.bar(
         perf, 
@@ -216,10 +200,7 @@ if page == "Visão Geral":
         text_auto=".1f", 
         title="Taxa de aprovação por ECV (%)"
     )
-    fig2.update_traces(
-        marker_line_width=0,
-        opacity=0.9
-    )
+    fig2.update_traces(marker_line_width=0, opacity=0.9)
     fig2.update_layout(
         title_font=dict(size=15, color="#f8fafc", family="sans-serif"),
         margin=dict(l=20, r=20, t=50, b=20), 
@@ -232,7 +213,6 @@ if page == "Visão Geral":
     )
     right.plotly_chart(fig2, use_container_width=True)
 
-    # Resumo Inteligente profissional
     st.markdown('<div class="section-title">Resumo inteligente</div>', unsafe_allow_html=True)
     best = perf.sort_values("taxa_aprovacao", ascending=False).iloc[0]
     worst = perf.sort_values("taxa_aprovacao").iloc[0]
@@ -259,18 +239,115 @@ if page == "Visão Geral":
     </div>''', unsafe_allow_html=True)
 
 elif page == "Vistorias":
-    st.markdown('<div class="hero"><h1>Vistorias</h1><p>Explore, filtre e exporte os registros operacionais.</p></div>', unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
-    ecv = c1.selectbox("ECV", ["Todas"] + sorted(df.ecv.unique()))
-    results = c2.multiselect("Resultado", sorted(df.resultado.unique()), default=sorted(df.resultado.unique()))
-    types = c3.multiselect("Tipo de vistoria", sorted(df.tipo_vistoria.unique()), default=sorted(df.tipo_vistoria.unique()))
+    st.markdown("""
+    <div class="hero">
+      <h1>Vistorias</h1>
+      <p>Explore, filtre e exporte os registros operacionais.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Conversão de datas para o filtro de período
+    df['data_dt'] = pd.to_datetime(df['data_vistoria'])
+    min_date = df['data_dt'].min().date()
+    max_date = df['data_dt'].max().date()
+
+    # Linha 1 de Filtros
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        periodo = st.date_input("Período", [min_date, max_date], min_value=min_date, max_value=max_date)
+    with col2:
+        ecv_opcoes = ["Todas"] + sorted(df.ecv.unique().tolist())
+        ecv_filtro = st.selectbox("ECV", ecv_opcoes)
+    with col3:
+        cidade_opcoes = ["Todas"] + sorted(df.cidade.unique().tolist())
+        cidade_filtro = st.selectbox("Cidade", cidade_opcoes)
+
+    # Linha 2 de Filtros
+    col4, col5, col6 = st.columns(3)
+    with col4:
+        tipo_opcoes = sorted(df.tipo_vistoria.unique().tolist())
+        tipo_filtro = st.multiselect("Tipo de vistoria", tipo_opcoes, default=tipo_opcoes)
+    with col5:
+        res_opcoes = sorted(df.resultado.unique().tolist())
+        res_filtro = st.multiselect("Resultado", res_opcoes, default=res_opcoes)
+    with col6:
+        busca_filtro = st.text_input("Buscar", placeholder="Placa ou ID")
+
+    if st.button("🔄 Limpar filtros"):
+        st.rerun()
+
+    # Aplicação de todos os filtros no dataframe
     f = df.copy()
-    if ecv != "Todas": f = f[f.ecv == ecv]
-    if results: f = f[f.resultado.isin(results)]
-    if types: f = f[f.tipo_vistoria.isin(types)]
-    st.metric("Registros encontrados", f"{len(f):,}".replace(",", "."))
-    st.dataframe(f[["id","data_vistoria","ecv","cidade","placa","tipo_vistoria","resultado","tempo_minutos","valor"]], use_container_width=True, hide_index=True)
-    st.download_button("📥 Exportar CSV", f.to_csv(index=False).encode("utf-8"), "vistorias.csv", "text/csv")
+    
+    if isinstance(periodo, list) and len(periodo) == 2:
+        start_d, end_d = periodo
+        f = f[(f['data_dt'].dt.date >= start_d) & (f['data_dt'].dt.date <= end_d)]
+    elif isinstance(periodo, tuple) and len(periodo) == 2:
+        start_d, end_d = periodo
+        f = f[(f['data_dt'].dt.date >= start_d) & (f['data_dt'].dt.date <= end_d)]
+
+    if ecv_filtro != "Todas":
+        f = f[f.ecv == ecv_filtro]
+    if cidade_filtro != "Todas":
+        f = f[f.cidade == cidade_filtro]
+    if tipo_filtro:
+        f = f[f.tipo_vistoria.isin(tipo_filtro)]
+    if res_filtro:
+        f = f[f.resultado.isin(res_filtro)]
+    if busca_filtro:
+        termo = busca_filtro.strip().lower()
+        f = f[f['placa'].str.lower().str.contains(termo, na=False) | f['id'].astype(str).str.contains(termo, na=False)]
+
+    st.divider()
+
+    # Cálculo dos KPIs Dinâmicos baseados no filtro aplicado
+    total_f = len(f)
+    if total_f > 0:
+        aprovadas_f = len(f[f['resultado'] == 'Aprovado'])
+        reprovadas_f = len(f[f['resultado'] == 'Reprovado'])
+        taxa_aprov_f = (aprovadas_f / total_f) * 100
+        taxa_reprov_f = (reprovadas_f / total_f) * 100
+        tempo_medio_f = f['tempo_minutos'].mean()
+        faturamento_f = f['valor'].sum() if 'valor' in f.columns else 0
+    else:
+        taxa_aprov_f, taxa_reprov_f, tempo_medio_f, faturamento_f = 0, 0, 0, 0
+
+    # Bloco de Indicadores Acima da Tabela
+    ic1, ic2, ic3, ic4 = st.columns(4)
+    ic1.metric("Vistorias", f"{total_f:,}".replace(",", "."))
+    ic2.metric("Aprovação", f"{taxa_aprov_f:.1f}%")
+    ic3.metric("Reprovação", f"{taxa_reprov_f:.1f}%")
+    ic4.metric("Tempo médio", f"{tempo_medio_f:.1f} min")
+
+    st.markdown(f'<div class="section-title">Registros encontrados: {total_f:,}</div>'.replace(",", "."), unsafe_allow_html=True)
+
+    # Exibição da Tabela Filtrada
+    st.dataframe(
+        f[["id", "data_vistoria", "ecv", "cidade", "placa", "tipo_vistoria", "resultado", "tempo_minutos", "valor"]],
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.download_button("📥 Exportar CSV", f.to_csv(index=False).encode("utf-8"), "vistorias_filtradas.csv", "text/csv")
+
+    # Bloco de Análise da Seleção (Portfólio Highlight)
+    st.markdown('<div class="section-title">🔍 Análise da seleção</div>', unsafe_allow_html=True)
+    
+    filtro_desc = f"{ecv_filtro if ecv_filtro != 'Todas' else 'Todas as ECVs'}"
+    if isinstance(periodo, (list, tuple)) and len(periodo) == 2:
+        filtro_desc += f" — {periodo[0].strftime('%d/%m/%Y')} até {periodo[1].strftime('%d/%m/%Y')}"
+
+    st.markdown(f'''<div class="card">
+        <span class="badge">RESUMO DOS DADOS SELECIONADOS</span>
+        <h3 style="margin: 0.5rem 0 0.5rem 0;">{filtro_desc}</h3>
+        <div style="display: flex; gap: 2.5rem; flex-wrap: wrap; margin-top: 0.8rem; font-size: 0.95rem;">
+            <div>📦 <b>{total_f:,}</b> vistorias</div>
+            <div>✅ <b>{taxa_aprov_f:.1f}%</b> aprovação</div>
+            <div>❌ <b>{taxa_reprov_f:.1f}%</b> reprovação</div>
+            <div>⏱️ <b>{tempo_medio_f:.1f} min</b> tempo médio</div>
+            <div>💰 <b>R$ {faturamento_f:,.0f}</b> faturamento</div>
+        </div>
+    </div>'''.replace(",", "."), unsafe_allow_html=True)
 
 elif page == "Qualidade":
     st.markdown('<div class="hero"><h1>Qualidade dos Dados</h1><p>Diagnóstico rápido para apoiar processos de tratamento e governança.</p></div>', unsafe_allow_html=True)
