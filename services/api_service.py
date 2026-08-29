@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import FastAPI
 from database.database import init_db, seed_database, get_connection
 
@@ -55,3 +56,78 @@ def indicadores():
         "tempo_medio_minutos": round(avg_time or 0, 2),
         "faturamento": round(revenue or 0, 2),
     }
+
+
+@app.get("/powerbi/vistorias")
+def powerbi_vistorias(limit: int = 5000):
+    """
+    Dataset detalhado para consumo no Power BI.
+    Mantém os dados em nível de vistoria para que o Power BI
+    possa aplicar filtros, medidas DAX e segmentações.
+    """
+    conn = get_connection()
+    try:
+        cursor = conn.execute("""
+            SELECT
+                v.id AS vistoria_id,
+                v.data_vistoria,
+                e.id AS ecv_id,
+                e.nome AS ecv,
+                e.cidade,
+                e.estado,
+                v.placa,
+                v.tipo_vistoria,
+                v.resultado,
+                v.tempo_minutos,
+                v.valor
+            FROM vistorias v
+            JOIN ecvs e ON e.id = v.ecv_id
+            ORDER BY v.data_vistoria DESC
+            LIMIT ?
+        """, (min(max(limit, 1), 50000),))
+
+        rows = cursor.fetchall()
+        cols = [d[0] for d in cursor.description]
+
+        return {
+            "dataset": "ecv_vistorias",
+            "version": "2.0.0",
+            "records": len(rows),
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "data": [dict(zip(cols, row)) for row in rows],
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/powerbi/indicadores")
+def powerbi_indicadores():
+    """
+    KPIs prontos para cards e indicadores executivos no Power BI.
+    """
+    return indicadores()
+
+
+@app.get("/integration/status")
+def integration_status():
+    """
+    Status da camada de integração.
+    """
+    db_status = "online"
+    try:
+        conn = get_connection()
+        conn.execute("SELECT 1").fetchone()
+        conn.close()
+    except Exception:
+        db_status = "offline"
+
+    return {
+        "api": "online",
+        "database": db_status,
+        "power_bi_dataset": "/powerbi/vistorias",
+        "power_bi_kpis": "/powerbi/indicadores",
+        "swagger": "/docs",
+        "openapi": "/openapi.json",
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+    }
+
