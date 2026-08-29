@@ -2,6 +2,7 @@ from datetime import datetime
 from fastapi import FastAPI
 from database.database import init_db, seed_database, get_connection
 from google import genai
+from database.database import init_db, seed_database, get_connection
 
 init_db()
 seed_database()
