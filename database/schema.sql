@@ -34,13 +34,3 @@ CREATE TABLE IF NOT EXISTS logs_automacao (
     registros_processados INTEGER DEFAULT 0,
     mensagem TEXT
 );
-
-
-CREATE TABLE IF NOT EXISTS logs_automacao (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    executado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    processo TEXT,
-    status TEXT,
-    registros_processados INTEGER,
-    mensagem TEXT
-);
