@@ -28,10 +28,11 @@ def run_pipeline():
             "Registro da execução",
         ]
 
+        # CORRIGIDO: 4 colunas e exatamente 4 interrogações (?, ?, ?, ?)
         conn.execute("""
             INSERT INTO logs_automacao
             (processo, status, registros_processados, mensagem)
-            VALUES (?,?,?,?,?)
+            VALUES (?, ?, ?, ?)
         """, (
             "Pipeline de Dados",
             "Concluído",
@@ -51,7 +52,7 @@ def run_pipeline():
         conn.execute("""
             INSERT INTO logs_automacao
             (processo, status, registros_processados, mensagem)
-            VALUES (?,?,?,?,?)
+            VALUES (?, ?, ?, ?)
         """, ("Pipeline de Dados", "Erro", 0, str(exc)))
         conn.commit()
         return {"status": "error", "message": str(exc)}
