@@ -473,7 +473,7 @@ elif page == "IA & Insights":
     
     st.markdown("""
     <div class="small" style="margin-top: 0.5rem; color: #94a3b8;">
-        A IA analisa automaticamente: ✓ volume de vistorias &nbsp;•&nbsp; ✓ taxa de aprovação &nbsp;•&nbsp; ✓ taxa de reprovação &nbsp;•&nbsp; ✓ desempenho por ECV &nbsp;•&nbsp; ✓ tempo médio &nbsp;•&nbsp; ✓ faturamento &nbsp;•&nbsp; ✓ tendências &nbsp;•&nbsp; ✓ possíveis anomalias
+        
     </div>
     """, unsafe_allow_html=True)
 
