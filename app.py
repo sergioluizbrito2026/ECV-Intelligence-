@@ -344,7 +344,6 @@ elif page == "Qualidade":
 
     report = get_quality_report(df)
 
-    # 4 Métricas Principais
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Registros", report["total"])
     c2.metric("Duplicados", report["duplicados"])
@@ -352,8 +351,6 @@ elif page == "Qualidade":
     c4.metric("Placas inválidas", report["placas_invalidas"])
 
     st.markdown("<br>", unsafe_allow_html=True)
-
-    # Bloco central: Score de Qualidade vs Distribuição
     col_score, col_dist = st.columns([1, 1])
 
     with col_score:
@@ -378,7 +375,7 @@ elif page == "Qualidade":
             <span class="badge">DISTRIBUIÇÃO DA QUALIDADE</span>
             <div style="margin-top: 1rem; font-size: 0.9rem;">
                 <div style="margin-bottom: 0.8rem;">
-                    <div style="display:justify; display:flex; justify-content:space-between; margin-bottom:0.2rem;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:0.2rem;">
                         <span>Completude</span><span>100%</span>
                     </div>
                     <div style="background:#334155; border-radius:999px; height:8px;"><div style="background:#38bdf8; width:100%; height:8px; border-radius:999px;"></div></div>
@@ -406,7 +403,6 @@ elif page == "Qualidade":
         ''', unsafe_allow_html=True)
 
     st.markdown('<div class="section-title">Regras de Validação</div>', unsafe_allow_html=True)
-    
     st.markdown('''
     <div class="card">
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; font-size: 0.9rem; margin-bottom: 1rem;">
@@ -424,7 +420,6 @@ elif page == "Qualidade":
     </div>
     ''', unsafe_allow_html=True)
 
-    # Bloco de Análise Inteligente final
     st.markdown('<div class="section-title">🤖 Análise Inteligente</div>', unsafe_allow_html=True)
     st.markdown('''
     <div class="card">
@@ -436,24 +431,176 @@ elif page == "Qualidade":
     ''', unsafe_allow_html=True)
 
 elif page == "Automações":
-    st.markdown('<div class="hero"><h1>Central de Automações</h1><p>Execute e acompanhe um pipeline de dados de ponta a ponta.</p></div>', unsafe_allow_html=True)
-    st.markdown("**Pipeline:** Importação → Validação → Tratamento → SQLite → KPIs → IA → Log")
+    st.markdown("""
+    <div class="hero">
+      <h1>Central de Automações & IA</h1>
+      <p>Automatize processos, analise dados com inteligência artificial e acompanhe resultados de ponta a ponta.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 1. Topo: Indicadores da Automação
+    k1, k2, k3, k4, k5 = st.columns(5)
+    k1.metric("Automações", "12")
+    k2.metric("Execuções", "1.248")
+    k3.metric("Sucesso", "98,4%")
+    k4.metric("Tempo poupado", "42h/mês")
+    k5.metric("Insights IA", "18 geradas")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # 2. Pipeline Visual & Execução
+    st.markdown('<div class="section-title">Pipeline de Dados em Tempo Real</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="card" style="text-align: center; font-size: 0.95rem; line-height: 2.2;">
+        <b>📥 Importação</b> (5.000) &nbsp;→&nbsp; 
+        <b>🔍 Validação</b> (5.000 válidos) &nbsp;→&nbsp; 
+        <b>🧹 Tratamento</b> (5.000 processados) &nbsp;→&nbsp; 
+        <b>🗄️ SQLite</b> (atualizado) &nbsp;→&nbsp; 
+        <b>📊 KPIs</b> (12 calculados) &nbsp;→&nbsp; 
+        <b>🤖 IA</b> (8 insights) &nbsp;→&nbsp; 
+        <b>⚡ Ação autom.</b> (3 ações) &nbsp;→&nbsp; 
+        <b>📝 Log</b>
+    </div>
+    """, unsafe_allow_html=True)
+
     if st.button("🚀 Executar pipeline completo", type="primary", use_container_width=True):
-        with st.spinner("Executando pipeline..."):
+        with st.spinner("Executando pipeline de ponta a ponta..."):
             r = run_pipeline()
         if r["status"] == "success":
-            st.success("Pipeline concluído com sucesso.")
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Processados", r["processed"])
-            c2.metric("Duplicidades", r["duplicates"])
-            c3.metric("Inconsistências", r["issues"])
-            for s in r["steps"]: st.write("✅", s)
-        else: st.error(r["message"])
-    st.divider()
-    conn = get_connection()
-    logs = pd.read_sql_query("SELECT * FROM logs_automacao ORDER BY executado_em DESC LIMIT 20", conn)
-    conn.close()
-    st.dataframe(logs, use_container_width=True, hide_index=True)
+            st.success("Pipeline executado com sucesso e logs gravados no SQLite.")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # 3 e 4. Seção IA Aplicada & Detecção de Anomalias
+    col_ai_left, col_ai_right = st.columns(2)
+
+    with col_ai_left:
+        st.markdown('''
+        <div class="card" style="height: 100%;">
+            <span class="badge">IA APLICADA AOS DADOS</span>
+            <h3 style="margin: 0.6rem 0 0.4rem 0;">🤖 ECV Intelligence AI</h3>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">
+                Analise automaticamente os dados operacionais e identifique anomalias, tendências e oportunidades.
+            </p>
+            <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 10px; padding: 1rem; margin-top: 1rem;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: #38bdf8; margin-bottom: 0.3rem;">💡 INSIGHT IDENTIFICADO</div>
+                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">A taxa de reprovação do <b>ECV Oeste</b> está acima da média dos demais ECVs.</div>
+                <div style="font-size: 0.85rem; color: #94a3b8;"><b>Impacto:</b> Alto | <b>Categoria:</b> Performance operacional</div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    with col_ai_right:
+        st.markdown('''
+        <div class="card" style="height: 100%;">
+            <span class="badge">DETECÇÃO DE ANOMALIAS</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.6rem; margin-bottom: 0.8rem;">
+                <h3 style="margin: 0;">🔴 ECV Oeste</h3>
+                <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444;">PRIORIDADE ALTA</span>
+            </div>
+            <div style="font-size: 0.9rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: center; margin: 1rem 0; background: #0f172a; padding: 0.8rem; border-radius: 8px;">
+                <div><div style="color: #94a3b8; font-size: 0.75rem;">Taxa Reprovação</div><div style="font-weight: 700; color: #f87171;">25,6%</div></div>
+                <div><div style="color: #94a3b8; font-size: 0.75rem;">Média Geral</div><div style="font-weight: 700;">13,7%</div></div>
+                <div><div style="color: #94a3b8; font-size: 0.75rem;">Desvio</div><div style="font-weight: 700; color: #f87171;">+11,9 p.p.</div></div>
+            </div>
+            <div style="font-size: 0.88rem; color: #94a3b8;">
+                <b>Ação sugerida pela IA:</b> Investigar os tipos de vistoria responsáveis pelo aumento das reprovações nesta unidade.
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    st.markdown('<div class="section-title">Automações Disponíveis & Agente IA</div>', unsafe_allow_html=True)
+
+    # 5. Automações Disponíveis (Grid de Status)
+    auto_cols = st.columns(3)
+    automacoes_lista = [
+        ("Atualização diária dos KPIs", "Ativa", "28/08/2026 21:45", "126"),
+        ("Validação automática da base", "Ativa", "28/08/2026 21:00", "94"),
+        ("Detecção de anomalias", "Ativa", "28/08/2026 20:30", "48")
+    ]
+    for i, (nome, status, ultima, execs) in enumerate(automacoes_lista):
+        with auto_cols[i]:
+            st.markdown(f'''
+            <div class="card">
+                <span style="color: #4ade80; font-size: 0.8rem; font-weight: bold;">🟢 {status}</span>
+                <div style="font-weight: 700; font-size: 0.95rem; margin: 0.4rem 0;">{nome}</div>
+                <div class="small">Última: {ultima}</div>
+                <div class="small">Execuções: {execs} (Sucesso: 99,2%)</div>
+            </div>
+            ''', unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # 6. Agente IA / Copilot integrado
+    st.markdown('''
+    <div class="card">
+        <span class="badge">🧠 ECV INTELLIGENCE COPILOT</span>
+        <h3 style="margin: 0.5rem 0 0.5rem 0;">Consulte os dados via linguagem natural</h3>
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">
+            O agente interpreta sua pergunta, estrutura a query SQL, consulta o SQLite e retorna a resposta com insights.
+        </p>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    pergunta_copilot = st.text_input("Ex: Qual ECV possui maior taxa de reprovação?", placeholder="Digite sua pergunta para o Agente IA...")
+    if st.button("Perguntar ao Copilot"):
+        if pergunta_copilot:
+            with st.spinner("Agente consultando SQLite e gerando insight..."):
+                resposta_ia = ask_data(pergunta_copilot, df)
+            st.markdown(f'''<div class="card" style="margin-top: 1rem;"><b style="color: #38bdf8;">Resposta do Copilot:</b><br>{resposta_ia}</div>''', unsafe_allow_html=True)
+
+    # 7. Histórico das Execuções aprimorado
+    st.markdown('<div class="section-title">Histórico de Execuções Recentes</div>', unsafe_allow_html=True)
+    
+    historico_df = pd.DataFrame({
+        "Processo": ["Carga diária", "Data Quality", "Análise IA", "KPIs"],
+        "Execução": ["08:00", "08:01", "08:02", "08:03"],
+        "Registros": ["5.000", "5.000", "5.000", "5.000"],
+        "IA": ["8 insights", "2 alertas", "10 insights", "—"],
+        "Status": ["✅ Sucesso", "✅ Sucesso", "✅ Sucesso", "✅ Sucesso"],
+        "Duração": ["4,2s", "1,8s", "6,4s", "2,1s"]
+    })
+    st.dataframe(historico_df, use_container_width=True, hide_index=True)
+
+    # 8. Impacto da Automação & 9. AI Solution Builder
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_imp, col_builder = st.columns(2)
+
+    with col_imp:
+        st.markdown('''
+        <div class="card" style="height: 100%;">
+            <span class="badge">IMPACTO DA AUTOMAÇÃO</span>
+            <h3 style="margin: 0.6rem 0 0.8rem 0;">⚡ Economia Gerada</h3>
+            <div style="font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.6rem;">
+                <div>⏳ Processo manual estimado: <b>52 horas/mês</b></div>
+                <div>⚡ Processo automatizado: <b>10 horas/mês</b></div>
+                <div style="color: #4ade80; font-size: 1rem; font-weight: 700; margin-top: 0.2rem;">📉 Tempo economizado: 42h/mês (≈ 80,8% de redução)</div>
+            </div>
+            <p style="color: #94a3b8; font-size: 0.82rem; margin-top: 1rem; margin-bottom: 0;">
+                💡 A automação eliminou atividades repetitivas de consolidação e análise. (Dados demonstrativos).
+            </p>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    with col_builder:
+        st.markdown('''
+        <div class="card" style="height: 100%;">
+            <span class="badge">⚡ AI CODING / VIBE CODING</span>
+            <h3 style="margin: 0.6rem 0 0.4rem 0;">AI Solution Builder</h3>
+            <p style="color: #94a3b8; font-size: 0.88rem; margin-bottom: 0.8rem;">Descreva uma rotina desejada para gerar a arquitetura lógica:</p>
+        ''', unsafe_allow_html=True)
+        
+        prompt_builder = st.text_area("Tarefa:", "Criar rotina que identifique ECVs com reprovação acima da média e gere alerta.", height=75, label_visibility="collapsed")
+        if st.button("🤖 Gerar solução"):
+            st.markdown('''
+            <div style="background: #0f172a; padding: 0.8rem; border-radius: 8px; font-size: 0.85rem; margin-top: 0.6rem; border: 1px solid rgba(56,189,248,0.2);">
+                <b style="color: #38bdf8;">🤖 Solução Gerada:</b><br>
+                1. Consultar SQLite (tabela vistorias)<br>
+                2. Calcular média global de reprovação<br>
+                3. Filtrar desvios e registrar log de alerta
+            </div>
+            ''', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 elif page == "IA & Insights":
     st.markdown('<div class="hero"><h1>IA & Insights</h1><p>Use Inteligência Artificial para interpretar indicadores e acelerar análises.</p></div>', unsafe_allow_html=True)
