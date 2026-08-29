@@ -393,6 +393,14 @@ elif page == "Automações":
     </div>
     """, unsafe_allow_html=True)
 
+    k1, k2, k3, k4, k5 = st.columns(5)elif page == "Automações":
+    st.markdown("""
+    <div class="hero">
+      <h1>Central de Automações & IA</h1>
+      <p>Automatize processos, analise dados com inteligência artificial e acompanhe resultados de ponta a ponta.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
     k1, k2, k3, k4, k5 = st.columns(5)
     k1.metric("Automações", "12")
     k2.metric("Execuções", "1.248")
@@ -415,10 +423,28 @@ elif page == "Automações":
     </div>
     """, unsafe_allow_html=True)
 
+    # Botão de execução do pipeline
     if st.button("🚀 Executar pipeline completo", type="primary", use_container_width=True):
         with st.spinner("Executando pipeline de ponta a ponta..."):
             run_pipeline()
         st.success("Pipeline executado com sucesso e logs gravados no SQLite.")
+
+    # --- ADIÇÃO DA TABELA DE LOGS PROFISSIONAL ---
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📋 Histórico de Execuções (Logs)</div>', unsafe_allow_html=True)
+
+    def load_logs():
+        conn = get_connection()
+        logs_df = pd.read_sql_query("SELECT * FROM logs_automacao ORDER BY id DESC LIMIT 10", conn)
+        conn.close()
+        return logs_df
+
+    df_logs = load_logs()
+    
+    if not df_logs.empty:
+        st.dataframe(df_logs, use_container_width=True, hide_index=True)
+    else:
+        st.info("Nenhum log registrado até o momento. Execute o pipeline acima.")
 
 elif page == "IA & Insights":
     st.markdown("""
