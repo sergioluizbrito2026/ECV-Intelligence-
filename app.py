@@ -117,7 +117,8 @@ def load_vistorias():
     return df
 
 st.sidebar.markdown('<div class="brand" style="font-size:1.1rem; font-weight:bold;">🚗 ECV Intelligence</div>', unsafe_allow_html=True)
-st.sidebar.markdown('<div class="brand-sub" style="font-size:0.85rem; color:#94a3b8;">Automation • BI • AI</div>', unsafe_allow_html=True)
+st.sidebar.markdown('<div class="brand-sub" style="font-size:0.85rem; color:#94a3b8;">Automação e Análise Inteligente de Vistorias
+</div>', unsafe_allow_html=True)
 
 page = st.sidebar.radio(
     "Workspace",
