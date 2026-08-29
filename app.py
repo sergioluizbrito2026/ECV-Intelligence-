@@ -393,7 +393,7 @@ elif page == "Automações":
     </div>
     """, unsafe_allow_html=True)
 
-    k1, k2, k3, k4, k5 = st.columns(5)elif page == "Automações":
+    k1, k2, k3, k4, k5 = st.columns(5)
     st.markdown("""
     <div class="hero">
       <h1>Central de Automações & IA</h1>
