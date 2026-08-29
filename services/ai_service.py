@@ -5,6 +5,7 @@ from google import genai
 import streamlit as st
 
 
+
 def _get_gemini_client():
   # Tenta pegar a chave do Streamlit Secrets ou das variáveis de ambiente
   api_key = (
