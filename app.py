@@ -530,7 +530,7 @@ elif page == "IA & Insights":
     
     st.markdown("""
     <div class="small" style="margin-top: 1rem; color: #94a3b8;">
-        <b>Exemplos:</b> • Qual ECV teve melhor desempenho? &nbsp;•&nbsp; Qual tipo de vistoria mais reprova? &nbsp;•&nbsp; Qual foi o faturamento? &nbsp;•&nbsp; Existem anomalias? &nbsp;•&nbsp; Quais ECVs precisam de atenção?
+        
     </div>
     """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
