@@ -509,40 +509,6 @@ elif page == "IA & Insights":
     """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # 6. Recomendações da IA & Origem da IA (Arquitetura)
-    col_rec, col_arch = st.columns(2)
-
-    with col_rec:
-        st.markdown('''
-        <div class="card" style="height: 100%;">
-            <span class="badge">🎯 RECOMENDAÇÕES DA IA</span>
-            <ol style="margin: 0.8rem 0 0 1.2rem; font-size: 0.9rem; color: #f8fafc; line-height: 1.8;">
-                <li>Investigar reprovações do ECV Oeste</li>
-                <li>Comparar desempenho por tipo de vistoria</li>
-                <li>Monitorar tendência de aprovação</li>
-                <li>Avaliar tempo médio operacional</li>
-            </ol>
-        </div>
-        ''', unsafe_allow_html=True)
-
-    with col_arch:
-        st.markdown('''
-        <div class="card" style="height: 100%;">
-            <span class="badge">🔌 MOTOR DE ANÁLISE & ARQUITETURA</span>
-            <div style="font-size: 0.88rem; margin-top: 0.8rem; line-height: 1.7; color: #94a3b8;">
-                • <b>Dados:</b> SQLite<br>
-                • <b>Modelo analítico:</b> Python / Pandas<br>
-                • <b>IA generativa:</b> LLM<br>
-                • <b>Integração:</b> API<br>
-                <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #38bdf8;">
-                    Fluxo: SQLite → Pandas → KPIs → Detecção → LLM → Insight → Recomendação
-                </div>
-            </div>
-        </div>
-        ''', unsafe_allow_html=True)
-
 elif page == "API":
     st.markdown('<div class="hero"><h1>API & Integrações</h1><p>Camada REST demonstrativa para integração com sistemas internos e BI.</p></div>', unsafe_allow_html=True)
     st.subheader("Endpoints")
