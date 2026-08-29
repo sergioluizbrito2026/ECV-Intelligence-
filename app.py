@@ -463,7 +463,7 @@ elif page == "IA & Insights":
         perf_data = get_ecv_performance(df)
         with st.spinner("Analisando 5.000 registros e calculando indicadores..."):
             analise_gerada = analyze_data(kpi, perf_data)
-        st.markdown(f'<div class="card" style="margin-top: 1rem;"><b style="color: #38bdf8;">Resumo Executivo (Baseado em SQLite):</b><br><br>{analise_gerada}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="card" style="margin-top: 1rem;"><b style="color: #38bdf8;">Resumo Executivo </b><br><br>{analise_gerada}</div>', unsafe_allow_html=True)
     
     st.markdown("""
     <div class="small" style="margin-top: 0.5rem; color: #94a3b8;">
