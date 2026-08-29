@@ -520,8 +520,8 @@ elif page == "IA & Insights":
     st.markdown("<br>", unsafe_allow_html=True)
 
     # 5. Pergunte aos dados (Copilot integrado ao SQLite)
-    st.markdown('<div class="section-title">💬 Pergunte aos dados (ECV Intelligence Copilot)</div>', unsafe_allow_html=True)
-    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">💬 Pergunte aos dados (ECV Intelligence IA)</div>', unsafe_allow_html=True)
+    
     pergunta_usuario = st.text_input("Ex: Qual ECV possui maior taxa de reprovação?", placeholder="Qual ECV precisa de mais atenção?")
     if st.button("🔎 Consultar", type="primary"):
         if pergunta_usuario:
