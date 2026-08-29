@@ -1,6 +1,7 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from google import genai
 
 from database.database import init_db, seed_database, get_connection
 from services.analytics import get_kpis, get_daily_series, get_ecv_performance, get_quality_report
