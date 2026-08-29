@@ -411,9 +411,8 @@ elif page == "Automações":
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown('<div class="section-title">Pipeline de Dados em Tempo Real</div>', unsafe_allow_html=True)
     st.markdown("""
-    <div class="card" style="text-align: center; font-size: 0.95rem; line-height: 2.2;">
-               
-                              
+                
+                             
         
     </div>
     """, unsafe_allow_html=True)
