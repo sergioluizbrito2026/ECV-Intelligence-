@@ -2239,11 +2239,6 @@ st.caption(
 )
 
 
-
-A principal alteração está na aba **Vistorias**. Agora ela reconhece corretamente o retorno que você mostrou:
-
-
-
 st.divider()
 
 st.caption(
