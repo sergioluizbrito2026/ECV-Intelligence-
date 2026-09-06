@@ -1493,27 +1493,27 @@ elif page == "IA & Insights":
 
  if "tipo_vistoria" in df.columns:
 
-            tipos = (
-                df["tipo_vistoria"]
-                .fillna("")
-                .astype(str)
-                .str.strip()
-            )
+    tipos = (
+        df["tipo_vistoria"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+    )
 
-            tipos = tipos[tipos != ""]
+    tipos = tipos[tipos != ""]
 
-            if not tipos.empty:
+    if not tipos.empty:
 
-                tipo_principal = tipos.value_counts().idxmax()
-                quantidade_tipo = int(
-                    tipos.value_counts().max()
-                )
+        contagem_tipos = tipos.value_counts()
 
-                insights.append(
-                    f"📋 **Tipo de vistoria predominante:** "
-                    f"{tipo_principal}, com "
-                    f"{number(quantidade_tipo)} registros."
-                )
+        tipo_principal = str(contagem_tipos.index[0])
+        quantidade_tipo = int(contagem_tipos.iloc[0])
+
+        insights.append(
+            f"📋 **Tipo de vistoria predominante:** "
+            f"{tipo_principal}, com "
+            f"{quantidade_tipo:,} registros."
+        )
 
         # ----------------------------------------------------
         # FATURAMENTO
