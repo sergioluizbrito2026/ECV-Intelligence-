@@ -2243,23 +2243,6 @@ st.caption(
 A principal alteração está na aba **Vistorias**. Agora ela reconhece corretamente o retorno que você mostrou:
 
 
-E a tela passa a ter:
-
-* **6 KPIs**
-* filtro por **placa/ID**
-* filtro por **ECV**
-* filtro por **cidade**
-* filtro por **estado**
-* filtro por **tipo**
-* filtro por **resultado**
-* filtro por **período**
-* gráfico de **tipos de vistoria**
-* gráfico de **volume por ECV**
-* tempo médio
-* faturamento
-* exportação CSV
-* tabela com `ecv_id`
-* limite de 5.000 registros preservado
 
 st.divider()
 
