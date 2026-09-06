@@ -1611,7 +1611,7 @@ elif page == "Qualidade":
         """,
         unsafe_allow_html=True,
     )
-```
+
 
 
 elif page == "IA & Insights":
