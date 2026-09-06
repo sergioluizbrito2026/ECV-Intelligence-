@@ -814,22 +814,656 @@ elif page == "Qualidade":
     quality_response = get_api_quality()
 
 
+```python
+# ============================================================
+# IA & INSIGHTS
+# ============================================================
+
 elif page == "IA & Insights":
 
-    vistorias_response = get_api_vistorias()
-    ecvs_response = get_api_ecvs()
-    performance_response = get_api_analytics_ecvs()
+    st.markdown(
+        """
+<div class="hero">
+<h1>🤖 IA & Insights</h1>
+<p>
+Inteligência artificial aplicada aos dados operacionais,
+performance das ECVs e identificação de oportunidades.
+</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
+    st.markdown(
+        f"""
+<div class="data-limit">
+🤖 Análise inteligente baseada em até
+<strong>{number(MAX_VISTORIAS)}</strong> vistorias carregadas.
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
-elif page == "ECVs":
+    # ========================================================
+    # INDICADORES DA IA
+    # ========================================================
 
-    ecvs_response = get_api_ecvs()
-    performance_response = get_api_analytics_ecvs()
+    total_ia = len(df)
 
+    ecvs_ia = (
+        df["ecv"].nunique()
+        if not df.empty and "ecv" in df.columns
+        else 0
+    )
 
-elif page == "Automações":
+    if not df.empty:
 
-    automations_response = get_api_automations()
+        resultado_ia = (
+            df["resultado"]
+            .fillna("")
+            .astype(str)
+            .str.lower()
+            .str.strip()
+        )
+
+        aprovadas_ia = int(
+            resultado_ia.isin(
+                [
+                    "aprovado",
+                    "aprovada",
+                    "aprovados",
+                    "aprovadas",
+                ]
+            ).sum()
+        )
+
+        taxa_aprovacao_ia = (
+            aprovadas_ia / total_ia * 100
+            if total_ia
+            else 0
+        )
+
+        tempo_ia = pd.to_numeric(
+            df["tempo_minutos"],
+            errors="coerce",
+        ).mean()
+
+        faturamento_ia = pd.to_numeric(
+            df["valor"],
+            errors="coerce",
+        ).fillna(0).sum()
+
+    else:
+
+        aprovadas_ia = 0
+        taxa_aprovacao_ia = 0
+        tempo_ia = 0
+        faturamento_ia = 0
+
+    st.markdown(
+        '<div class="section-title">🧠 Visão inteligente da operação</div>',
+        unsafe_allow_html=True,
+    )
+
+    i1, i2, i3, i4, i5, i6 = st.columns(6)
+
+    i1.metric(
+        "Vistorias analisadas",
+        number(total_ia),
+    )
+
+    i2.metric(
+        "ECVs analisadas",
+        number(ecvs_ia),
+    )
+
+    i3.metric(
+        "Aprovação",
+        f"{safe_float(taxa_aprovacao_ia):.1f}%",
+    )
+
+    i4.metric(
+        "Tempo médio",
+        f"{safe_float(tempo_ia):.1f} min",
+    )
+
+    i5.metric(
+        "Faturamento",
+        money(faturamento_ia),
+    )
+
+    i6.metric(
+        "Copilot",
+        "Ativo",
+    )
+
+    # ========================================================
+    # INSIGHTS AUTOMÁTICOS
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">💡 Insights automáticos</div>',
+        unsafe_allow_html=True,
+    )
+
+    if df.empty:
+
+        st.info(
+            "Não existem dados de vistorias disponíveis "
+            "para gerar insights."
+        )
+
+    else:
+
+        insights = []
+
+        # ----------------------------------------------------
+        # INSIGHT DE APROVAÇÃO
+        # ----------------------------------------------------
+
+        if taxa_aprovacao_ia >= 90:
+
+            insights.append(
+                f"🟢 **Alta taxa de aprovação:** "
+                f"{taxa_aprovacao_ia:.1f}% das vistorias "
+                f"foram aprovadas."
+            )
+
+        elif taxa_aprovacao_ia >= 75:
+
+            insights.append(
+                f"🟡 **Taxa de aprovação moderada:** "
+                f"{taxa_aprovacao_ia:.1f}% das vistorias "
+                f"foram aprovadas."
+            )
+
+        else:
+
+            insights.append(
+                f"🔴 **Atenção à aprovação:** "
+                f"a taxa atual é de "
+                f"{taxa_aprovacao_ia:.1f}%."
+            )
+
+        # ----------------------------------------------------
+        # INSIGHT DE TEMPO
+        # ----------------------------------------------------
+
+        if safe_float(tempo_ia) > 60:
+
+            insights.append(
+                f"🟠 **Tempo operacional elevado:** "
+                f"a média está em "
+                f"{safe_float(tempo_ia):.1f} minutos."
+            )
+
+        elif safe_float(tempo_ia) > 0:
+
+            insights.append(
+                f"🟢 **Tempo operacional:** "
+                f"a média das vistorias está em "
+                f"{safe_float(tempo_ia):.1f} minutos."
+            )
+
+        # ----------------------------------------------------
+        # MELHOR ECV
+        # ----------------------------------------------------
+
+        if "ecv" in df.columns:
+
+            ranking_ecv = (
+                df.groupby("ecv")
+                .agg(
+                    vistorias=("id", "count"),
+                    tempo_medio=("tempo_minutos", "mean"),
+                    faturamento=("valor", "sum"),
+                )
+                .reset_index()
+            )
+
+            ranking_ecv = ranking_ecv[
+                ranking_ecv["ecv"].astype(str).str.strip() != ""
+            ]
+
+            if not ranking_ecv.empty:
+
+                melhor_ecv = ranking_ecv.sort_values(
+                    "vistorias",
+                    ascending=False,
+                ).iloc[0]
+
+                insights.append(
+                    f"🏢 **ECV com maior volume:** "
+                    f"{melhor_ecv['ecv']} com "
+                    f"{number(melhor_ecv['vistorias'])} "
+                    f"vistorias."
+                )
+
+        # ----------------------------------------------------
+        # TIPO MAIS UTILIZADO
+        # ----------------------------------------------------
+
+        if "tipo_vistoria" in df.columns:
+
+            tipos = (
+                df["tipo_vistoria"]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+            )
+
+            tipos = tipos[tipos != ""]
+
+            if not tipos.empty:
+
+                tipo_principal = tipos.value_counts().idxmax()
+                quantidade_tipo = int(
+                    tipos.value_counts().max()
+                )
+
+                insights.append(
+                    f"📋 **Tipo de vistoria predominante:** "
+                    f"{tipo_principal}, com "
+                    f"{number(quantidade_tipo)} registros."
+                )
+
+        # ----------------------------------------------------
+        # FATURAMENTO
+        # ----------------------------------------------------
+
+        if faturamento_ia > 0:
+
+            insights.append(
+                f"💰 **Receita analisada:** "
+                f"{money(faturamento_ia)} "
+                f"considerando os registros carregados."
+            )
+
+        for insight in insights:
+
+            st.markdown(
+                f"""
+<div class="card">
+{insight}
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+
+    # ========================================================
+    # ANÁLISE DE PERFORMANCE
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">📊 Análise de performance</div>',
+        unsafe_allow_html=True,
+    )
+
+    if not df.empty:
+
+        p1, p2 = st.columns(2)
+
+        # ----------------------------------------------------
+        # VOLUME POR ECV
+        # ----------------------------------------------------
+
+        with p1:
+
+            if "ecv" in df.columns:
+
+                volume_ecv = (
+                    df["ecv"]
+                    .fillna("Não informado")
+                    .astype(str)
+                    .value_counts()
+                    .reset_index()
+                )
+
+                volume_ecv.columns = [
+                    "ecv",
+                    "vistorias",
+                ]
+
+                volume_ecv = volume_ecv.head(10)
+
+                fig_volume = px.bar(
+                    volume_ecv,
+                    x="vistorias",
+                    y="ecv",
+                    orientation="h",
+                    text_auto=True,
+                    title="Top ECVs por volume",
+                )
+
+                fig_volume.update_layout(
+                    plot_bgcolor="#1e293b",
+                    paper_bgcolor="#1e293b",
+                    font=dict(
+                        color="#94a3b8"
+                    ),
+                    showlegend=False,
+                )
+
+                st.plotly_chart(
+                    fig_volume,
+                    use_container_width=True,
+                )
+
+        # ----------------------------------------------------
+        # RESULTADOS
+        # ----------------------------------------------------
+
+        with p2:
+
+            resultado_chart = (
+                df["resultado"]
+                .fillna("Não informado")
+                .astype(str)
+                .value_counts()
+                .reset_index()
+            )
+
+            resultado_chart.columns = [
+                "resultado",
+                "quantidade",
+            ]
+
+            fig_resultado = px.pie(
+                resultado_chart,
+                names="resultado",
+                values="quantidade",
+                hole=.55,
+                title="Distribuição dos resultados",
+            )
+
+            fig_resultado.update_layout(
+                plot_bgcolor="#1e293b",
+                paper_bgcolor="#1e293b",
+                font=dict(
+                    color="#94a3b8"
+                ),
+            )
+
+            st.plotly_chart(
+                fig_resultado,
+                use_container_width=True,
+            )
+
+    else:
+
+        st.info(
+            "Não existem dados suficientes para análise."
+        )
+
+    # ========================================================
+    # COPILOT
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">💬 Copilot de Dados</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+<div class="card">
+
+<h3>🤖 Pergunte aos seus dados</h3>
+
+<div class="small">
+O Copilot pode analisar as vistorias carregadas e responder
+perguntas sobre ECVs, resultados, volume, tempo e faturamento.
+</div>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    question = st.text_input(
+        "Pergunta",
+        placeholder=(
+            "Ex.: Qual ECV realizou mais vistorias?"
+        ),
+        key="copilot_question_v3",
+    )
+
+    st.markdown(
+        '<div class="small">Sugestões de perguntas:</div>',
+        unsafe_allow_html=True,
+    )
+
+    s1, s2, s3, s4 = st.columns(4)
+
+    if s1.button(
+        "🏢 Melhor ECV",
+        use_container_width=True,
+        key="sugestao_melhor_ecv",
+    ):
+        question = "Qual ECV realizou mais vistorias?"
+
+    if s2.button(
+        "📊 Aprovação",
+        use_container_width=True,
+        key="sugestao_aprovacao",
+    ):
+        question = "Qual é a taxa de aprovação das vistorias?"
+
+    if s3.button(
+        "⏱️ Tempo médio",
+        use_container_width=True,
+        key="sugestao_tempo",
+    ):
+        question = "Qual é o tempo médio das vistorias?"
+
+    if s4.button(
+        "💰 Faturamento",
+        use_container_width=True,
+        key="sugestao_faturamento",
+    ):
+        question = "Qual é o faturamento total?"
+
+    if st.button(
+        "🔎 Analisar dados",
+        type="primary",
+        use_container_width=True,
+        key="consultar_copilot_v3",
+    ):
+
+        if not question.strip():
+
+            st.warning(
+                "Digite uma pergunta ou escolha uma sugestão."
+            )
+
+        elif df.empty:
+
+            st.warning(
+                "Não existem dados de vistorias disponíveis."
+            )
+
+        else:
+
+            try:
+
+                from services.ai_service import ask_data
+
+                with st.spinner(
+                    "🤖 O Copilot está analisando os dados..."
+                ):
+
+                    answer = ask_data(
+                        question,
+                        df,
+                    )
+
+                st.markdown(
+                    f"""
+<div class="card">
+
+<span class="badge">COPILOT IA</span>
+
+<h3>Resposta</h3>
+
+<div style="margin-top:1rem; line-height:1.7;">
+{html.escape(str(answer))}
+</div>
+
+</div>
+""",
+                    unsafe_allow_html=True,
+                )
+
+            except Exception:
+
+                # ------------------------------------------------
+                # FALLBACK ANALÍTICO
+                # ------------------------------------------------
+
+                q = question.lower()
+
+                resposta = None
+
+                if (
+                    "mais" in q
+                    and "ecv" in q
+                ):
+
+                    ranking = (
+                        df["ecv"]
+                        .value_counts()
+                    )
+
+                    if not ranking.empty:
+
+                        resposta = (
+                            f"A ECV com maior volume de "
+                            f"vistorias é **{ranking.index[0]}**, "
+                            f"com **{number(ranking.iloc[0])} "
+                            f"registros**."
+                        )
+
+                elif (
+                    "aprovação" in q
+                    or "aprovacao" in q
+                ):
+
+                    resposta = (
+                        f"A taxa de aprovação calculada "
+                        f"na base atual é de "
+                        f"**{taxa_aprovacao_ia:.1f}%**."
+                    )
+
+                elif (
+                    "tempo" in q
+                    and "médio" in q
+                ):
+
+                    resposta = (
+                        f"O tempo médio das vistorias "
+                        f"é de **{safe_float(tempo_ia):.1f} minutos**."
+                    )
+
+                elif (
+                    "faturamento" in q
+                    or "receita" in q
+                ):
+
+                    resposta = (
+                        f"O faturamento dos registros "
+                        f"analisados é de **{money(faturamento_ia)}**."
+                    )
+
+                if resposta:
+
+                    st.markdown(
+                        f"""
+<div class="card">
+
+<span class="badge">ANÁLISE AUTOMÁTICA</span>
+
+<h3>Resultado</h3>
+
+<div style="margin-top:1rem; line-height:1.7;">
+{resposta}
+</div>
+
+</div>
+""",
+                        unsafe_allow_html=True,
+                    )
+
+                else:
+
+                    st.warning(
+                        "O Copilot de IA não está disponível no momento "
+                        "e não foi possível interpretar essa pergunta "
+                        "automaticamente."
+                    )
+
+    # ========================================================
+    # RECOMENDAÇÕES
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">🎯 Recomendações inteligentes</div>',
+        unsafe_allow_html=True,
+    )
+
+    recomendacoes = []
+
+    if taxa_aprovacao_ia < 75:
+
+        recomendacoes.append(
+            "🔴 Revisar os principais motivos de reprovação "
+            "e identificar ECVs com desempenho abaixo da média."
+        )
+
+    elif taxa_aprovacao_ia < 90:
+
+        recomendacoes.append(
+            "🟡 Monitorar a taxa de aprovação e comparar "
+            "o desempenho entre as ECVs."
+        )
+
+    else:
+
+        recomendacoes.append(
+            "🟢 Manter o padrão atual de aprovação e "
+            "identificar as práticas das ECVs de melhor desempenho."
+        )
+
+    if safe_float(tempo_ia) > 60:
+
+        recomendacoes.append(
+            "⏱️ Avaliar o tempo operacional das vistorias "
+            "para identificar possíveis gargalos."
+        )
+
+    if ecvs_ia > 0:
+
+        recomendacoes.append(
+            "🏢 Comparar volume, tempo médio e resultados "
+            "entre as ECVs para identificar oportunidades."
+        )
+
+    recomendacoes.append(
+        "🤖 Utilizar o Copilot para consultas rápidas "
+        "sobre a operação e apoio à tomada de decisão."
+    )
+
+    for recomendacao in recomendacoes:
+
+        st.markdown(
+            f"""
+<div class="card">
+{recomendacao}
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+```
+
 
 
 # ============================================================
