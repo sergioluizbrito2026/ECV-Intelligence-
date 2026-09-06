@@ -2267,7 +2267,6 @@ E a tela passa a ter:
 * filtro por **tipo**
 * filtro por **resultado**
 * filtro por **período**
-* gráfico de **Aprovado × Reprovado**
 * gráfico de **tipos de vistoria**
 * gráfico de **volume por ECV**
 * tempo médio
