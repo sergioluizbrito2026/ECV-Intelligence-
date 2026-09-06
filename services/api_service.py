@@ -13,7 +13,7 @@ Responsabilidades:
 - Qualidade dos dados
 - Automações
 - Dataset para Power BI
-- Estrutura preparada para SaaS
+- Estrutura preparada para SaaS multi-tenant
 
 Executar:
 
@@ -50,15 +50,23 @@ from services.automation import (
 # CONFIGURAÇÃO
 # ============================================================
 
-API_VERSION = "3.0.0"
+API_VERSION = "3.1.0"
+
+DEFAULT_LIMIT = 5000
+MAX_LIMIT = 50000
 
 
 # ============================================================
 # DATABASE
 # ============================================================
 
-init_db()
-seed_database()
+try:
+    init_db()
+    seed_database()
+except Exception as exc:
+    print(
+        f"[DATABASE] Erro ao inicializar banco: {exc}"
+    )
 
 
 # ============================================================
@@ -93,6 +101,10 @@ app.add_middleware(
 # ============================================================
 
 def _rows_to_dict(rows, columns):
+    """
+    Converte linhas SQLite em lista de dicionários.
+    """
+
     return [
         dict(zip(columns, row))
         for row in rows
@@ -107,6 +119,7 @@ def _query_df(query, params=()):
     conn = get_connection()
 
     try:
+
         return pd.read_sql_query(
             query,
             conn,
@@ -114,13 +127,49 @@ def _query_df(query, params=()):
         )
 
     finally:
+
         conn.close()
 
 
-def _limit(value, minimum=1, maximum=5000):
+def _limit(
+    value,
+    minimum=1,
+    maximum=MAX_LIMIT,
+):
+    """
+    Garante que o limite esteja dentro
+    de uma faixa segura.
+    """
+
+    try:
+        value = int(value)
+    except Exception:
+        value = minimum
+
     return min(
-        max(int(value), minimum),
+        max(value, minimum),
         maximum,
+    )
+
+
+def _safe_records(df):
+    """
+    Converte DataFrame em registros JSON
+    sem valores NaN incompatíveis.
+    """
+
+    if df is None or df.empty:
+        return []
+
+    result = df.copy()
+
+    result = result.where(
+        pd.notna(result),
+        None,
+    )
+
+    return result.to_dict(
+        orient="records"
     )
 
 
@@ -152,27 +201,39 @@ def health():
 )
 def status():
 
+    conn = None
+
     try:
 
         conn = get_connection()
 
-        try:
-            total_ecvs = conn.execute(
-                "SELECT COUNT(*) FROM ecvs"
-            ).fetchone()[0]
+        total_ecvs = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM ecvs
+            """
+        ).fetchone()[0]
 
-            total_vistorias = conn.execute(
-                "SELECT COUNT(*) FROM vistorias"
-            ).fetchone()[0]
+        total_vistorias = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM vistorias
+            """
+        ).fetchone()[0]
 
-        finally:
-            conn.close()
+        total_usuarios = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM usuarios
+            """
+        ).fetchone()[0]
 
         return {
             "api": "operational",
             "database": "operational",
             "ecvs": total_ecvs or 0,
             "vistorias": total_vistorias or 0,
+            "usuarios": total_usuarios or 0,
             "version": API_VERSION,
         }
 
@@ -180,8 +241,13 @@ def status():
 
         raise HTTPException(
             status_code=500,
-            detail=str(exc),
+            detail=f"Erro no banco de dados: {exc}",
         )
+
+    finally:
+
+        if conn is not None:
+            conn.close()
 
 
 # ============================================================
@@ -196,13 +262,15 @@ def ecvs(
     limit: int = Query(
         100,
         ge=1,
-        le=5000,
+        le=MAX_LIMIT,
     )
 ):
 
-    conn = get_connection()
+    conn = None
 
     try:
+
+        conn = get_connection()
 
         cursor = conn.execute(
             """
@@ -221,7 +289,7 @@ def ecvs(
                 _limit(
                     limit,
                     1,
-                    5000,
+                    MAX_LIMIT,
                 ),
             ),
         )
@@ -239,9 +307,17 @@ def ecvs(
             columns,
         )
 
+    except Exception as exc:
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao consultar ECVs: {exc}",
+        )
+
     finally:
 
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 # ============================================================
@@ -252,13 +328,17 @@ def ecvs(
     "/ecvs/{ecv_id}",
     tags=["ECVs"],
 )
-def ecv_detail(ecv_id: int):
+def ecv_detail(
+    ecv_id: int,
+):
 
-    conn = get_connection()
+    conn = None
 
     try:
 
-        row = conn.execute(
+        conn = get_connection()
+
+        cursor = conn.execute(
             """
             SELECT
                 id,
@@ -271,7 +351,9 @@ def ecv_detail(ecv_id: int):
             WHERE id = ?
             """,
             (ecv_id,),
-        ).fetchone()
+        )
+
+        row = cursor.fetchone()
 
         if not row:
 
@@ -283,20 +365,7 @@ def ecv_detail(ecv_id: int):
         columns = [
             description[0]
             for description
-            in conn.execute(
-                """
-                SELECT
-                    id,
-                    nome,
-                    cidade,
-                    estado,
-                    status,
-                    meta_mensal
-                FROM ecvs
-                WHERE id = ?
-                """,
-                (ecv_id,),
-            ).description
+            in cursor.description
         ]
 
         return dict(
@@ -306,9 +375,21 @@ def ecv_detail(ecv_id: int):
             )
         )
 
+    except HTTPException:
+
+        raise
+
+    except Exception as exc:
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao consultar ECV: {exc}",
+        )
+
     finally:
 
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 # ============================================================
@@ -321,19 +402,17 @@ def ecv_detail(ecv_id: int):
 )
 def vistorias(
     limit: int = Query(
-        5000,
+        DEFAULT_LIMIT,
         ge=1,
-        le=50000,
+        le=MAX_LIMIT,
         description="Quantidade máxima de registros retornados",
     ),
 
-    # Busca geral
     busca: Optional[str] = Query(
         None,
         description="Busca por placa ou ID da vistoria",
     ),
 
-    # Filtros
     vistoria_id: Optional[int] = Query(
         None,
         description="ID da vistoria",
@@ -377,6 +456,12 @@ def vistorias(
 
     # --------------------------------------------------------
     # QUERY BASE
+    #
+    # IMPORTANTE:
+    # No database.py a coluna é "tipo".
+    # Portanto usamos:
+    #
+    # v.tipo AS tipo_vistoria
     # --------------------------------------------------------
 
     query = """
@@ -387,7 +472,7 @@ def vistorias(
             e.cidade,
             e.estado,
             v.placa,
-            v.tipo_vistoria,
+            v.tipo AS tipo_vistoria,
             v.data_vistoria,
             v.resultado,
             v.tempo_minutos,
@@ -410,31 +495,37 @@ def vistorias(
             AND v.id = ?
         """
 
-        params.append(vistoria_id)
+        params.append(
+            vistoria_id
+        )
 
     # --------------------------------------------------------
-    # BUSCA GERAL
-    # Placa OU ID
+    # BUSCA
     # --------------------------------------------------------
 
     if busca:
 
         busca = busca.strip()
 
-        query += """
-            AND (
-                CAST(v.id AS TEXT) LIKE ?
-                OR LOWER(COALESCE(v.placa, ''))
-                    LIKE LOWER(?)
+        if busca:
+
+            query += """
+                AND (
+                    CAST(v.id AS TEXT) LIKE ?
+                    OR LOWER(
+                        COALESCE(v.placa, '')
+                    ) LIKE LOWER(?)
+                )
+            """
+
+            termo = f"%{busca}%"
+
+            params.extend(
+                [
+                    termo,
+                    termo,
+                ]
             )
-        """
-
-        termo = f"%{busca}%"
-
-        params.extend([
-            termo,
-            termo,
-        ])
 
     # --------------------------------------------------------
     # PLACA
@@ -442,14 +533,19 @@ def vistorias(
 
     if placa:
 
-        query += """
-            AND LOWER(COALESCE(v.placa, ''))
-                LIKE LOWER(?)
-        """
+        placa_limpa = placa.strip()
 
-        params.append(
-            f"%{placa.strip()}%"
-        )
+        if placa_limpa:
+
+            query += """
+                AND LOWER(
+                    COALESCE(v.placa, '')
+                ) LIKE LOWER(?)
+            """
+
+            params.append(
+                f"%{placa_limpa}%"
+            )
 
     # --------------------------------------------------------
     # ECV
@@ -457,14 +553,19 @@ def vistorias(
 
     if ecv:
 
-        query += """
-            AND LOWER(COALESCE(e.nome, ''))
-                LIKE LOWER(?)
-        """
+        ecv_limpa = ecv.strip()
 
-        params.append(
-            f"%{ecv.strip()}%"
-        )
+        if ecv_limpa:
+
+            query += """
+                AND LOWER(
+                    COALESCE(e.nome, '')
+                ) LIKE LOWER(?)
+            """
+
+            params.append(
+                f"%{ecv_limpa}%"
+            )
 
     # --------------------------------------------------------
     # CIDADE
@@ -472,14 +573,19 @@ def vistorias(
 
     if cidade:
 
-        query += """
-            AND LOWER(COALESCE(e.cidade, ''))
-                LIKE LOWER(?)
-        """
+        cidade_limpa = cidade.strip()
 
-        params.append(
-            f"%{cidade.strip()}%"
-        )
+        if cidade_limpa:
+
+            query += """
+                AND LOWER(
+                    COALESCE(e.cidade, '')
+                ) LIKE LOWER(?)
+            """
+
+            params.append(
+                f"%{cidade_limpa}%"
+            )
 
     # --------------------------------------------------------
     # TIPO
@@ -487,14 +593,19 @@ def vistorias(
 
     if tipo:
 
-        query += """
-            AND LOWER(COALESCE(v.tipo_vistoria, ''))
-                LIKE LOWER(?)
-        """
+        tipo_limpo = tipo.strip()
 
-        params.append(
-            f"%{tipo.strip()}%"
-        )
+        if tipo_limpo:
+
+            query += """
+                AND LOWER(
+                    COALESCE(v.tipo, '')
+                ) LIKE LOWER(?)
+            """
+
+            params.append(
+                f"%{tipo_limpo}%"
+            )
 
     # --------------------------------------------------------
     # RESULTADO
@@ -502,14 +613,19 @@ def vistorias(
 
     if resultado:
 
-        query += """
-            AND LOWER(COALESCE(v.resultado, ''))
-                = LOWER(?)
-        """
+        resultado_limpo = resultado.strip()
 
-        params.append(
-            resultado.strip()
-        )
+        if resultado_limpo:
+
+            query += """
+                AND LOWER(
+                    COALESCE(v.resultado, '')
+                ) = LOWER(?)
+            """
+
+            params.append(
+                resultado_limpo
+            )
 
     # --------------------------------------------------------
     # DATA INICIAL
@@ -517,7 +633,6 @@ def vistorias(
 
     if data_inicio:
 
-        # Validação da data
         try:
 
             datetime.strptime(
@@ -536,7 +651,8 @@ def vistorias(
             )
 
         query += """
-            AND DATE(v.data_vistoria) >= DATE(?)
+            AND DATE(v.data_vistoria)
+                >= DATE(?)
         """
 
         params.append(
@@ -567,7 +683,8 @@ def vistorias(
             )
 
         query += """
-            AND DATE(v.data_vistoria) <= DATE(?)
+            AND DATE(v.data_vistoria)
+                <= DATE(?)
         """
 
         params.append(
@@ -575,47 +692,59 @@ def vistorias(
         )
 
     # --------------------------------------------------------
-    # ORDENAÇÃO + LIMITE
+    # ORDENAÇÃO
     # --------------------------------------------------------
 
     query += """
         ORDER BY
-            DATE(v.data_vistoria) DESC,
+            datetime(v.data_vistoria) DESC,
             v.id DESC
         LIMIT ?
     """
 
+    final_limit = _limit(
+        limit,
+        1,
+        MAX_LIMIT,
+    )
+
     params.append(
-        _limit(
-            limit,
-            1,
-            50000,
-        )
+        final_limit
     )
 
     # --------------------------------------------------------
     # EXECUÇÃO
     # --------------------------------------------------------
 
-    df = _query_df(
-        query,
-        tuple(params),
-    )
+    try:
+
+        df = _query_df(
+            query,
+            tuple(params),
+        )
+
+    except Exception as exc:
+
+        print(
+            f"[VISTORIAS] Erro SQL: {exc}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Erro ao consultar vistorias: "
+                f"{exc}"
+            ),
+        )
 
     # --------------------------------------------------------
     # RESPOSTA
     # --------------------------------------------------------
 
     return {
-        "data": df.to_dict(
-            orient="records"
-        ),
+        "data": _safe_records(df),
         "total": len(df),
-        "limit": _limit(
-            limit,
-            1,
-            50000,
-        ),
+        "limit": final_limit,
         "filtros": {
             "busca": busca,
             "vistoria_id": vistoria_id,
@@ -640,51 +769,65 @@ def vistorias(
 )
 def indicadores():
 
-    df = _query_df(
-        """
-        SELECT
-            v.id,
-            e.nome AS ecv,
-            v.placa,
-            v.tipo_vistoria,
-            v.data_vistoria,
-            v.resultado,
-            v.tempo_minutos,
-            v.valor
-        FROM vistorias v
-        JOIN ecvs e
-            ON e.id = v.ecv_id
-        """
-    )
+    try:
 
-    kpis = get_kpis(
-        df
-    )
+        df = _query_df(
+            """
+            SELECT
+                v.id,
+                e.nome AS ecv,
+                v.placa,
+                v.tipo AS tipo_vistoria,
+                v.data_vistoria,
+                v.resultado,
+                v.tempo_minutos,
+                v.valor
+            FROM vistorias v
+            JOIN ecvs e
+                ON e.id = v.ecv_id
+            """
+        )
 
-    return {
-        "total_vistorias": kpis[
-            "total"
-        ],
-        "aprovadas": kpis[
-            "aprovadas"
-        ],
-        "reprovadas": kpis[
-            "reprovadas"
-        ],
-        "taxa_aprovacao": kpis[
-            "taxa_aprovacao"
-        ],
-        "taxa_reprovacao": kpis[
-            "taxa_reprovacao"
-        ],
-        "tempo_medio_minutos": kpis[
-            "tempo_medio"
-        ],
-        "faturamento": kpis[
-            "faturamento"
-        ],
-        "timestamp": datetime.now().isoformat(),
-    }
+        kpis = get_kpis(df)
+
+        return {
+            "total_vistorias": kpis.get(
+                "total",
+                0,
+            ),
+            "aprovadas": kpis.get(
+                "aprovadas",
+                0,
+            ),
+            "reprovadas": kpis.get(
+                "reprovadas",
+                0,
+            ),
+            "taxa_aprovacao": kpis.get(
+                "taxa_aprovacao",
+                0,
+            ),
+            "taxa_reprovacao": kpis.get(
+                "taxa_reprovacao",
+                0,
+            ),
+            "tempo_medio_minutos": kpis.get(
+                "tempo_medio",
+                0,
+            ),
+            "faturamento": kpis.get(
+                "faturamento",
+                0,
+            ),
+            "timestamp": datetime.now().isoformat(),
+        }
+
+    except Exception as exc:
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro nos indicadores: {exc}",
+        )
 
 
 # ============================================================
@@ -697,27 +840,39 @@ def indicadores():
 )
 def analytics_ecvs():
 
-    df = _query_df(
-        """
-        SELECT
-            v.id,
-            e.nome AS ecv,
-            v.resultado,
-            v.tempo_minutos,
-            v.valor
-        FROM vistorias v
-        JOIN ecvs e
-            ON e.id = v.ecv_id
-        """
-    )
+    try:
 
-    performance = get_ecv_performance(
-        df
-    )
+        df = _query_df(
+            """
+            SELECT
+                v.id,
+                e.nome AS ecv,
+                v.resultado,
+                v.tempo_minutos,
+                v.valor
+            FROM vistorias v
+            JOIN ecvs e
+                ON e.id = v.ecv_id
+            """
+        )
 
-    return performance.to_dict(
-        orient="records"
-    )
+        performance = get_ecv_performance(
+            df
+        )
+
+        return _safe_records(
+            performance
+        )
+
+    except Exception as exc:
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Erro na análise de performance: "
+                f"{exc}"
+            ),
+        )
 
 
 # ============================================================
@@ -730,26 +885,38 @@ def analytics_ecvs():
 )
 def analytics_quality():
 
-    df = _query_df(
-        """
-        SELECT
-            v.id,
-            e.nome AS ecv,
-            v.placa,
-            v.tipo_vistoria,
-            v.data_vistoria,
-            v.resultado,
-            v.tempo_minutos,
-            v.valor
-        FROM vistorias v
-        JOIN ecvs e
-            ON e.id = v.ecv_id
-        """
-    )
+    try:
 
-    return get_quality_report(
-        df
-    )
+        df = _query_df(
+            """
+            SELECT
+                v.id,
+                e.nome AS ecv,
+                v.placa,
+                v.tipo AS tipo_vistoria,
+                v.data_vistoria,
+                v.resultado,
+                v.tempo_minutos,
+                v.valor
+            FROM vistorias v
+            JOIN ecvs e
+                ON e.id = v.ecv_id
+            """
+        )
+
+        return get_quality_report(
+            df
+        )
+
+    except Exception as exc:
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Erro no relatório de qualidade: "
+                f"{exc}"
+            ),
+        )
 
 
 # ============================================================
@@ -762,22 +929,34 @@ def analytics_quality():
 )
 def analytics_daily():
 
-    df = _query_df(
-        """
-        SELECT
-            v.id,
-            v.data_vistoria
-        FROM vistorias v
-        """
-    )
+    try:
 
-    series = get_daily_series(
-        df
-    )
+        df = _query_df(
+            """
+            SELECT
+                v.id,
+                v.data_vistoria
+            FROM vistorias v
+            """
+        )
 
-    return series.to_dict(
-        orient="records"
-    )
+        series = get_daily_series(
+            df
+        )
+
+        return _safe_records(
+            series
+        )
+
+    except Exception as exc:
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Erro na série diária: "
+                f"{exc}"
+            ),
+        )
 
 
 # ============================================================
@@ -790,43 +969,55 @@ def analytics_daily():
 )
 def dashboard():
 
-    df = _query_df(
-        """
-        SELECT
-            v.id,
-            e.nome AS ecv,
-            v.placa,
-            v.tipo_vistoria,
-            v.data_vistoria,
-            v.resultado,
-            v.tempo_minutos,
-            v.valor
-        FROM vistorias v
-        JOIN ecvs e
-            ON e.id = v.ecv_id
-        """
-    )
+    try:
 
-    kpis = get_kpis(
-        df
-    )
+        df = _query_df(
+            """
+            SELECT
+                v.id,
+                e.nome AS ecv,
+                v.placa,
+                v.tipo AS tipo_vistoria,
+                v.data_vistoria,
+                v.resultado,
+                v.tempo_minutos,
+                v.valor
+            FROM vistorias v
+            JOIN ecvs e
+                ON e.id = v.ecv_id
+            """
+        )
 
-    performance = get_ecv_performance(
-        df
-    )
+        kpis = get_kpis(
+            df
+        )
 
-    quality = get_quality_report(
-        df
-    )
+        performance = get_ecv_performance(
+            df
+        )
 
-    return {
-        "kpis": kpis,
-        "quality": quality,
-        "ecvs": performance.to_dict(
-            orient="records"
-        ),
-        "updated_at": datetime.now().isoformat(),
-    }
+        quality = get_quality_report(
+            df
+        )
+
+        return {
+            "kpis": kpis,
+            "quality": quality,
+            "ecvs": _safe_records(
+                performance
+            ),
+            "updated_at": datetime.now().isoformat(),
+        }
+
+    except Exception as exc:
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Erro ao montar dashboard: "
+                f"{exc}"
+            ),
+        )
 
 
 # ============================================================
@@ -839,37 +1030,49 @@ def dashboard():
 )
 def automations():
 
-    df = _query_df(
-        """
-        SELECT
-            v.id,
-            e.nome AS ecv,
-            v.placa,
-            v.tipo_vistoria,
-            v.data_vistoria,
-            v.resultado,
-            v.tempo_minutos,
-            v.valor
-        FROM vistorias v
-        JOIN ecvs e
-            ON e.id = v.ecv_id
-        """
-    )
+    try:
 
-    engine = AutomationEngine()
+        df = _query_df(
+            """
+            SELECT
+                v.id,
+                e.nome AS ecv,
+                v.placa,
+                v.tipo AS tipo_vistoria,
+                v.data_vistoria,
+                v.resultado,
+                v.tempo_minutos,
+                v.valor
+            FROM vistorias v
+            JOIN ecvs e
+                ON e.id = v.ecv_id
+            """
+        )
 
-    events = engine.evaluate(
-        df
-    )
+        engine = AutomationEngine()
 
-    return {
-        "total": len(events),
-        "events": events,
-    }
+        events = engine.evaluate(
+            df
+        )
+
+        return {
+            "total": len(events),
+            "events": events,
+        }
+
+    except Exception as exc:
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Erro nas automações: "
+                f"{exc}"
+            ),
+        )
 
 
 # ============================================================
-# POWER BI
+# POWER BI — VISTORIAS
 # ============================================================
 
 @app.get(
@@ -878,53 +1081,66 @@ def automations():
 )
 def powerbi_vistorias(
     limit: int = Query(
-        5000,
+        DEFAULT_LIMIT,
         ge=1,
-        le=50000,
+        le=MAX_LIMIT,
     ),
 ):
 
-    query = """
-        SELECT
-            v.id AS vistoria_id,
-            v.data_vistoria,
-            e.id AS ecv_id,
-            e.nome AS ecv,
-            e.cidade,
-            e.estado,
-            v.placa,
-            v.tipo_vistoria,
-            v.resultado,
-            v.tempo_minutos,
-            v.valor
-        FROM vistorias v
-        JOIN ecvs e
-            ON e.id = v.ecv_id
-        ORDER BY
-            v.data_vistoria DESC,
-            v.id DESC
-        LIMIT ?
-    """
+    try:
 
-    df = _query_df(
-        query,
-        (
-            _limit(
-                limit,
-                1,
-                50000,
+        query = """
+            SELECT
+                v.id AS vistoria_id,
+                v.data_vistoria,
+                e.id AS ecv_id,
+                e.nome AS ecv,
+                e.cidade,
+                e.estado,
+                v.placa,
+                v.tipo AS tipo_vistoria,
+                v.resultado,
+                v.tempo_minutos,
+                v.valor
+            FROM vistorias v
+            JOIN ecvs e
+                ON e.id = v.ecv_id
+            ORDER BY
+                datetime(v.data_vistoria) DESC,
+                v.id DESC
+            LIMIT ?
+        """
+
+        df = _query_df(
+            query,
+            (
+                _limit(
+                    limit,
+                    1,
+                    MAX_LIMIT,
+                ),
             ),
-        ),
-    )
+        )
 
-    return {
-        "dataset": "vistorias",
-        "version": API_VERSION,
-        "rows": len(df),
-        "data": df.to_dict(
-            orient="records"
-        ),
-    }
+        return {
+            "dataset": "vistorias",
+            "version": API_VERSION,
+            "rows": len(df),
+            "data": _safe_records(
+                df
+            ),
+        }
+
+    except Exception as exc:
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Erro no dataset Power BI "
+                "de vistorias: "
+                f"{exc}"
+            ),
+        )
 
 
 # ============================================================
@@ -937,28 +1153,41 @@ def powerbi_vistorias(
 )
 def powerbi_ecvs():
 
-    df = _query_df(
-        """
-        SELECT
-            id AS ecv_id,
-            nome AS ecv,
-            cidade,
-            estado,
-            status,
-            meta_mensal
-        FROM ecvs
-        ORDER BY nome
-        """
-    )
+    try:
 
-    return {
-        "dataset": "ecvs",
-        "version": API_VERSION,
-        "rows": len(df),
-        "data": df.to_dict(
-            orient="records"
-        ),
-    }
+        df = _query_df(
+            """
+            SELECT
+                id AS ecv_id,
+                nome AS ecv,
+                cidade,
+                estado,
+                status,
+                meta_mensal
+            FROM ecvs
+            ORDER BY nome
+            """
+        )
+
+        return {
+            "dataset": "ecvs",
+            "version": API_VERSION,
+            "rows": len(df),
+            "data": _safe_records(
+                df
+            ),
+        }
+
+    except Exception as exc:
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Erro no dataset Power BI "
+                "de ECVs: "
+                f"{exc}"
+            ),
+        )
 
 
 # ============================================================
@@ -971,39 +1200,52 @@ def powerbi_ecvs():
 )
 def powerbi_indicadores():
 
-    df = _query_df(
-        """
-        SELECT
-            v.id,
-            e.nome AS ecv,
-            v.placa,
-            v.tipo_vistoria,
-            v.data_vistoria,
-            v.resultado,
-            v.tempo_minutos,
-            v.valor
-        FROM vistorias v
-        JOIN ecvs e
-            ON e.id = v.ecv_id
-        """
-    )
+    try:
 
-    kpis = get_kpis(
-        df
-    )
+        df = _query_df(
+            """
+            SELECT
+                v.id,
+                e.nome AS ecv,
+                v.placa,
+                v.tipo AS tipo_vistoria,
+                v.data_vistoria,
+                v.resultado,
+                v.tempo_minutos,
+                v.valor
+            FROM vistorias v
+            JOIN ecvs e
+                ON e.id = v.ecv_id
+            """
+        )
 
-    performance = get_ecv_performance(
-        df
-    )
+        kpis = get_kpis(
+            df
+        )
 
-    return {
-        "dataset": "indicadores",
-        "version": API_VERSION,
-        "kpis": kpis,
-        "ecvs": performance.to_dict(
-            orient="records"
-        ),
-    }
+        performance = get_ecv_performance(
+            df
+        )
+
+        return {
+            "dataset": "indicadores",
+            "version": API_VERSION,
+            "kpis": kpis,
+            "ecvs": _safe_records(
+                performance
+            ),
+        }
+
+    except Exception as exc:
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Erro nos indicadores "
+                "do Power BI: "
+                f"{exc}"
+            ),
+        )
 
 
 # ============================================================
@@ -1029,6 +1271,7 @@ def root():
             "status": "/status",
             "dashboard": "/dashboard",
             "ecvs": "/ecvs",
+            "ecv_detail": "/ecvs/{ecv_id}",
             "vistorias": "/vistorias",
             "indicadores": "/indicadores",
             "analytics_ecvs": "/analytics/ecvs",
