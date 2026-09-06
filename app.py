@@ -21,7 +21,7 @@ st.set_page_config(
 
 API_URL = os.getenv(
     "ECV_API_URL",
-    "https://ecv-intelligence-api-v3.onrender.com"
+    "https://ecv-intelligence-api-v3.onrender.com",
 ).rstrip("/")
 
 API_TIMEOUT = int(
@@ -37,20 +37,18 @@ st.markdown(
     """
 <style>
 
+/* ========================================================
+   APP
+   ======================================================== */
+
 .stApp{
     background:#0f172a;
     color:#f8fafc;
 }
 
-[data-testid="stSidebar"]{
-    background:#0b1120;
-    border-right:1px solid rgba(255,255,255,.08);
-    min-width:285px!important;
-    max-width:285px!important;
-}
-
-[data-testid="stSidebar"] *{
-    color:#f8fafc!important;
+.block-container{
+    padding:1.5rem 2rem 2.5rem;
+    max-width:100%!important;
 }
 
 #MainMenu,
@@ -58,9 +56,85 @@ footer{
     visibility:hidden;
 }
 
-.block-container{
-    padding:1.5rem 2rem 2.5rem;
-    max-width:100%!important;
+
+/* ========================================================
+   SIDEBAR
+   ======================================================== */
+
+[data-testid="stSidebar"]{
+    background:#0b1120;
+    border-right:1px solid rgba(255,255,255,.08);
+    min-width:280px!important;
+    max-width:280px!important;
+}
+
+[data-testid="stSidebar"] *{
+    color:#f8fafc;
+}
+
+.sidebar-brand{
+    padding:8px 4px 16px 4px;
+}
+
+.sidebar-brand h2{
+    margin:0;
+    font-size:1.25rem;
+    font-weight:750;
+    color:#f8fafc;
+}
+
+.sidebar-brand p{
+    margin:5px 0 0;
+    font-size:.76rem;
+    color:#94a3b8;
+    line-height:1.4;
+}
+
+.sidebar-section{
+    margin-top:15px;
+    margin-bottom:6px;
+    padding-left:5px;
+    font-size:.68rem;
+    font-weight:800;
+    letter-spacing:.10em;
+    color:#64748b!important;
+    text-transform:uppercase;
+}
+
+
+/* ========================================================
+   BOTÕES SIDEBAR
+   ======================================================== */
+
+[data-testid="stSidebar"] .stButton{
+    margin-bottom:3px;
+}
+
+[data-testid="stSidebar"] .stButton > button{
+    width:100%;
+    min-height:40px;
+    border:1px solid transparent;
+    border-radius:9px;
+    background:transparent;
+    color:#cbd5e1!important;
+    text-align:left!important;
+    font-size:.88rem;
+    font-weight:500;
+    padding:0 12px;
+    transition:all .15s ease;
+}
+
+[data-testid="stSidebar"] .stButton > button:hover{
+    background:#172033;
+    border-color:rgba(255,255,255,.06);
+    color:#ffffff!important;
+}
+
+.sidebar-active > div > button{
+    background:#1e293b!important;
+    border-color:rgba(255,255,255,.10)!important;
+    color:#ffffff!important;
+    font-weight:700!important;
 }
 
 
@@ -89,7 +163,7 @@ footer{
 
 
 /* ========================================================
-   SECTIONS
+   SEÇÕES
    ======================================================== */
 
 .section-title{
@@ -129,6 +203,11 @@ footer{
     padding:1.2rem 1.3rem;
     background:#1e293b;
     color:#f8fafc;
+    margin-bottom:.8rem;
+}
+
+.card h3{
+    margin:.65rem 0;
 }
 
 .badge{
@@ -155,123 +234,43 @@ footer{
 
 
 /* ========================================================
-   API STATUS
+   INTEGRAÇÕES
    ======================================================== */
 
-.api-online{
-    color:#4ade80!important;
-    font-weight:700;
+.integration-card{
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;
+    background:#1e293b;
+    padding:1.3rem;
+    min-height:150px;
 }
 
-.api-offline{
-    color:#f87171!important;
-    font-weight:700;
+.integration-card h3{
+    margin:.4rem 0;
+}
+
+.integration-card p{
+    color:#94a3b8;
+    font-size:.84rem;
 }
 
 
 /* ========================================================
-   SIDEBAR PROFISSIONAL
-   ======================================================== */
-
-.sidebar-brand{
-    padding:8px 0 14px 0;
-}
-
-.sidebar-brand h2{
-    margin:0;
-    font-size:1.15rem;
-    font-weight:700;
-}
-
-.sidebar-brand p{
-    margin:4px 0 0;
-    color:#94a3b8!important;
-    font-size:.75rem;
-    line-height:1.4;
-}
-
-.sidebar-section{
-    margin-top:8px;
-    margin-bottom:5px;
-    padding:0 2px;
-    font-size:.68rem;
-    font-weight:800;
-    letter-spacing:.08em;
-    color:#64748b!important;
-}
-
-.sidebar-info{
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:10px;
-    padding:10px 11px;
-    background:rgba(30,41,59,.55);
-    margin-top:7px;
-}
-
-.sidebar-info-title{
-    font-size:.72rem;
-    font-weight:700;
-    color:#94a3b8!important;
-    margin-bottom:5px;
-}
-
-.sidebar-info-value{
-    font-size:.78rem;
-    color:#f8fafc!important;
-    word-break:break-word;
-}
-
-.sidebar-status{
-    border-radius:10px;
-    padding:9px 11px;
-    margin-top:7px;
-    background:rgba(30,41,59,.55);
-    border:1px solid rgba(255,255,255,.07);
-}
-
-.sidebar-status-label{
-    font-size:.68rem;
-    color:#64748b!important;
-    margin-bottom:3px;
-}
-
-.sidebar-status-value{
-    font-size:.8rem;
-    font-weight:700;
-}
-
-.sidebar-footer{
-    text-align:center;
-    color:#64748b!important;
-    font-size:.68rem;
-    padding:8px 0;
-}
-
-
-/* ========================================================
-   BUTTONS
-   ======================================================== */
-
-.stButton > button{
-    border-radius:9px;
-}
-
-
-/* ========================================================
-   DATAFRAME
+   TABELAS
    ======================================================== */
 
 [data-testid="stDataFrame"]{
     border-radius:12px;
+    overflow:hidden;
 }
 
 
 /* ========================================================
-   LINKS
+   DIVIDER
    ======================================================== */
 
-a{
-    color:#60a5fa;
+hr{
+    border-color:rgba(255,255,255,.08)!important;
 }
 
 </style>
@@ -310,23 +309,7 @@ def safe_float(value, default=0.0):
         return default
 
 
-def normalize_list_response(
-    data,
-    possible_keys=None,
-):
-    """
-    Converte respostas da API em lista de registros.
-
-    Aceita:
-
-        [...]
-        {"data": [...]}
-        {"items": [...]}
-        {"results": [...]}
-        {"records": [...]}
-        {"ecvs": [...]}
-        {"vistorias": [...]}
-    """
+def normalize_list_response(data, possible_keys=None):
 
     if isinstance(data, list):
         return data
@@ -340,6 +323,10 @@ def normalize_list_response(
             "records",
             "ecvs",
             "vistorias",
+            "daily",
+            "performance",
+            "logs",
+            "automations",
         ]
 
         for key in keys:
@@ -353,20 +340,23 @@ def normalize_list_response(
 
 
 # ============================================================
+# NAVEGAÇÃO
+# ============================================================
+
+if "page" not in st.session_state:
+    st.session_state.page = "Visão Geral"
+
+
+def navigate(page_name):
+    st.session_state.page = page_name
+
+
+# ============================================================
 # CLIENTE DA API
 # ============================================================
 
-@st.cache_data(
-    ttl=30,
-    show_spinner=False,
-)
-def api_get(
-    endpoint,
-    params=None,
-):
-    """
-    Cliente HTTP centralizado da API.
-    """
+@st.cache_data(ttl=30, show_spinner=False)
+def api_get(endpoint, params=None):
 
     url = f"{API_URL}{endpoint}"
 
@@ -378,9 +368,7 @@ def api_get(
             timeout=API_TIMEOUT,
             headers={
                 "Accept": "application/json",
-                "User-Agent": (
-                    "ECV-Intelligence-Streamlit/3.1"
-                ),
+                "User-Agent": "ECV-Intelligence-Streamlit/3.1",
             },
         )
 
@@ -399,10 +387,7 @@ def api_get(
             "ok": False,
             "status_code": None,
             "data": None,
-            "error": (
-                "Tempo limite excedido ao "
-                "consultar a API."
-            ),
+            "error": "Tempo limite excedido ao consultar a API.",
         }
 
     except requests.exceptions.ConnectionError:
@@ -411,9 +396,7 @@ def api_get(
             "ok": False,
             "status_code": None,
             "data": None,
-            "error": (
-                "Não foi possível conectar à API."
-            ),
+            "error": "Não foi possível conectar à API.",
         }
 
     except requests.exceptions.HTTPError as exc:
@@ -426,9 +409,7 @@ def api_get(
                 None,
             ),
             "data": None,
-            "error": (
-                f"Erro HTTP na API: {exc}"
-            ),
+            "error": f"Erro HTTP na API: {exc}",
         }
 
     except Exception as exc:
@@ -485,6 +466,18 @@ def get_api_automations():
     return api_get("/automations")
 
 
+def get_api_powerbi_vistorias():
+    return api_get("/powerbi/vistorias")
+
+
+def get_api_powerbi_ecvs():
+    return api_get("/powerbi/ecvs")
+
+
+def get_api_powerbi_indicadores():
+    return api_get("/powerbi/indicadores")
+
+
 # ============================================================
 # NORMALIZAÇÃO
 # ============================================================
@@ -518,9 +511,7 @@ def build_vistorias_dataframe(data):
         "nome_ecv": "ecv",
     }
 
-    df = df.rename(
-        columns=rename_map
-    )
+    df = df.rename(columns=rename_map)
 
     if "data_vistoria" in df.columns:
 
@@ -575,11 +566,7 @@ def build_daily_dataframe(data):
         "count": "vistorias",
     }
 
-    df = df.rename(
-        columns=rename_map
-    )
-
-    return df
+    return df.rename(columns=rename_map)
 
 
 def build_performance_dataframe(data):
@@ -605,14 +592,10 @@ def build_performance_dataframe(data):
         "nome": "ecv",
         "ecv_nome": "ecv",
         "approval_rate": "taxa_aprovacao",
-        "taxa_aprovacao_percentual": (
-            "taxa_aprovacao"
-        ),
+        "taxa_aprovacao_percentual": "taxa_aprovacao",
     }
 
-    df = df.rename(
-        columns=rename_map
-    )
+    df = df.rename(columns=rename_map)
 
     if "taxa_aprovacao" in df.columns:
 
@@ -625,410 +608,201 @@ def build_performance_dataframe(data):
 
 
 # ============================================================
-# CARREGAMENTO PRINCIPAL
+# CARREGAMENTO DA API
 # ============================================================
 
-with st.spinner(
-    "Conectando à ECV Intelligence API..."
-):
+with st.spinner("Carregando dados da ECV Intelligence..."):
 
     health = get_api_health()
 
-    status_api = get_api_status()
+    dashboard_response = get_api_dashboard()
 
-    dashboard_response = (
-        get_api_dashboard()
-    )
+    indicadores_response = get_api_indicadores()
 
-    indicadores_response = (
-        get_api_indicadores()
-    )
+    vistorias_response = get_api_vistorias()
 
-    vistorias_response = (
-        get_api_vistorias()
-    )
+    ecvs_response = get_api_ecvs()
 
-    ecvs_response = (
-        get_api_ecvs()
-    )
+    performance_response = get_api_analytics_ecvs()
 
-    performance_response = (
-        get_api_analytics_ecvs()
-    )
+    quality_response = get_api_quality()
 
-    quality_response = (
-        get_api_quality()
-    )
+    daily_response = get_api_daily()
 
-    daily_response = (
-        get_api_daily()
-    )
-
-    automations_response = (
-        get_api_automations()
-    )
+    automations_response = get_api_automations()
 
 
-api_online = health.get(
-    "ok",
-    False,
-)
+api_online = health.get("ok", False)
 
 
 # ============================================================
 # SIDEBAR — 5 BLOCOS
 # ============================================================
 
-with st.sidebar:
-
-    # --------------------------------------------------------
-    # MARCA
-    # --------------------------------------------------------
-
-    st.markdown(
-        """
+st.sidebar.markdown(
+    """
 <div class="sidebar-brand">
 
 <h2>📊 ECV Intelligence</h2>
 
 <p>
-Analytics, IA e automação
-para Empresas Credenciadas
-de Vistoria.
+Analytics, IA e automação para ECVs
 </p>
 
 </div>
 """,
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# BLOCO 1 — WORKSPACE
+# ============================================================
+
+st.sidebar.markdown(
+    '<div class="sidebar-section">WORKSPACE</div>',
+    unsafe_allow_html=True,
+)
+
+
+def sidebar_button(label, page_name):
+
+    active = (
+        st.session_state.page == page_name
+    )
+
+    wrapper = (
+        '<div class="sidebar-active">'
+        if active
+        else '<div>'
+    )
+
+    st.sidebar.markdown(
+        wrapper,
         unsafe_allow_html=True,
     )
 
-    st.divider()
-
-
-    # ========================================================
-    # 1. WORKSPACE
-    # ========================================================
-
-    st.markdown(
-        '<div class="sidebar-section">'
-        'WORKSPACE'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    workspace_page = st.radio(
-        "Workspace",
-        [
-            "📊 Visão Geral",
-        ],
-        label_visibility="collapsed",
-        key="workspace_navigation",
-    )
-
-
-    # ========================================================
-    # 2. INTELIGÊNCIA
-    # ========================================================
-
-    st.markdown(
-        '<div class="sidebar-section">'
-        'INTELIGÊNCIA'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    intelligence_page = st.radio(
-        "Inteligência",
-        [
-            "✨ IA & Insights",
-        ],
-        label_visibility="collapsed",
-        key="intelligence_navigation",
-    )
-
-
-    # ========================================================
-    # 3. INTEGRAÇÕES
-    # ========================================================
-
-    st.markdown(
-        '<div class="sidebar-section">'
-        'INTEGRAÇÕES'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    integrations_page = st.radio(
-        "Integrações",
-        [
-            "🔌 API & Integrações",
-        ],
-        label_visibility="collapsed",
-        key="integrations_navigation",
-    )
-
-
-    # ========================================================
-    # 4. GESTÃO
-    # ========================================================
-
-    st.markdown(
-        '<div class="sidebar-section">'
-        'GESTÃO'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    management_page = st.radio(
-        "Gestão",
-        [
-            "🚗 Vistorias",
-            "🏢 ECVs",
-            "✓ Qualidade",
-            "⚙️ Automações",
-        ],
-        label_visibility="collapsed",
-        key="management_navigation",
-    )
-
-
-    # ========================================================
-    # DETERMINAÇÃO DA PÁGINA
-    # ========================================================
-
-    if workspace_page == "📊 Visão Geral":
-
-        page = "Visão Geral"
-
-    elif intelligence_page == "✨ IA & Insights":
-
-        page = "IA & Insights"
-
-    elif integrations_page == "🔌 API & Integrações":
-
-        page = "API"
-
-    elif management_page == "🚗 Vistorias":
-
-        page = "Vistorias"
-
-    elif management_page == "🏢 ECVs":
-
-        page = "ECVs"
-
-    elif management_page == "✓ Qualidade":
-
-        page = "Qualidade"
-
-    elif management_page == "⚙️ Automações":
-
-        page = "Automações"
-
-    else:
-
-        page = "Visão Geral"
-
-
-    st.divider()
-
-
-    # ========================================================
-    # 5. AMBIENTE / CONTA
-    # ========================================================
-
-    st.markdown(
-        '<div class="sidebar-section">'
-        'AMBIENTE / CONTA'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-
-    # --------------------------------------------------------
-    # STATUS DA API
-    # --------------------------------------------------------
-
-    if api_online:
-
-        st.markdown(
-            """
-<div class="sidebar-status">
-
-<div class="sidebar-status-label">
-STATUS DO SISTEMA
-</div>
-
-<div class="sidebar-status-value api-online">
-● API ONLINE
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-    else:
-
-        st.markdown(
-            """
-<div class="sidebar-status">
-
-<div class="sidebar-status-label">
-STATUS DO SISTEMA
-</div>
-
-<div class="sidebar-status-value api-offline">
-● API OFFLINE
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-
-    # --------------------------------------------------------
-    # PRODUTO
-    # --------------------------------------------------------
-
-    st.markdown(
-        """
-<div class="sidebar-info">
-
-<div class="sidebar-info-title">
-PRODUTO
-</div>
-
-<div class="sidebar-info-value">
-ECV Intelligence API V3
-</div>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-
-    # --------------------------------------------------------
-    # PLANO
-    # --------------------------------------------------------
-
-    st.markdown(
-        """
-<div class="sidebar-info">
-
-<div class="sidebar-info-title">
-PLANO
-</div>
-
-<div class="sidebar-info-value">
-Demo
-</div>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-
-    # --------------------------------------------------------
-    # FRONTEND
-    # --------------------------------------------------------
-
-    st.markdown(
-        """
-<div class="sidebar-info">
-
-<div class="sidebar-info-title">
-FRONTEND
-</div>
-
-<div class="sidebar-info-value">
-Streamlit V3.1
-</div>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-
-    # --------------------------------------------------------
-    # BACKEND
-    # --------------------------------------------------------
-
-    st.markdown(
-        """
-<div class="sidebar-info">
-
-<div class="sidebar-info-title">
-BACKEND
-</div>
-
-<div class="sidebar-info-value">
-FastAPI + Analytics + IA
-</div>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-
-    # --------------------------------------------------------
-    # API
-    # --------------------------------------------------------
-
-    st.markdown(
-        f"""
-<div class="sidebar-info">
-
-<div class="sidebar-info-title">
-API
-</div>
-
-<div class="sidebar-info-value">
-{html.escape(API_URL)}
-</div>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-
-    # --------------------------------------------------------
-    # ATUALIZAÇÃO
-    # --------------------------------------------------------
-
-    st.markdown(
-        "<div style='height:6px'></div>",
-        unsafe_allow_html=True,
-    )
-
-    if st.button(
-        "🔄 Atualizar dados",
+    clicked = st.sidebar.button(
+        label,
+        key=f"sidebar_{page_name}",
         use_container_width=True,
-    ):
+    )
 
-        st.cache_data.clear()
+    st.sidebar.markdown(
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
+    if clicked:
+        navigate(page_name)
         st.rerun()
 
 
-    # --------------------------------------------------------
-    # VERSÃO
-    # --------------------------------------------------------
+sidebar_button(
+    "📊  Visão Geral",
+    "Visão Geral",
+)
 
-    st.markdown(
-        """
-<div class="sidebar-footer">
-ECV Intelligence V3.1<br>
-SaaS Analytics Platform
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+sidebar_button(
+    "🔎  Vistorias",
+    "Vistorias",
+)
+
+sidebar_button(
+    "🛡️  Qualidade",
+    "Qualidade",
+)
+
+
+# ============================================================
+# BLOCO 2 — INTELIGÊNCIA
+# ============================================================
+
+st.sidebar.markdown(
+    '<div class="sidebar-section">INTELIGÊNCIA</div>',
+    unsafe_allow_html=True,
+)
+
+sidebar_button(
+    "🤖  IA & Insights",
+    "IA & Insights",
+)
+
+
+# ============================================================
+# BLOCO 3 — INTEGRAÇÕES
+# ============================================================
+
+st.sidebar.markdown(
+    '<div class="sidebar-section">INTEGRAÇÕES</div>',
+    unsafe_allow_html=True,
+)
+
+sidebar_button(
+    "🔌  API",
+    "API",
+)
+
+sidebar_button(
+    "📈  Power BI",
+    "Power BI",
+)
+
+
+# ============================================================
+# BLOCO 4 — GESTÃO
+# ============================================================
+
+st.sidebar.markdown(
+    '<div class="sidebar-section">GESTÃO</div>',
+    unsafe_allow_html=True,
+)
+
+sidebar_button(
+    "🏢  ECVs",
+    "ECVs",
+)
+
+sidebar_button(
+    "⚙️  Automações",
+    "Automações",
+)
+
+
+# ============================================================
+# BLOCO 5 — AMBIENTE / CONTA
+# ============================================================
+
+st.sidebar.markdown(
+    '<div class="sidebar-section">AMBIENTE / CONTA</div>',
+    unsafe_allow_html=True,
+)
+
+sidebar_button(
+    "👤  Meu Perfil",
+    "Meu Perfil",
+)
+
+sidebar_button(
+    "⚙️  Configurações",
+    "Configurações",
+)
+
+
+# ============================================================
+# AÇÕES
+# ============================================================
+
+st.sidebar.divider()
+
+if st.sidebar.button(
+    "🔄  Atualizar dados",
+    use_container_width=True,
+    key="refresh_data",
+):
+
+    st.cache_data.clear()
+    st.rerun()
 
 
 # ============================================================
@@ -1053,18 +827,18 @@ daily = build_daily_dataframe(
 
 
 # ============================================================
-# VALIDAÇÃO DA API
+# VERIFICAÇÃO API
 # ============================================================
 
 if not api_online:
 
     st.error(
-        "A API ECV Intelligence está indisponível "
-        "no momento. Verifique o serviço no Render."
+        "A plataforma não conseguiu carregar os dados "
+        "da API neste momento."
     )
 
     st.link_button(
-        "🌐 Abrir API",
+        "Abrir serviço",
         API_URL,
         use_container_width=True,
     )
@@ -1072,26 +846,16 @@ if not api_online:
     st.stop()
 
 
-if df.empty:
-
-    st.warning(
-        "A API está online, mas não retornou "
-        "registros de vistorias."
-    )
-
-
 # ============================================================
 # KPI
 # ============================================================
 
 dashboard_data = (
-    dashboard_response.get("data")
-    or {}
+    dashboard_response.get("data") or {}
 )
 
 indicadores_data = (
-    indicadores_response.get("data")
-    or {}
+    indicadores_response.get("data") or {}
 )
 
 
@@ -1110,7 +874,6 @@ def extract_kpi(
             for key in keys:
 
                 if key in source:
-
                     return source[key]
 
     return default
@@ -1168,7 +931,7 @@ faturamento = extract_kpi(
 # VISÃO GERAL
 # ============================================================
 
-if page == "Visão Geral":
+if st.session_state.page == "Visão Geral":
 
     st.markdown(
         """
@@ -1186,39 +949,32 @@ e inteligência para tomada de decisão.
         unsafe_allow_html=True,
     )
 
-
     c1, c2, c3, c4, c5 = st.columns(5)
-
 
     c1.metric(
         "Vistorias",
         number(total_vistorias),
     )
 
-
     c2.metric(
         "Aprovação",
         f"{safe_float(taxa_aprovacao):.1f}%",
     )
-
 
     c3.metric(
         "Reprovação",
         f"{safe_float(taxa_reprovacao):.1f}%",
     )
 
-
     c4.metric(
         "Tempo médio",
         f"{safe_float(tempo_medio):.1f} min",
     )
 
-
     c5.metric(
         "Faturamento",
         money(faturamento),
     )
-
 
     st.markdown(
         '<div class="section-title">'
@@ -1227,17 +983,12 @@ e inteligência para tomada de decisão.
         unsafe_allow_html=True,
     )
 
-
     a, b = st.columns(2)
-
-
-    # --------------------------------------------------------
-    # GRÁFICO DIÁRIO
-    # --------------------------------------------------------
 
     if (
         not daily.empty
         and "data" in daily.columns
+        and "vistorias" in daily.columns
     ):
 
         daily["data"] = pd.to_datetime(
@@ -1245,41 +996,32 @@ e inteligência para tomada de decisão.
             errors="coerce",
         )
 
-        if "vistorias" in daily.columns:
+        fig1 = px.line(
+            daily,
+            x="data",
+            y="vistorias",
+            markers=True,
+            title="Volume diário de vistorias",
+        )
 
-            fig1 = px.line(
-                daily,
-                x="data",
-                y="vistorias",
-                markers=True,
-                title=(
-                    "Volume diário de vistorias"
-                ),
-            )
+        fig1.update_layout(
+            plot_bgcolor="#1e293b",
+            paper_bgcolor="#1e293b",
+            font=dict(
+                color="#94a3b8"
+            ),
+            margin=dict(
+                l=20,
+                r=20,
+                t=50,
+                b=30,
+            ),
+        )
 
-            fig1.update_layout(
-                plot_bgcolor="#1e293b",
-                paper_bgcolor="#1e293b",
-                font=dict(
-                    color="#94a3b8"
-                ),
-                margin=dict(
-                    l=20,
-                    r=20,
-                    t=50,
-                    b=30,
-                ),
-            )
-
-            a.plotly_chart(
-                fig1,
-                use_container_width=True,
-            )
-
-
-    # --------------------------------------------------------
-    # PERFORMANCE ECV
-    # --------------------------------------------------------
+        a.plotly_chart(
+            fig1,
+            use_container_width=True,
+        )
 
     if (
         not perf.empty
@@ -1292,9 +1034,7 @@ e inteligência para tomada de decisão.
             x="ecv",
             y="taxa_aprovacao",
             text_auto=".1f",
-            title=(
-                "Taxa de aprovação por ECV (%)"
-            ),
+            title="Taxa de aprovação por ECV (%)",
         )
 
         fig2.update_layout(
@@ -1317,17 +1057,12 @@ e inteligência para tomada de decisão.
             use_container_width=True,
         )
 
-
-    # --------------------------------------------------------
-    # DESEMPENHO
-    # --------------------------------------------------------
-
     if (
         not perf.empty
         and "taxa_aprovacao" in perf.columns
     ):
 
-        perf = (
+        perf_sorted = (
             perf
             .sort_values(
                 "taxa_aprovacao",
@@ -1336,12 +1071,10 @@ e inteligência para tomada de decisão.
             .reset_index(drop=True)
         )
 
-        best = perf.iloc[0]
-
-        worst = perf.iloc[-1]
+        best = perf_sorted.iloc[0]
+        worst = perf_sorted.iloc[-1]
 
         x, y, z = st.columns(3)
-
 
         x.markdown(
             f"""
@@ -1352,22 +1085,18 @@ MELHOR DESEMPENHO
 </span>
 
 <h3>
-{html.escape(
-    str(best.get("ecv", "N/D"))
-)}
+{html.escape(str(best.get("ecv", "N/D")))}
 </h3>
 
 <div class="success">
-{safe_float(
-    best.get("taxa_aprovacao")
-):.1f}% de aprovação
+{safe_float(best.get("taxa_aprovacao")):.1f}%
+de aprovação
 </div>
 
 </div>
 """,
             unsafe_allow_html=True,
         )
-
 
         y.markdown(
             f"""
@@ -1378,15 +1107,12 @@ PONTO DE ATENÇÃO
 </span>
 
 <h3>
-{html.escape(
-    str(worst.get("ecv", "N/D"))
-)}
+{html.escape(str(worst.get("ecv", "N/D")))}
 </h3>
 
 <div class="danger">
-{safe_float(
-    worst.get("taxa_aprovacao")
-):.1f}% de aprovação
+{safe_float(worst.get("taxa_aprovacao")):.1f}%
+de aprovação
 </div>
 
 </div>
@@ -1394,21 +1120,15 @@ PONTO DE ATENÇÃO
             unsafe_allow_html=True,
         )
 
-
         diferenca = (
             safe_float(
-                best.get(
-                    "taxa_aprovacao"
-                )
+                best.get("taxa_aprovacao")
             )
             -
             safe_float(
-                worst.get(
-                    "taxa_aprovacao"
-                )
+                worst.get("taxa_aprovacao")
             )
         )
-
 
         z.markdown(
             f"""
@@ -1423,7 +1143,7 @@ DIFERENCIAL
 </h3>
 
 <div class="small">
-Distância entre melhor e pior ECV.
+Distância entre melhor e pior ECV
 </div>
 
 </div>
@@ -1436,7 +1156,7 @@ Distância entre melhor e pior ECV.
 # VISTORIAS
 # ============================================================
 
-elif page == "Vistorias":
+elif st.session_state.page == "Vistorias":
 
     st.markdown(
         """
@@ -1445,8 +1165,7 @@ elif page == "Vistorias":
 <h1>Vistorias</h1>
 
 <p>
-Pesquisa, filtros e exportação dos
-registros operacionais.
+Pesquisa, filtros e análise dos registros operacionais.
 </p>
 
 </div>
@@ -1454,390 +1173,323 @@ registros operacionais.
         unsafe_allow_html=True,
     )
 
-
     if df.empty:
 
         st.info(
             "Nenhuma vistoria disponível."
         )
 
-        st.stop()
+    else:
 
+        if "data_dt" not in df.columns:
 
-    if "data_dt" not in df.columns:
-
-        df["data_dt"] = pd.to_datetime(
-            df.get(
-                "data_vistoria"
-            ),
-            errors="coerce",
-        )
-
-
-    valid_dates = (
-        df["data_dt"]
-        .dropna()
-    )
-
-
-    if not valid_dates.empty:
-
-        mn = (
-            valid_dates
-            .min()
-            .date()
-        )
-
-        mx = (
-            valid_dates
-            .max()
-            .date()
-        )
-
-
-        c1, c2, c3 = st.columns(3)
-
-
-        with c1:
-
-            periodo = st.date_input(
-                "Período",
-                [mn, mx],
-                min_value=mn,
-                max_value=mx,
-            )
-
-
-        with c2:
-
-            ecv_values = (
-                sorted(
-                    df["ecv"]
-                    .dropna()
-                    .unique()
-                    .tolist()
-                )
-                if "ecv" in df.columns
-                else []
-            )
-
-            ef = st.selectbox(
-                "ECV",
-                ["Todas"] + ecv_values,
-            )
-
-
-        with c3:
-
-            city_values = (
-                sorted(
-                    df["cidade"]
-                    .dropna()
-                    .unique()
-                    .tolist()
-                )
-                if "cidade" in df.columns
-                else []
-            )
-
-            cf = st.selectbox(
-                "Cidade",
-                ["Todas"] + city_values,
-            )
-
-
-        c4, c5, c6 = st.columns(3)
-
-
-        with c4:
-
-            tipos = (
-                sorted(
-                    df["tipo_vistoria"]
-                    .dropna()
-                    .unique()
-                    .tolist()
-                )
-                if "tipo_vistoria"
-                in df.columns
-                else []
-            )
-
-            tf = st.multiselect(
-                "Tipo",
-                tipos,
-                default=tipos,
-            )
-
-
-        with c5:
-
-            resultados = (
-                sorted(
-                    df["resultado"]
-                    .dropna()
-                    .unique()
-                    .tolist()
-                )
-                if "resultado"
-                in df.columns
-                else []
-            )
-
-            rf = st.multiselect(
-                "Resultado",
-                resultados,
-                default=resultados,
-            )
-
-
-        with c6:
-
-            busca = st.text_input(
-                "Buscar",
-                "",
-                placeholder="Placa ou ID",
-            )
-
-
-        f = df.copy()
-
-
-        if (
-            isinstance(
-                periodo,
-                (list, tuple)
-            )
-            and len(periodo) == 2
-        ):
-
-            f = f[
-                (
-                    f.data_dt.dt.date
-                    >= periodo[0]
-                )
-                &
-                (
-                    f.data_dt.dt.date
-                    <= periodo[1]
-                )
-            ]
-
-
-        if (
-            ef != "Todas"
-            and "ecv" in f.columns
-        ):
-
-            f = f[
-                f.ecv == ef
-            ]
-
-
-        if (
-            cf != "Todas"
-            and "cidade" in f.columns
-        ):
-
-            f = f[
-                f.cidade == cf
-            ]
-
-
-        if (
-            tf
-            and "tipo_vistoria"
-            in f.columns
-        ):
-
-            f = f[
-                f.tipo_vistoria
-                .isin(tf)
-            ]
-
-
-        if (
-            rf
-            and "resultado"
-            in f.columns
-        ):
-
-            f = f[
-                f.resultado
-                .isin(rf)
-            ]
-
-
-        if busca:
-
-            q = (
-                busca
-                .lower()
-                .strip()
-            )
-
-            mask = pd.Series(
-                False,
-                index=f.index,
-            )
-
-
-            if "placa" in f.columns:
-
-                mask = (
-                    mask
-                    |
-                    f["placa"]
-                    .astype(str)
-                    .str.lower()
-                    .str.contains(
-                        q,
-                        na=False,
-                    )
-                )
-
-
-            if "id" in f.columns:
-
-                mask = (
-                    mask
-                    |
-                    f["id"]
-                    .astype(str)
-                    .str.contains(
-                        q,
-                        na=False,
-                    )
-                )
-
-
-            f = f[mask]
-
-
-        a, b, c, d = st.columns(4)
-
-
-        total = len(f)
-
-
-        if "resultado" in f.columns:
-
-            resultado_lower = (
-                f["resultado"]
-                .astype(str)
-                .str.lower()
-            )
-
-
-            ap = int(
-                (
-                    resultado_lower
-                    == "aprovado"
-                ).sum()
-            )
-
-
-            rp = int(
-                (
-                    resultado_lower
-                    == "reprovado"
-                ).sum()
-            )
-
-        else:
-
-            ap = 0
-            rp = 0
-
-
-        a.metric(
-            "Registros",
-            number(total),
-        )
-
-
-        b.metric(
-            "Aprovação",
-            (
-                f"{ap / total * 100:.1f}%"
-                if total
-                else "0,0%"
-            ),
-        )
-
-
-        c.metric(
-            "Reprovação",
-            (
-                f"{rp / total * 100:.1f}%"
-                if total
-                else "0,0%"
-            ),
-        )
-
-
-        faturamento_filtro = (
-            pd.to_numeric(
-                f["valor"],
+            df["data_dt"] = pd.to_datetime(
+                df.get("data_vistoria"),
                 errors="coerce",
             )
-            .fillna(0)
-            .sum()
-            if "valor" in f.columns
-            else 0
+
+        valid_dates = (
+            df["data_dt"].dropna()
         )
 
+        if not valid_dates.empty:
 
-        d.metric(
-            "Faturamento",
-            money(
-                faturamento_filtro
-            ),
-        )
+            mn = valid_dates.min().date()
+            mx = valid_dates.max().date()
 
+            c1, c2, c3 = st.columns(3)
 
-        preferred_cols = [
-            "id",
-            "data_vistoria",
-            "ecv",
-            "cidade",
-            "placa",
-            "tipo_vistoria",
-            "resultado",
-            "tempo_minutos",
-            "valor",
-        ]
+            with c1:
 
+                periodo = st.date_input(
+                    "Período",
+                    [mn, mx],
+                    min_value=mn,
+                    max_value=mx,
+                )
 
-        cols = [
-            col
-            for col in preferred_cols
-            if col in f.columns
-        ]
+            with c2:
 
+                ecv_values = (
+                    sorted(
+                        df["ecv"]
+                        .dropna()
+                        .unique()
+                        .tolist()
+                    )
+                    if "ecv" in df.columns
+                    else []
+                )
 
-        st.dataframe(
-            f[cols],
-            use_container_width=True,
-            hide_index=True,
-        )
+                ef = st.selectbox(
+                    "ECV",
+                    ["Todas"] + ecv_values,
+                )
 
+            with c3:
 
-        st.download_button(
-            "📥 Exportar CSV",
-            f.to_csv(
-                index=False
-            ).encode("utf-8"),
-            "vistorias_filtradas.csv",
-            "text/csv",
-        )
+                city_values = (
+                    sorted(
+                        df["cidade"]
+                        .dropna()
+                        .unique()
+                        .tolist()
+                    )
+                    if "cidade" in df.columns
+                    else []
+                )
+
+                cf = st.selectbox(
+                    "Cidade",
+                    ["Todas"] + city_values,
+                )
+
+            c4, c5, c6 = st.columns(3)
+
+            with c4:
+
+                tipos = (
+                    sorted(
+                        df["tipo_vistoria"]
+                        .dropna()
+                        .unique()
+                        .tolist()
+                    )
+                    if "tipo_vistoria"
+                    in df.columns
+                    else []
+                )
+
+                tf = st.multiselect(
+                    "Tipo",
+                    tipos,
+                    default=tipos,
+                )
+
+            with c5:
+
+                resultados = (
+                    sorted(
+                        df["resultado"]
+                        .dropna()
+                        .unique()
+                        .tolist()
+                    )
+                    if "resultado"
+                    in df.columns
+                    else []
+                )
+
+                rf = st.multiselect(
+                    "Resultado",
+                    resultados,
+                    default=resultados,
+                )
+
+            with c6:
+
+                busca = st.text_input(
+                    "Buscar",
+                    placeholder="Placa ou ID",
+                )
+
+            f = df.copy()
+
+            if (
+                isinstance(
+                    periodo,
+                    (list, tuple)
+                )
+                and len(periodo) == 2
+            ):
+
+                f = f[
+                    (
+                        f.data_dt.dt.date
+                        >= periodo[0]
+                    )
+                    &
+                    (
+                        f.data_dt.dt.date
+                        <= periodo[1]
+                    )
+                ]
+
+            if (
+                ef != "Todas"
+                and "ecv" in f.columns
+            ):
+                f = f[f.ecv == ef]
+
+            if (
+                cf != "Todas"
+                and "cidade" in f.columns
+            ):
+                f = f[f.cidade == cf]
+
+            if (
+                tf
+                and "tipo_vistoria"
+                in f.columns
+            ):
+                f = f[
+                    f.tipo_vistoria
+                    .isin(tf)
+                ]
+
+            if (
+                rf
+                and "resultado"
+                in f.columns
+            ):
+                f = f[
+                    f.resultado
+                    .isin(rf)
+                ]
+
+            if busca:
+
+                q = busca.lower().strip()
+
+                mask = pd.Series(
+                    False,
+                    index=f.index,
+                )
+
+                if "placa" in f.columns:
+
+                    mask |= (
+                        f["placa"]
+                        .astype(str)
+                        .str.lower()
+                        .str.contains(
+                            q,
+                            na=False,
+                        )
+                    )
+
+                if "id" in f.columns:
+
+                    mask |= (
+                        f["id"]
+                        .astype(str)
+                        .str.contains(
+                            q,
+                            na=False,
+                        )
+                    )
+
+                f = f[mask]
+
+            a, b, c, d = st.columns(4)
+
+            total = len(f)
+
+            if "resultado" in f.columns:
+
+                ap = int(
+                    (
+                        f["resultado"]
+                        .astype(str)
+                        .str.lower()
+                        == "aprovado"
+                    ).sum()
+                )
+
+                rp = int(
+                    (
+                        f["resultado"]
+                        .astype(str)
+                        .str.lower()
+                        == "reprovado"
+                    ).sum()
+                )
+
+            else:
+
+                ap = 0
+                rp = 0
+
+            a.metric(
+                "Registros",
+                number(total),
+            )
+
+            b.metric(
+                "Aprovação",
+                (
+                    f"{ap / total * 100:.1f}%"
+                    if total
+                    else "0,0%"
+                ),
+            )
+
+            c.metric(
+                "Reprovação",
+                (
+                    f"{rp / total * 100:.1f}%"
+                    if total
+                    else "0,0%"
+                ),
+            )
+
+            faturamento_filtro = (
+                pd.to_numeric(
+                    f["valor"],
+                    errors="coerce",
+                )
+                .fillna(0)
+                .sum()
+                if "valor" in f.columns
+                else 0
+            )
+
+            d.metric(
+                "Faturamento",
+                money(
+                    faturamento_filtro
+                ),
+            )
+
+            preferred_cols = [
+                "id",
+                "data_vistoria",
+                "ecv",
+                "cidade",
+                "placa",
+                "tipo_vistoria",
+                "resultado",
+                "tempo_minutos",
+                "valor",
+            ]
+
+            cols = [
+                col
+                for col in preferred_cols
+                if col in f.columns
+            ]
+
+            st.dataframe(
+                f[cols],
+                use_container_width=True,
+                hide_index=True,
+            )
+
+            st.download_button(
+                "📥 Exportar CSV",
+                f.to_csv(
+                    index=False
+                ).encode("utf-8"),
+                "vistorias_filtradas.csv",
+                "text/csv",
+            )
 
 
 # ============================================================
 # QUALIDADE
 # ============================================================
 
-elif page == "Qualidade":
+elif st.session_state.page == "Qualidade":
 
     st.markdown(
         """
@@ -1846,8 +1498,7 @@ elif page == "Qualidade":
 <h1>Qualidade dos Dados</h1>
 
 <p>
-Diagnóstico da confiabilidade
-da base operacional.
+Diagnóstico da confiabilidade da base operacional.
 </p>
 
 </div>
@@ -1855,18 +1506,14 @@ da base operacional.
         unsafe_allow_html=True,
     )
 
-
     quality_data = (
-        quality_response.get(
-            "data"
-        )
+        quality_response.get("data")
         or {}
     )
 
-
     if isinstance(
         quality_data,
-        dict
+        dict,
     ):
 
         total = quality_data.get(
@@ -1877,14 +1524,10 @@ da base operacional.
             ),
         )
 
-
-        duplicados = (
-            quality_data.get(
-                "duplicados",
-                0,
-            )
+        duplicados = quality_data.get(
+            "duplicados",
+            0,
         )
-
 
         nulos = quality_data.get(
             "nulos",
@@ -1894,41 +1537,32 @@ da base operacional.
             ),
         )
 
-
-        placas_invalidas = (
-            quality_data.get(
-                "placas_invalidas",
-                0,
-            )
+        placas_invalidas = quality_data.get(
+            "placas_invalidas",
+            0,
         )
 
-
         a, b, c, d = st.columns(4)
-
 
         a.metric(
             "Registros",
             number(total),
         )
 
-
         b.metric(
             "Duplicados",
             number(duplicados),
         )
-
 
         c.metric(
             "Campos vazios",
             number(nulos),
         )
 
-
         d.metric(
             "Placas inválidas",
             number(placas_invalidas),
         )
-
 
         if safe_float(total) > 0:
 
@@ -1959,7 +1593,6 @@ da base operacional.
 
             score = 0
 
-
         st.markdown(
             f"""
 <div class="card">
@@ -1973,8 +1606,241 @@ SCORE DE QUALIDADE
 </h2>
 
 <div class="small">
-Calculado a partir das inconsistências
-identificadas.
+Índice calculado a partir das
+inconsistências identificadas.
+</div>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        mensagens = quality_data.get(
+            "mensagens",
+            [],
+        )
+
+        for msg in mensagens:
+            st.write(msg)
+
+    else:
+
+        st.info(
+            "A API não retornou dados de qualidade."
+        )
+
+
+# ============================================================
+# IA & INSIGHTS
+# ============================================================
+
+elif st.session_state.page == "IA & Insights":
+
+    st.markdown(
+        """
+<div class="hero">
+
+<h1>IA & Insights</h1>
+
+<p>
+Inteligência artificial aplicada à análise operacional das ECVs.
+</p>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    ecv_count = (
+        len(ecvs_df)
+        if not ecvs_df.empty
+        else (
+            perf["ecv"].nunique()
+            if (
+                not perf.empty
+                and "ecv" in perf.columns
+            )
+            else 0
+        )
+    )
+
+    a, b, c = st.columns(3)
+
+    a.metric(
+        "ECVs analisadas",
+        number(ecv_count),
+    )
+
+    b.metric(
+        "Vistorias analisadas",
+        number(len(df)),
+    )
+
+    c.metric(
+        "Copilot",
+        "Ativo",
+    )
+
+    st.markdown(
+        """
+<div class="card">
+
+<span class="badge">
+ECV INTELLIGENCE AI
+</span>
+
+<h3>
+Copilot operacional
+</h3>
+
+<div class="small">
+Utilize a IA para interpretar indicadores,
+identificar oportunidades e apoiar decisões.
+</div>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="section-title">'
+        '💬 Copilot de Dados'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    question = st.text_input(
+        "Pergunta",
+        placeholder="Qual ECV teve melhor desempenho?",
+    )
+
+    st.caption(
+        "Exemplos: "
+        "Qual ECV teve melhor desempenho? • "
+        "Qual teve pior desempenho? • "
+        "Quantas vistorias existem?"
+    )
+
+    if st.button(
+        "🔎 Consultar dados",
+        type="primary",
+    ):
+
+        if not question.strip():
+
+            st.warning(
+                "Digite uma pergunta."
+            )
+
+        else:
+
+            try:
+
+                from services.ai_service import ask_data
+
+                with st.spinner(
+                    "Analisando dados..."
+                ):
+
+                    answer = ask_data(
+                        question,
+                        df,
+                    )
+
+                st.markdown(
+                    f"""
+<div class="card">
+
+<span class="badge">
+COPILOT
+</span>
+
+<div style="margin-top:1rem">
+{html.escape(str(answer))}
+</div>
+
+</div>
+""",
+                    unsafe_allow_html=True,
+                )
+
+            except Exception as exc:
+
+                st.error(
+                    "Não foi possível executar "
+                    "o Copilot neste momento."
+                )
+
+                st.caption(
+                    f"Detalhes técnicos: {exc}"
+                )
+
+    if (
+        not perf.empty
+        and "taxa_aprovacao"
+        in perf.columns
+    ):
+
+        perf_sorted = (
+            perf
+            .sort_values(
+                "taxa_aprovacao",
+                ascending=False,
+            )
+            .reset_index(drop=True)
+        )
+
+        best = perf_sorted.iloc[0]
+        worst = perf_sorted.iloc[-1]
+
+        x, y = st.columns(2)
+
+        x.markdown(
+            f"""
+<div class="card">
+
+<span class="badge">
+OPORTUNIDADE
+</span>
+
+<h3>
+{html.escape(
+    str(best.get("ecv", "N/D"))
+)}
+</h3>
+
+<div class="small">
+Maior aprovação:
+{safe_float(
+    best.get("taxa_aprovacao")
+):.1f}%
+</div>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        y.markdown(
+            f"""
+<div class="card">
+
+<span class="badge">
+ATENÇÃO
+</span>
+
+<h3>
+{html.escape(
+    str(worst.get("ecv", "N/D"))
+)}
+</h3>
+
+<div class="small">
+Menor aprovação:
+{safe_float(
+    worst.get("taxa_aprovacao")
+):.1f}%
 </div>
 
 </div>
@@ -1983,24 +1849,79 @@ identificadas.
         )
 
 
-        mensagens = (
-            quality_data.get(
-                "mensagens",
-                [],
-            )
+# ============================================================
+# ECVs
+# ============================================================
+
+elif st.session_state.page == "ECVs":
+
+    st.markdown(
+        """
+<div class="hero">
+
+<h1>Gestão de ECVs</h1>
+
+<p>
+Visão consolidada das Empresas Credenciadas de Vistoria.
+</p>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    if ecvs_df.empty:
+
+        st.info(
+            "A API não retornou ECVs."
         )
-
-
-        for msg in mensagens:
-
-            st.write(msg)
-
 
     else:
 
-        st.info(
-            "A API não retornou dados "
-            "de qualidade."
+        display_df = ecvs_df.copy()
+
+        if (
+            not perf.empty
+            and "ecv" in perf.columns
+            and "taxa_aprovacao"
+            in perf.columns
+        ):
+
+            join_column = None
+
+            if "nome" in display_df.columns:
+                join_column = "nome"
+
+            elif "ecv" in display_df.columns:
+                join_column = "ecv"
+
+            if join_column:
+
+                performance_join = perf[
+                    [
+                        "ecv",
+                        "taxa_aprovacao",
+                    ]
+                ].copy()
+
+                display_df = display_df.merge(
+                    performance_join,
+                    left_on=join_column,
+                    right_on="ecv",
+                    how="left",
+                )
+
+                if join_column != "ecv":
+
+                    display_df = display_df.drop(
+                        columns=["ecv"],
+                        errors="ignore",
+                    )
+
+        st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True,
         )
 
 
@@ -2008,7 +1929,7 @@ identificadas.
 # AUTOMAÇÕES
 # ============================================================
 
-elif page == "Automações":
+elif st.session_state.page == "Automações":
 
     st.markdown(
         """
@@ -2017,8 +1938,7 @@ elif page == "Automações":
 <h1>Central de Automações</h1>
 
 <p>
-Monitoramento das regras e
-execuções automatizadas.
+Monitoramento das regras e execuções automatizadas.
 </p>
 
 </div>
@@ -2026,17 +1946,11 @@ execuções automatizadas.
         unsafe_allow_html=True,
     )
 
-
     automation_data = (
-        automations_response.get(
-            "data"
-        )
-        if automations_response.get(
-            "ok"
-        )
+        automations_response.get("data")
+        if automations_response.get("ok")
         else None
     )
-
 
     logs = pd.DataFrame(
         normalize_list_response(
@@ -2051,14 +1965,11 @@ execuções automatizadas.
         )
     )
 
-
     total = len(logs)
-
 
     if not logs.empty:
 
         status_column = None
-
 
         for candidate in [
             "status",
@@ -2069,9 +1980,7 @@ execuções automatizadas.
             if candidate in logs.columns:
 
                 status_column = candidate
-
                 break
-
 
         if status_column:
 
@@ -2101,20 +2010,13 @@ execuções automatizadas.
 
         sucesso = 0
 
-
     taxa = (
-        sucesso
-        /
-        total
-        *
-        100
+        sucesso / total * 100
         if total
         else 0
     )
 
-
     processados = 0
-
 
     if not logs.empty:
 
@@ -2137,35 +2039,27 @@ execuções automatizadas.
 
                 break
 
-
     a, b, c, d = st.columns(4)
-
 
     a.metric(
         "Execuções",
         number(total),
     )
 
-
     b.metric(
         "Sucesso",
         f"{taxa:.1f}%",
     )
-
 
     c.metric(
         "Processados",
         number(processados),
     )
 
-
     d.metric(
         "Status",
-        "Operacional"
-        if api_online
-        else "Offline",
+        "Operacional",
     )
-
 
     st.markdown(
         """
@@ -2180,9 +2074,8 @@ Pipeline operacional
 </h3>
 
 <div class="small">
-Leitura → Validação →
-Duplicidades → Campos críticos →
-Indicadores → Log
+Leitura → Validação → Duplicidades →
+Campos críticos → Indicadores → Log
 </div>
 
 </div>
@@ -2190,14 +2083,12 @@ Indicadores → Log
         unsafe_allow_html=True,
     )
 
-
     st.markdown(
         '<div class="section-title">'
         '📋 Histórico'
         '</div>',
         unsafe_allow_html=True,
     )
-
 
     if not logs.empty:
 
@@ -2210,377 +2101,15 @@ Indicadores → Log
     else:
 
         st.info(
-            "Nenhuma execução registrada "
-            "pela API."
+            "Nenhuma execução registrada pela API."
         )
 
 
 # ============================================================
-# IA & INSIGHTS
+# API
 # ============================================================
 
-elif page == "IA & Insights":
-
-    st.markdown(
-        """
-<div class="hero">
-
-<h1>IA & Insights</h1>
-
-<p>
-Inteligência artificial aplicada à
-análise operacional das ECVs.
-</p>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-
-    ecv_count = (
-        len(ecvs_df)
-        if not ecvs_df.empty
-        else (
-            perf["ecv"].nunique()
-            if (
-                not perf.empty
-                and "ecv" in perf.columns
-            )
-            else 0
-        )
-    )
-
-
-    a, b, c = st.columns(3)
-
-
-    a.metric(
-        "ECVs analisadas",
-        number(ecv_count),
-    )
-
-
-    b.metric(
-        "Vistorias analisadas",
-        number(len(df)),
-    )
-
-
-    c.metric(
-        "Copilot",
-        "Ativo",
-    )
-
-
-    st.markdown(
-        """
-<div class="card">
-
-<span class="badge">
-ECV INTELLIGENCE AI
-</span>
-
-<h3>
-Copilot operacional
-</h3>
-
-<div class="small">
-A camada de IA utiliza os indicadores
-operacionais para apoiar análise
-e tomada de decisão.
-</div>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-
-    st.markdown(
-        '<div class="section-title">'
-        '💬 Copilot de Dados'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-
-    question = st.text_input(
-        "Pergunta",
-        placeholder=(
-            "Qual ECV teve melhor desempenho?"
-        ),
-    )
-
-
-    st.caption(
-        "Exemplos: Qual ECV teve melhor "
-        "desempenho? • Qual teve pior "
-        "desempenho? • Quantas vistorias existem?"
-    )
-
-
-    if st.button(
-        "🔎 Consultar dados",
-        type="primary",
-    ):
-
-        if not question.strip():
-
-            st.warning(
-                "Digite uma pergunta."
-            )
-
-        else:
-
-            try:
-
-                from services.ai_service import (
-                    ask_data
-                )
-
-
-                with st.spinner(
-                    "Analisando dados..."
-                ):
-
-                    answer = ask_data(
-                        question,
-                        df,
-                    )
-
-
-                st.markdown(
-                    f"""
-<div class="card">
-
-<span class="badge">
-COPILOT
-</span>
-
-<div style="margin-top:1rem">
-
-{html.escape(
-    str(answer)
-)}
-
-</div>
-
-</div>
-""",
-                    unsafe_allow_html=True,
-                )
-
-
-            except Exception as exc:
-
-                st.warning(
-                    "O módulo de IA local "
-                    "não está disponível."
-                )
-
-
-                st.caption(
-                    f"Detalhes técnicos: {exc}"
-                )
-
-
-    if (
-        not perf.empty
-        and "taxa_aprovacao"
-        in perf.columns
-    ):
-
-        perf_sorted = (
-            perf
-            .sort_values(
-                "taxa_aprovacao",
-                ascending=False,
-            )
-            .reset_index(drop=True)
-        )
-
-
-        best = perf_sorted.iloc[0]
-
-        worst = perf_sorted.iloc[-1]
-
-
-        x, y = st.columns(2)
-
-
-        x.markdown(
-            f"""
-<div class="card">
-
-<span class="badge">
-OPORTUNIDADE
-</span>
-
-<h3>
-{html.escape(
-    str(
-        best.get(
-            "ecv",
-            "N/D"
-        )
-    )
-)}
-</h3>
-
-<div class="small">
-
-Maior aprovação:
-
-{safe_float(
-    best.get(
-        "taxa_aprovacao"
-    )
-):.1f}%
-
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-
-        y.markdown(
-            f"""
-<div class="card">
-
-<span class="badge">
-ATENÇÃO
-</span>
-
-<h3>
-{html.escape(
-    str(
-        worst.get(
-            "ecv",
-            "N/D"
-        )
-    )
-)}
-</h3>
-
-<div class="small">
-
-Menor aprovação:
-
-{safe_float(
-    worst.get(
-        "taxa_aprovacao"
-    )
-):.1f}%
-
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-
-# ============================================================
-# ECVs
-# ============================================================
-
-elif page == "ECVs":
-
-    st.markdown(
-        """
-<div class="hero">
-
-<h1>ECVs</h1>
-
-<p>
-Visão consolidada de desempenho
-por ECV.
-</p>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-
-    if ecvs_df.empty:
-
-        st.info(
-            "A API não retornou ECVs."
-        )
-
-    else:
-
-        display_df = ecvs_df.copy()
-
-
-        if (
-            not perf.empty
-            and "ecv" in perf.columns
-            and "taxa_aprovacao"
-            in perf.columns
-        ):
-
-            join_column = None
-
-
-            if "nome" in display_df.columns:
-
-                join_column = "nome"
-
-            elif "ecv" in display_df.columns:
-
-                join_column = "ecv"
-
-
-            if join_column:
-
-                performance_join = (
-                    perf[
-                        [
-                            "ecv",
-                            "taxa_aprovacao",
-                        ]
-                    ]
-                    .copy()
-                )
-
-
-                display_df = (
-                    display_df.merge(
-                        performance_join,
-                        left_on=join_column,
-                        right_on="ecv",
-                        how="left",
-                    )
-                )
-
-
-                if join_column != "ecv":
-
-                    display_df = (
-                        display_df.drop(
-                            columns=["ecv"],
-                            errors="ignore",
-                        )
-                    )
-
-
-        st.dataframe(
-            display_df,
-            use_container_width=True,
-            hide_index=True,
-        )
-
-
-# ============================================================
-# API & INTEGRAÇÕES
-# ============================================================
-
-elif page == "API":
+elif st.session_state.page == "API":
 
     st.markdown(
         """
@@ -2589,8 +2118,8 @@ elif page == "API":
 <h1>API & Integrações</h1>
 
 <p>
-Camada REST para integração com
-sistemas externos, BI e parceiros.
+Camada REST para integração com sistemas externos,
+BI e parceiros.
 </p>
 
 </div>
@@ -2598,29 +2127,22 @@ sistemas externos, BI e parceiros.
         unsafe_allow_html=True,
     )
 
-
     c1, c2, c3 = st.columns(3)
-
 
     c1.metric(
         "API",
-        "Online"
-        if api_online
-        else "Offline",
+        "Online",
     )
-
 
     c2.metric(
         "Versão",
         "3.0.0",
     )
 
-
     c3.metric(
-        "Frontend",
-        "3.1",
+        "Endpoints",
+        "15+",
     )
-
 
     st.markdown(
         '<div class="section-title">'
@@ -2628,7 +2150,6 @@ sistemas externos, BI e parceiros.
         '</div>',
         unsafe_allow_html=True,
     )
-
 
     endpoints = [
         "GET /health",
@@ -2647,11 +2168,15 @@ sistemas externos, BI e parceiros.
         "GET /powerbi/indicadores",
     ]
 
+    cols = st.columns(2)
 
-    for endpoint in endpoints:
+    for index, endpoint in enumerate(
+        endpoints
+    ):
 
-        st.code(endpoint)
-
+        cols[index % 2].code(
+            endpoint
+        )
 
     st.markdown(
         '<div class="section-title">'
@@ -2660,20 +2185,17 @@ sistemas externos, BI e parceiros.
         unsafe_allow_html=True,
     )
 
-
     st.link_button(
         "📚 Abrir Swagger / OpenAPI",
         f"{API_URL}/docs",
         use_container_width=True,
     )
 
-
     st.link_button(
         "❤️ Health Check",
         f"{API_URL}/health",
         use_container_width=True,
     )
-
 
     st.link_button(
         "📊 Status da API",
@@ -2682,55 +2204,156 @@ sistemas externos, BI e parceiros.
     )
 
 
+# ============================================================
+# POWER BI
+# ============================================================
+
+elif st.session_state.page == "Power BI":
+
+    st.markdown(
+        """
+<div class="hero">
+
+<h1>Power BI</h1>
+
+<p>
+Camada de integração analítica para consumo dos dados
+da plataforma ECV Intelligence.
+</p>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3 = st.columns(3)
+
+    c1.metric(
+        "Vistorias",
+        "Dataset",
+    )
+
+    c2.metric(
+        "ECVs",
+        "Dataset",
+    )
+
+    c3.metric(
+        "Indicadores",
+        "Dataset",
+    )
+
     st.markdown(
         '<div class="section-title">'
-        '🏗️ Arquitetura'
+        'Fontes disponíveis'
         '</div>',
         unsafe_allow_html=True,
     )
 
+    a, b, c = st.columns(3)
+
+    with a:
+
+        st.markdown(
+            """
+<div class="integration-card">
+
+<h3>🚗 Vistorias</h3>
+
+<p>
+Dados operacionais das vistorias
+para análise no Power BI.
+</p>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        st.link_button(
+            "Abrir endpoint",
+            f"{API_URL}/powerbi/vistorias",
+            use_container_width=True,
+        )
+
+    with b:
+
+        st.markdown(
+            """
+<div class="integration-card">
+
+<h3>🏢 ECVs</h3>
+
+<p>
+Dados consolidados das empresas
+credenciadas.
+</p>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        st.link_button(
+            "Abrir endpoint",
+            f"{API_URL}/powerbi/ecvs",
+            use_container_width=True,
+        )
+
+    with c:
+
+        st.markdown(
+            """
+<div class="integration-card">
+
+<h3>📊 Indicadores</h3>
+
+<p>
+KPIs e indicadores preparados
+para camada analítica.
+</p>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        st.link_button(
+            "Abrir endpoint",
+            f"{API_URL}/powerbi/indicadores",
+            use_container_width=True,
+        )
+
+    st.markdown(
+        '<div class="section-title">'
+        'Arquitetura de integração'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
     st.markdown(
         """
 <div class="card">
 
 <span class="badge">
-SAAS ARCHITECTURE
+BI PIPELINE
 </span>
 
 <h3>
-ECV Intelligence V3.1
+ECV Intelligence → API → Power BI
 </h3>
 
 <div class="small">
 
-Frontend<br>
-→ Streamlit
-
-<br><br>
-
-Backend<br>
-→ FastAPI
-
-<br><br>
-
-Analytics<br>
-→ KPIs + Performance + Quality
-
-<br><br>
-
-IA<br>
-→ Gemini / Copilot
-
-<br><br>
-
-Automação<br>
-→ Automation Engine
-
-<br><br>
-
-BI<br>
-→ Power BI API
+Dados operacionais<br>
+↓<br>
+FastAPI<br>
+↓<br>
+Endpoints Power BI<br>
+↓<br>
+Power BI Dataset<br>
+↓<br>
+Dashboards executivos
 
 </div>
 
@@ -2740,19 +2363,171 @@ BI<br>
     )
 
 
+# ============================================================
+# MEU PERFIL
+# ============================================================
+
+elif st.session_state.page == "Meu Perfil":
+
+    st.markdown(
+        """
+<div class="hero">
+
+<h1>Meu Perfil</h1>
+
+<p>
+Informações e preferências do usuário da plataforma.
+</p>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    a, b = st.columns(2)
+
+    with a:
+
+        st.markdown(
+            """
+<div class="card">
+
+<span class="badge">
+USUÁRIO
+</span>
+
+<h3>
+Administrador
+</h3>
+
+<div class="small">
+Perfil com acesso ao ambiente analítico.
+</div>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+    with b:
+
+        st.markdown(
+            """
+<div class="card">
+
+<span class="badge">
+ACESSO
+</span>
+
+<h3>
+Analytics + IA
+</h3>
+
+<div class="small">
+Permissões para análise operacional,
+indicadores e inteligência.
+</div>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
     st.markdown(
         '<div class="section-title">'
-        'Próxima evolução comercial'
+        'Preferências'
         '</div>',
         unsafe_allow_html=True,
     )
 
-
-    st.info(
-        "Autenticação → organizações → usuários → "
-        "organization_id → API Keys → limites de uso → "
-        "planos SaaS → billing."
+    st.checkbox(
+        "Receber alertas de desempenho",
+        value=True,
     )
+
+    st.checkbox(
+        "Exibir indicadores avançados",
+        value=True,
+    )
+
+
+# ============================================================
+# CONFIGURAÇÕES
+# ============================================================
+
+elif st.session_state.page == "Configurações":
+
+    st.markdown(
+        """
+<div class="hero">
+
+<h1>Configurações</h1>
+
+<p>
+Preferências da plataforma ECV Intelligence.
+</p>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+<div class="card">
+
+<span class="badge">
+PLATAFORMA
+</span>
+
+<h3>
+Preferências gerais
+</h3>
+
+<div class="small">
+Configure a experiência de utilização do
+dashboard.
+</div>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.checkbox(
+            "Atualização automática",
+            value=True,
+        )
+
+        st.checkbox(
+            "Mostrar gráficos avançados",
+            value=True,
+        )
+
+    with col2:
+
+        st.checkbox(
+            "Ativar sugestões da IA",
+            value=True,
+        )
+
+        st.checkbox(
+            "Modo compacto",
+            value=False,
+        )
+
+    if st.button(
+        "💾 Salvar preferências",
+        type="primary",
+    ):
+
+        st.success(
+            "Preferências salvas."
+        )
 
 
 # ============================================================
@@ -2761,10 +2536,9 @@ BI<br>
 
 st.divider()
 
-
 st.caption(
-    f"ECV Intelligence V3.1 • "
-    f"API {API_URL} • "
-    f"Atualizado em "
-    f"{datetime.now().strftime('%d/%m/%Y %H:%M')}"
+    "ECV Intelligence • Plataforma de "
+    "Analytics, IA e Automação"
 )
+
+
