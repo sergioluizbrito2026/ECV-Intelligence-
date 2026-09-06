@@ -1,3 +1,4 @@
+```python
 import html
 import os
 from datetime import datetime, date
@@ -19,12 +20,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
 API_URL = os.getenv(
     "ECV_API_URL",
     "https://ecv-intelligence-api-v3.onrender.com",
 ).rstrip("/")
-
 
 API_TIMEOUT = int(
     os.getenv(
@@ -32,11 +31,6 @@ API_TIMEOUT = int(
         "30",
     )
 )
-
-
-# ============================================================
-# LIMITE CENTRAL DE DADOS
-# ============================================================
 
 MAX_VISTORIAS = int(
     os.getenv(
@@ -59,161 +53,166 @@ st.markdown(
     """
 <style>
 
-.stApp{
-    background:#0f172a;
-    color:#f8fafc;
+.stApp {
+    background: #0f172a;
+    color: #f8fafc;
 }
 
-.block-container{
-    padding:1.5rem 2rem 2.5rem;
-    max-width:100%!important;
+.block-container {
+    padding: 1.5rem 2rem 2.5rem;
+    max-width: 100% !important;
 }
 
 #MainMenu,
-footer{
-    visibility:hidden;
+footer {
+    visibility: hidden;
 }
 
-[data-testid="stSidebar"]{
-    background:#0b1120;
-    border-right:1px solid rgba(255,255,255,.08);
-    min-width:270px!important;
-    max-width:270px!important;
+[data-testid="stSidebar"] {
+    background: #0b1120;
+    border-right: 1px solid rgba(255,255,255,.08);
+    min-width: 270px !important;
+    max-width: 270px !important;
 }
 
-[data-testid="stSidebar"] *{
-    color:#f8fafc;
+[data-testid="stSidebar"] * {
+    color: #f8fafc;
 }
 
-.sidebar-brand{
-    padding:8px 4px 18px 4px;
+.sidebar-brand {
+    padding: 8px 4px 18px;
 }
 
-.sidebar-brand h2{
-    margin:0;
-    font-size:1.25rem;
-    font-weight:750;
+.sidebar-brand h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 750;
 }
 
-.sidebar-brand p{
-    margin:5px 0 0;
-    font-size:.76rem;
-    color:#94a3b8;
+.sidebar-brand p {
+    margin: 5px 0 0;
+    font-size: .76rem;
+    color: #94a3b8;
 }
 
-.sidebar-section{
-    margin-top:15px;
-    margin-bottom:6px;
-    padding-left:5px;
-    font-size:.68rem;
-    font-weight:800;
-    letter-spacing:.10em;
-    color:#64748b!important;
-    text-transform:uppercase;
+.sidebar-section {
+    margin-top: 15px;
+    margin-bottom: 6px;
+    padding-left: 5px;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .10em;
+    color: #64748b !important;
+    text-transform: uppercase;
 }
 
-[data-testid="stSidebar"] .stButton{
-    margin-bottom:3px;
+[data-testid="stSidebar"] .stButton {
+    margin-bottom: 3px;
 }
 
-[data-testid="stSidebar"] .stButton > button{
-    width:100%;
-    min-height:40px;
-    border:1px solid transparent;
-    border-radius:9px;
-    background:transparent;
-    color:#cbd5e1!important;
-    text-align:left!important;
-    font-size:.88rem;
-    font-weight:500;
-    padding:0 12px;
+[data-testid="stSidebar"] .stButton > button {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: #cbd5e1 !important;
+    text-align: left !important;
+    font-size: .88rem;
+    font-weight: 500;
+    padding: 0 12px;
 }
 
-[data-testid="stSidebar"] .stButton > button:hover{
-    background:#172033;
-    border-color:rgba(255,255,255,.06);
-    color:#ffffff!important;
+[data-testid="stSidebar"] .stButton > button:hover {
+    background: #172033;
+    border-color: rgba(255,255,255,.06);
+    color: #ffffff !important;
 }
 
-.hero{
-    padding:1.5rem 1.8rem;
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:16px;
-    background:#1e293b;
-    margin-bottom:1.2rem;
+.hero {
+    padding: 1.5rem 1.8rem;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    background: #1e293b;
+    margin-bottom: 1.2rem;
 }
 
-.hero h1{
-    margin:0;
-    font-size:2rem;
-    color:#f8fafc;
+.hero h1 {
+    margin: 0;
+    font-size: 2rem;
+    color: #f8fafc;
 }
 
-.hero p{
-    margin:.45rem 0 0;
-    color:#94a3b8;
+.hero p {
+    margin: .45rem 0 0;
+    color: #94a3b8;
 }
 
-.section-title{
-    font-size:1.1rem;
-    font-weight:700;
-    margin:1.2rem 0 .8rem;
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 1.2rem 0 .8rem;
 }
 
-[data-testid="stMetric"]{
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:14px;
-    padding:14px 16px;
-    background:#1e293b;
+[data-testid="stMetric"] {
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: #1e293b;
 }
 
-[data-testid="stMetric"] label{
-    color:#94a3b8!important;
+[data-testid="stMetric"] label {
+    color: #94a3b8 !important;
 }
 
-[data-testid="stMetric"] [data-testid="stMetricValue"]{
-    color:#f8fafc!important;
+[data-testid="stMetric"] [data-testid="stMetricValue"] {
+    color: #f8fafc !important;
 }
 
-.card{
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:14px;
-    padding:1.2rem 1.3rem;
-    background:#1e293b;
-    color:#f8fafc;
-    margin-bottom:.8rem;
+.card {
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    padding: 1.2rem 1.3rem;
+    background: #1e293b;
+    color: #f8fafc;
+    margin-bottom: .8rem;
 }
 
-.card h3{
-    margin:.65rem 0;
+.card h3 {
+    margin: .65rem 0;
 }
 
-.badge{
-    display:inline-block;
-    padding:.22rem .55rem;
-    border-radius:999px;
-    font-size:.72rem;
-    font-weight:700;
-    background:#334155;
+.badge {
+    display: inline-block;
+    padding: .22rem .55rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 700;
+    background: #334155;
 }
 
-.small{
-    font-size:.82rem;
-    color:#94a3b8;
+.small {
+    font-size: .82rem;
+    color: #94a3b8;
 }
 
-.data-limit{
-    padding:.7rem .9rem;
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:10px;
-    background:#111827;
-    color:#94a3b8;
-    font-size:.8rem;
-    margin-bottom:1rem;
+.data-limit {
+    padding: .7rem .9rem;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    background: #111827;
+    color: #94a3b8;
+    font-size: .8rem;
+    margin-bottom: 1rem;
 }
 
-hr{
-    border-color:rgba(255,255,255,.08)!important;
+.kpi-subtitle {
+    color: #64748b;
+    font-size: .72rem;
+}
+
+hr {
+    border-color: rgba(255,255,255,.08) !important;
 }
 
 </style>
@@ -259,12 +258,6 @@ def safe_int(value, default=0):
         return default
 
 
-def clean_text(value):
-    if pd.isna(value):
-        return ""
-    return str(value).strip()
-
-
 def normalize_list_response(data, possible_keys=None):
 
     if isinstance(data, list):
@@ -295,16 +288,6 @@ def normalize_list_response(data, possible_keys=None):
     return []
 
 
-def first_existing_column(df, candidates):
-
-    for column in candidates:
-
-        if column in df.columns:
-            return column
-
-    return None
-
-
 # ============================================================
 # NAVEGAÇÃO
 # ============================================================
@@ -326,7 +309,6 @@ def sidebar_button(label, page_name):
     )
 
     if clicked:
-
         navigate(page_name)
         st.rerun()
 
@@ -465,8 +447,8 @@ def build_vistorias_dataframe(data):
     records = normalize_list_response(
         data,
         [
-            "vistorias",
             "data",
+            "vistorias",
             "items",
             "results",
             "records",
@@ -478,14 +460,12 @@ def build_vistorias_dataframe(data):
 
     df = pd.DataFrame(records)
 
-    # --------------------------------------------------------
-    # NORMALIZAÇÃO DAS COLUNAS
-    # --------------------------------------------------------
-
     rename_map = {
 
         "id": "id",
         "inspection_id": "id",
+
+        "ecv_id": "ecv_id",
 
         "data_hora": "data_vistoria",
         "data": "data_vistoria",
@@ -501,6 +481,9 @@ def build_vistorias_dataframe(data):
         "cidade": "cidade",
         "city": "cidade",
         "municipio": "cidade",
+
+        "estado": "estado",
+        "uf": "estado",
 
         "placa": "placa",
         "plate": "placa",
@@ -531,15 +514,13 @@ def build_vistorias_dataframe(data):
         }
     )
 
-    # --------------------------------------------------------
-    # CAMPOS ESPERADOS
-    # --------------------------------------------------------
-
     expected_columns = [
         "id",
+        "ecv_id",
         "data_vistoria",
         "ecv",
         "cidade",
+        "estado",
         "placa",
         "tipo_vistoria",
         "resultado",
@@ -552,23 +533,17 @@ def build_vistorias_dataframe(data):
         if column not in df.columns:
             df[column] = ""
 
-    # --------------------------------------------------------
-    # DATA
-    # --------------------------------------------------------
-
     df["data_dt"] = pd.to_datetime(
         df["data_vistoria"],
         errors="coerce",
     )
 
-    # --------------------------------------------------------
-    # TEXTO
-    # --------------------------------------------------------
-
     text_columns = [
         "id",
+        "ecv_id",
         "ecv",
         "cidade",
+        "estado",
         "placa",
         "tipo_vistoria",
         "resultado",
@@ -583,10 +558,6 @@ def build_vistorias_dataframe(data):
             .str.strip()
         )
 
-    # --------------------------------------------------------
-    # NUMÉRICOS
-    # --------------------------------------------------------
-
     df["tempo_minutos"] = pd.to_numeric(
         df["tempo_minutos"],
         errors="coerce",
@@ -597,19 +568,14 @@ def build_vistorias_dataframe(data):
         errors="coerce",
     )
 
-    # --------------------------------------------------------
-    # LIMITE DE SEGURANÇA
-    # --------------------------------------------------------
-
     if len(df) > MAX_VISTORIAS:
-
         df = df.head(MAX_VISTORIAS)
 
     return df
 
 
 # ============================================================
-# DATAFRAME — ECVs
+# DATAFRAME — ECV
 # ============================================================
 
 def build_ecvs_dataframe(data):
@@ -727,97 +693,51 @@ def build_performance_dataframe(data):
 st.sidebar.markdown(
     """
 <div class="sidebar-brand">
-
 <h2>📊 ECV Intelligence</h2>
-
-<p>
-Analytics, IA e automação para ECVs
-</p>
-
+<p>Analytics, IA e automação para ECVs</p>
 </div>
 """,
     unsafe_allow_html=True,
 )
-
 
 st.sidebar.markdown(
     '<div class="sidebar-section">WORKSPACE</div>',
     unsafe_allow_html=True,
 )
 
-sidebar_button(
-    "📊  Visão Geral",
-    "Visão Geral",
-)
-
-sidebar_button(
-    "🔎  Vistorias",
-    "Vistorias",
-)
-
-sidebar_button(
-    "🛡️  Qualidade",
-    "Qualidade",
-)
-
+sidebar_button("📊  Visão Geral", "Visão Geral")
+sidebar_button("🔎  Vistorias", "Vistorias")
+sidebar_button("🛡️  Qualidade", "Qualidade")
 
 st.sidebar.markdown(
     '<div class="sidebar-section">INTELIGÊNCIA</div>',
     unsafe_allow_html=True,
 )
 
-sidebar_button(
-    "🤖  IA & Insights",
-    "IA & Insights",
-)
-
+sidebar_button("🤖  IA & Insights", "IA & Insights")
 
 st.sidebar.markdown(
     '<div class="sidebar-section">INTEGRAÇÕES</div>',
     unsafe_allow_html=True,
 )
 
-sidebar_button(
-    "🔌  API",
-    "API",
-)
-
-sidebar_button(
-    "📈  Power BI",
-    "Power BI",
-)
-
+sidebar_button("🔌  API", "API")
+sidebar_button("📈  Power BI", "Power BI")
 
 st.sidebar.markdown(
     '<div class="sidebar-section">GESTÃO</div>',
     unsafe_allow_html=True,
 )
 
-sidebar_button(
-    "🏢  ECVs",
-    "ECVs",
-)
-
-sidebar_button(
-    "⚙️  Automações",
-    "Automações",
-)
-
+sidebar_button("🏢  ECVs", "ECVs")
+sidebar_button("⚙️  Automações", "Automações")
 
 st.sidebar.markdown(
     '<div class="sidebar-section">SISTEMA</div>',
     unsafe_allow_html=True,
 )
 
-sidebar_button(
-    "⚙️  Configurações",
-    "Configurações",
-)
-
-
-# ============================================================
-# STATUS DO LIMITE
-# ============================================================
+sidebar_button("⚙️  Configurações", "Configurações")
 
 st.sidebar.divider()
 
@@ -833,11 +753,6 @@ st.sidebar.caption(
     f"{number(MAX_VISTORIAS)} registros."
 )
 
-
-# ============================================================
-# ATUALIZAÇÃO
-# ============================================================
-
 if st.sidebar.button(
     "🔄 Atualizar dados",
     use_container_width=True,
@@ -849,7 +764,7 @@ if st.sidebar.button(
 
 
 # ============================================================
-# CARREGAMENTO
+# HEALTH
 # ============================================================
 
 page = st.session_state.page
@@ -861,31 +776,19 @@ api_online = health.get(
     False,
 )
 
-
-# ============================================================
-# API OFFLINE
-# ============================================================
-
 if not api_online:
 
     st.markdown(
         """
 <div class="hero">
-
 <h1>ECV Intelligence</h1>
-
-<p>
-Não foi possível conectar à API neste momento.
-</p>
-
+<p>Não foi possível conectar à API neste momento.</p>
 </div>
 """,
         unsafe_allow_html=True,
     )
 
-    st.error(
-        "A API não respondeu corretamente."
-    )
+    st.error("A API não respondeu corretamente.")
 
     error_message = health.get("error")
 
@@ -902,82 +805,48 @@ Não foi possível conectar à API neste momento.
 
 
 # ============================================================
-# RESPOSTAS PADRÃO
+# RESPOSTAS
 # ============================================================
 
-dashboard_response = {
-    "data": {}
-}
-
-indicadores_response = {
-    "data": {}
-}
-
-vistorias_response = {
-    "data": {}
-}
-
-ecvs_response = {
-    "data": {}
-}
-
-performance_response = {
-    "data": {}
-}
-
-quality_response = {
-    "data": {}
-}
-
-daily_response = {
-    "data": {}
-}
-
-automations_response = {
-    "data": {}
-}
+dashboard_response = {"data": {}}
+indicadores_response = {"data": {}}
+vistorias_response = {"data": {}}
+ecvs_response = {"data": {}}
+performance_response = {"data": {}}
+quality_response = {"data": {}}
+daily_response = {"data": {}}
+automations_response = {"data": {}}
 
 
 # ============================================================
-# CARREGAMENTO POR ABA
+# CARREGAMENTO
 # ============================================================
 
 if page == "Visão Geral":
 
     dashboard_response = get_api_dashboard()
-
     indicadores_response = get_api_indicadores()
-
     performance_response = get_api_analytics_ecvs()
-
     daily_response = get_api_daily()
-
 
 elif page == "Vistorias":
 
     vistorias_response = get_api_vistorias()
 
-
 elif page == "Qualidade":
 
     quality_response = get_api_quality()
 
-
 elif page == "IA & Insights":
 
     vistorias_response = get_api_vistorias()
-
     ecvs_response = get_api_ecvs()
-
     performance_response = get_api_analytics_ecvs()
-
 
 elif page == "ECVs":
 
     ecvs_response = get_api_ecvs()
-
     performance_response = get_api_analytics_ecvs()
-
 
 elif page == "Automações":
 
@@ -992,16 +861,13 @@ df = build_vistorias_dataframe(
     vistorias_response.get("data")
 )
 
-
 ecvs_df = build_ecvs_dataframe(
     ecvs_response.get("data")
 )
 
-
 perf = build_performance_dataframe(
     performance_response.get("data")
 )
-
 
 daily = build_daily_dataframe(
     daily_response.get("data")
@@ -1012,15 +878,8 @@ daily = build_daily_dataframe(
 # KPI
 # ============================================================
 
-dashboard_data = (
-    dashboard_response.get("data")
-    or {}
-)
-
-indicadores_data = (
-    indicadores_response.get("data")
-    or {}
-)
+dashboard_data = dashboard_response.get("data") or {}
+indicadores_data = indicadores_response.get("data") or {}
 
 
 def extract_kpi(keys, default=0):
@@ -1035,7 +894,6 @@ def extract_kpi(keys, default=0):
             for key in keys:
 
                 if key in source:
-
                     return source[key]
 
     return default
@@ -1050,7 +908,6 @@ total_vistorias = extract_kpi(
     len(df),
 )
 
-
 taxa_aprovacao = extract_kpi(
     [
         "taxa_aprovacao",
@@ -1058,7 +915,6 @@ taxa_aprovacao = extract_kpi(
     ],
     0,
 )
-
 
 taxa_reprovacao = extract_kpi(
     [
@@ -1068,7 +924,6 @@ taxa_reprovacao = extract_kpi(
     0,
 )
 
-
 tempo_medio = extract_kpi(
     [
         "tempo_medio",
@@ -1077,7 +932,6 @@ tempo_medio = extract_kpi(
     ],
     0,
 )
-
 
 faturamento = extract_kpi(
     [
@@ -1098,14 +952,11 @@ if page == "Visão Geral":
     st.markdown(
         """
 <div class="hero">
-
 <h1>Visão Executiva</h1>
-
 <p>
 Monitoramento operacional, desempenho das ECVs
 e inteligência para tomada de decisão.
 </p>
-
 </div>
 """,
         unsafe_allow_html=True,
@@ -1114,10 +965,8 @@ e inteligência para tomada de decisão.
     st.markdown(
         f"""
 <div class="data-limit">
-
 📊 Base operacional carregada com limite de
 <strong>{number(MAX_VISTORIAS)}</strong> vistorias.
-
 </div>
 """,
         unsafe_allow_html=True,
@@ -1151,17 +1000,11 @@ e inteligência para tomada de decisão.
     )
 
     st.markdown(
-        '<div class="section-title">'
-        'Performance operacional'
-        '</div>',
+        '<div class="section-title">Performance operacional</div>',
         unsafe_allow_html=True,
     )
 
     a, b = st.columns(2)
-
-    # --------------------------------------------------------
-    # GRÁFICO DIÁRIO
-    # --------------------------------------------------------
 
     if (
         not daily.empty
@@ -1180,9 +1023,7 @@ e inteligência para tomada de decisão.
         fig1.update_layout(
             plot_bgcolor="#1e293b",
             paper_bgcolor="#1e293b",
-            font=dict(
-                color="#94a3b8"
-            ),
+            font=dict(color="#94a3b8"),
         )
 
         a.plotly_chart(
@@ -1193,13 +1034,8 @@ e inteligência para tomada de decisão.
     else:
 
         a.info(
-            "Não existem dados suficientes "
-            "para o gráfico diário."
+            "Não existem dados suficientes para o gráfico diário."
         )
-
-    # --------------------------------------------------------
-    # PERFORMANCE ECV
-    # --------------------------------------------------------
 
     if (
         not perf.empty
@@ -1218,9 +1054,7 @@ e inteligência para tomada de decisão.
         fig2.update_layout(
             plot_bgcolor="#1e293b",
             paper_bgcolor="#1e293b",
-            font=dict(
-                color="#94a3b8"
-            ),
+            font=dict(color="#94a3b8"),
             showlegend=False,
         )
 
@@ -1237,7 +1071,7 @@ e inteligência para tomada de decisão.
 
 
 # ============================================================
-# VISTORIAS
+# VISTORIAS — VERSÃO PROFISSIONAL
 # ============================================================
 
 elif page == "Vistorias":
@@ -1245,13 +1079,11 @@ elif page == "Vistorias":
     st.markdown(
         """
 <div class="hero">
-
-<h1>Vistorias</h1>
-
+<h1>🚗 Vistorias</h1>
 <p>
-Pesquisa, filtros e análise dos registros operacionais.
+Monitoramento operacional, filtros avançados e análise
+detalhada das inspeções realizadas.
 </p>
-
 </div>
 """,
         unsafe_allow_html=True,
@@ -1260,10 +1092,8 @@ Pesquisa, filtros e análise dos registros operacionais.
     st.markdown(
         f"""
 <div class="data-limit">
-
-📦 Limite atual da consulta:
+📦 Consulta atual limitada a
 <strong>{number(MAX_VISTORIAS)}</strong> registros.
-
 </div>
 """,
         unsafe_allow_html=True,
@@ -1275,11 +1105,6 @@ Pesquisa, filtros e análise dos registros operacionais.
             "A API não retornou registros de vistoria."
         )
 
-        st.info(
-            "A tela está pronta para receber os dados "
-            "assim que o endpoint /vistorias retornar registros."
-        )
-
         st.code(
             f"GET {API_URL}/vistorias?limit={MAX_VISTORIAS}",
             language="text",
@@ -1287,31 +1112,31 @@ Pesquisa, filtros e análise dos registros operacionais.
 
     else:
 
+        # ====================================================
+        # FILTROS
+        # ====================================================
+
         st.markdown(
-            '<div class="section-title">'
-            '🔎 Pesquisa e filtros'
-            '</div>',
+            '<div class="section-title">🔎 Filtros de pesquisa</div>',
             unsafe_allow_html=True,
         )
 
-        busca = st.text_input(
-            "Pesquisar",
-            placeholder="Digite placa ou ID da vistoria...",
-            key="busca_vistoria",
-        )
+        f1, f2, f3, f4 = st.columns(4)
 
-        c1, c2, c3 = st.columns(3)
+        with f1:
 
-        with c1:
+            busca = st.text_input(
+                "Pesquisar",
+                placeholder="Placa ou ID...",
+                key="busca_vistoria",
+            )
+
+        with f2:
 
             ecv_values = sorted(
                 [
-                    x
-                    for x in
-                    df["ecv"]
-                    .dropna()
-                    .unique()
-                    .tolist()
+                    x for x in
+                    df["ecv"].dropna().unique().tolist()
                     if str(x).strip()
                 ]
             )
@@ -1322,16 +1147,12 @@ Pesquisa, filtros e análise dos registros operacionais.
                 key="filtro_ecv",
             )
 
-        with c2:
+        with f3:
 
             city_values = sorted(
                 [
-                    x
-                    for x in
-                    df["cidade"]
-                    .dropna()
-                    .unique()
-                    .tolist()
+                    x for x in
+                    df["cidade"].dropna().unique().tolist()
                     if str(x).strip()
                 ]
             )
@@ -1342,39 +1163,47 @@ Pesquisa, filtros e análise dos registros operacionais.
                 key="filtro_cidade",
             )
 
-        with c3:
+        with f4:
+
+            state_values = sorted(
+                [
+                    x for x in
+                    df["estado"].dropna().unique().tolist()
+                    if str(x).strip()
+                ]
+            )
+
+            state_filter = st.selectbox(
+                "🗺️ Estado",
+                ["Todos"] + state_values,
+                key="filtro_estado",
+            )
+
+        f5, f6, f7, f8 = st.columns(4)
+
+        with f5:
 
             type_values = sorted(
                 [
-                    x
-                    for x in
-                    df["tipo_vistoria"]
-                    .dropna()
-                    .unique()
-                    .tolist()
+                    x for x in
+                    df["tipo_vistoria"].dropna().unique().tolist()
                     if str(x).strip()
                 ]
             )
 
             type_filter = st.multiselect(
-                "📋 Tipo",
+                "📋 Tipo de vistoria",
                 type_values,
                 default=type_values,
                 key="filtro_tipo",
             )
 
-        c4, c5, c6 = st.columns(3)
-
-        with c4:
+        with f6:
 
             result_values = sorted(
                 [
-                    x
-                    for x in
-                    df["resultado"]
-                    .dropna()
-                    .unique()
-                    .tolist()
+                    x for x in
+                    df["resultado"].dropna().unique().tolist()
                     if str(x).strip()
                 ]
             )
@@ -1386,7 +1215,7 @@ Pesquisa, filtros e análise dos registros operacionais.
                 key="filtro_resultado",
             )
 
-        with c5:
+        with f7:
 
             valid_dates = df["data_dt"].dropna()
 
@@ -1397,10 +1226,7 @@ Pesquisa, filtros e análise dos registros operacionais.
 
                 date_filter = st.date_input(
                     "📅 Período",
-                    value=(
-                        min_date,
-                        max_date,
-                    ),
+                    value=(min_date, max_date),
                     min_value=min_date,
                     max_value=max_date,
                     key="filtro_periodo",
@@ -1410,28 +1236,18 @@ Pesquisa, filtros e análise dos registros operacionais.
 
                 date_filter = None
 
-                st.caption(
-                    "Período indisponível"
-                )
-
-        with c6:
+        with f8:
 
             display_limit = st.selectbox(
                 "📊 Registros exibidos",
-                [
-                    25,
-                    50,
-                    100,
-                    250,
-                    500,
-                ],
+                [25, 50, 100, 250, 500],
                 index=1,
                 key="limite_tabela",
             )
 
-        # ----------------------------------------------------
-        # FILTROS
-        # ----------------------------------------------------
+        # ====================================================
+        # APLICAÇÃO DOS FILTROS
+        # ====================================================
 
         filtered = df.copy()
 
@@ -1475,24 +1291,27 @@ Pesquisa, filtros e análise dos registros operacionais.
                 filtered["cidade"] == city_filter
             ]
 
+        if state_filter != "Todos":
+
+            filtered = filtered[
+                filtered["estado"] == state_filter
+            ]
+
         if type_filter:
 
             filtered = filtered[
-                filtered["tipo_vistoria"].isin(
-                    type_filter
-                )
+                filtered["tipo_vistoria"].isin(type_filter)
             ]
 
         if result_filter:
 
             filtered = filtered[
-                filtered["resultado"].isin(
-                    result_filter
-                )
+                filtered["resultado"].isin(result_filter)
             ]
 
         if (
             date_filter
+            and isinstance(date_filter, tuple)
             and len(date_filter) == 2
         ):
 
@@ -1511,13 +1330,13 @@ Pesquisa, filtros e análise dos registros operacionais.
                 )
             ]
 
-        # ----------------------------------------------------
+        # ====================================================
         # KPIs
-        # ----------------------------------------------------
+        # ====================================================
 
         total_filtrado = len(filtered)
 
-        resultados_lower = (
+        resultado_normalizado = (
             filtered["resultado"]
             .astype(str)
             .str.lower()
@@ -1525,7 +1344,7 @@ Pesquisa, filtros e análise dos registros operacionais.
         )
 
         aprovados = int(
-            resultados_lower
+            resultado_normalizado
             .isin(
                 [
                     "aprovado",
@@ -1538,7 +1357,7 @@ Pesquisa, filtros e análise dos registros operacionais.
         )
 
         reprovados = int(
-            resultados_lower
+            resultado_normalizado
             .isin(
                 [
                     "reprovado",
@@ -1550,50 +1369,202 @@ Pesquisa, filtros e análise dos registros operacionais.
             .sum()
         )
 
+        taxa_aprovacao_filtro = (
+            aprovados / total_filtrado * 100
+            if total_filtrado
+            else 0
+        )
+
+        taxa_reprovacao_filtro = (
+            reprovados / total_filtrado * 100
+            if total_filtrado
+            else 0
+        )
+
+        tempo_medio_filtro = (
+            filtered["tempo_minutos"]
+            .mean()
+            if not filtered.empty
+            else 0
+        )
+
         faturamento_filtrado = (
             filtered["valor"]
             .fillna(0)
             .sum()
         )
 
-        k1, k2, k3, k4 = st.columns(4)
+        st.markdown(
+            '<div class="section-title">📊 Indicadores filtrados</div>',
+            unsafe_allow_html=True,
+        )
+
+        k1, k2, k3, k4, k5, k6 = st.columns(6)
 
         k1.metric(
-            "Registros",
+            "Vistorias",
             number(total_filtrado),
         )
 
         k2.metric(
-            "Aprovação",
-            (
-                f"{aprovados / total_filtrado * 100:.1f}%"
-                if total_filtrado
-                else "0,0%"
-            ),
+            "Aprovadas",
+            number(aprovados),
         )
 
         k3.metric(
-            "Reprovação",
-            (
-                f"{reprovados / total_filtrado * 100:.1f}%"
-                if total_filtrado
-                else "0,0%"
-            ),
+            "Reprovadas",
+            number(reprovados),
         )
 
         k4.metric(
+            "Taxa aprovação",
+            f"{taxa_aprovacao_filtro:.1f}%",
+        )
+
+        k5.metric(
+            "Tempo médio",
+            f"{safe_float(tempo_medio_filtro):.1f} min",
+        )
+
+        k6.metric(
             "Faturamento",
             money(faturamento_filtrado),
         )
 
-        # ----------------------------------------------------
+        # ====================================================
+        # GRÁFICOS
+        # ====================================================
+
+        if not filtered.empty:
+
+            st.markdown(
+                '<div class="section-title">📈 Análise operacional</div>',
+                unsafe_allow_html=True,
+            )
+
+            g1, g2 = st.columns(2)
+
+            # -----------------------------------------------
+            # RESULTADOS
+            # -----------------------------------------------
+
+            result_chart = (
+                filtered["resultado"]
+                .value_counts()
+                .reset_index()
+            )
+
+            result_chart.columns = [
+                "resultado",
+                "quantidade",
+            ]
+
+            fig_result = px.pie(
+                result_chart,
+                names="resultado",
+                values="quantidade",
+                hole=.55,
+                title="Distribuição dos resultados",
+            )
+
+            fig_result.update_layout(
+                plot_bgcolor="#1e293b",
+                paper_bgcolor="#1e293b",
+                font=dict(color="#94a3b8"),
+            )
+
+            g1.plotly_chart(
+                fig_result,
+                use_container_width=True,
+            )
+
+            # -----------------------------------------------
+            # TIPOS
+            # -----------------------------------------------
+
+            type_chart = (
+                filtered["tipo_vistoria"]
+                .value_counts()
+                .reset_index()
+            )
+
+            type_chart.columns = [
+                "tipo_vistoria",
+                "quantidade",
+            ]
+
+            fig_type = px.bar(
+                type_chart,
+                x="tipo_vistoria",
+                y="quantidade",
+                text_auto=True,
+                title="Vistorias por tipo",
+            )
+
+            fig_type.update_layout(
+                plot_bgcolor="#1e293b",
+                paper_bgcolor="#1e293b",
+                font=dict(color="#94a3b8"),
+                showlegend=False,
+            )
+
+            g2.plotly_chart(
+                fig_type,
+                use_container_width=True,
+            )
+
+            # -----------------------------------------------
+            # PERFORMANCE ECV
+            # -----------------------------------------------
+
+            ecv_analysis = (
+                filtered
+                .groupby("ecv")
+                .agg(
+                    vistorias=("id", "count"),
+                    tempo_medio=("tempo_minutos", "mean"),
+                    faturamento=("valor", "sum"),
+                )
+                .reset_index()
+                .sort_values(
+                    "vistorias",
+                    ascending=False,
+                )
+            )
+
+            if not ecv_analysis.empty:
+
+                st.markdown(
+                    '<div class="section-title">🏢 Performance por ECV</div>',
+                    unsafe_allow_html=True,
+                )
+
+                fig_ecv = px.bar(
+                    ecv_analysis,
+                    x="ecv",
+                    y="vistorias",
+                    text_auto=True,
+                    title="Volume de vistorias por ECV",
+                )
+
+                fig_ecv.update_layout(
+                    plot_bgcolor="#1e293b",
+                    paper_bgcolor="#1e293b",
+                    font=dict(color="#94a3b8"),
+                    showlegend=False,
+                )
+
+                st.plotly_chart(
+                    fig_ecv,
+                    use_container_width=True,
+                )
+
+        # ====================================================
         # EXPORTAÇÃO
-        # ----------------------------------------------------
+        # ====================================================
 
         st.markdown(
-            '<div class="section-title">'
-            '📋 Resultado da pesquisa'
-            '</div>',
+            '<div class="section-title">📋 Resultado da pesquisa</div>',
             unsafe_allow_html=True,
         )
 
@@ -1601,14 +1572,19 @@ Pesquisa, filtros e análise dos registros operacionais.
 
         with e1:
 
+            export_df = filtered.copy()
+
+            if "data_dt" in export_df.columns:
+                export_df = export_df.drop(
+                    columns=["data_dt"]
+                )
+
             csv_data = (
-                filtered
+                export_df
                 .to_csv(
                     index=False
                 )
-                .encode(
-                    "utf-8-sig"
-                )
+                .encode("utf-8-sig")
             )
 
             st.download_button(
@@ -1622,20 +1598,20 @@ Pesquisa, filtros e análise dos registros operacionais.
         with e2:
 
             st.caption(
-                f"Encontrados "
-                f"{number(total_filtrado)} "
-                f"registros."
+                f"Encontrados {number(total_filtrado)} registros."
             )
 
-        # ----------------------------------------------------
+        # ====================================================
         # TABELA
-        # ----------------------------------------------------
+        # ====================================================
 
         preferred_columns = [
             "id",
+            "ecv_id",
             "data_vistoria",
             "ecv",
             "cidade",
+            "estado",
             "placa",
             "tipo_vistoria",
             "resultado",
@@ -1709,27 +1685,18 @@ elif page == "Qualidade":
     st.markdown(
         """
 <div class="hero">
-
 <h1>Qualidade dos Dados</h1>
-
 <p>
 Diagnóstico da confiabilidade da base operacional.
 </p>
-
 </div>
 """,
         unsafe_allow_html=True,
     )
 
-    quality_data = (
-        quality_response.get("data")
-        or {}
-    )
+    quality_data = quality_response.get("data") or {}
 
-    if not isinstance(
-        quality_data,
-        dict,
-    ):
+    if not isinstance(quality_data, dict):
 
         st.info(
             "A API não retornou informações de qualidade."
@@ -1795,13 +1762,10 @@ elif page == "IA & Insights":
     st.markdown(
         """
 <div class="hero">
-
 <h1>IA & Insights</h1>
-
 <p>
 Inteligência artificial aplicada aos dados operacionais.
 </p>
-
 </div>
 """,
         unsafe_allow_html=True,
@@ -1810,11 +1774,9 @@ Inteligência artificial aplicada aos dados operacionais.
     st.markdown(
         f"""
 <div class="data-limit">
-
 🤖 O Copilot está analisando até
 <strong>{number(MAX_VISTORIAS)}</strong>
 vistorias carregadas da base.
-
 </div>
 """,
         unsafe_allow_html=True,
@@ -1844,17 +1806,13 @@ vistorias carregadas da base.
     )
 
     st.markdown(
-        '<div class="section-title">'
-        '💬 Copilot de Dados'
-        '</div>',
+        '<div class="section-title">💬 Copilot de Dados</div>',
         unsafe_allow_html=True,
     )
 
     question = st.text_input(
         "Pergunta",
-        placeholder=(
-            "Qual ECV teve melhor desempenho?"
-        ),
+        placeholder="Qual ECV teve melhor desempenho?",
         key="copilot_question",
     )
 
@@ -1873,8 +1831,7 @@ vistorias carregadas da base.
         elif df.empty:
 
             st.warning(
-                "Não existem dados de vistorias "
-                "disponíveis para análise."
+                "Não existem dados de vistorias disponíveis."
             )
 
         else:
@@ -1895,15 +1852,10 @@ vistorias carregadas da base.
                 st.markdown(
                     f"""
 <div class="card">
-
-<span class="badge">
-COPILOT
-</span>
-
+<span class="badge">COPILOT</span>
 <div style="margin-top:1rem">
 {html.escape(str(answer))}
 </div>
-
 </div>
 """,
                     unsafe_allow_html=True,
@@ -1929,13 +1881,10 @@ elif page == "ECVs":
     st.markdown(
         """
 <div class="hero">
-
 <h1>Gestão de ECVs</h1>
-
 <p>
 Visão consolidada das Empresas Credenciadas de Vistoria.
 </p>
-
 </div>
 """,
         unsafe_allow_html=True,
@@ -1970,13 +1919,10 @@ elif page == "Automações":
     st.markdown(
         """
 <div class="hero">
-
 <h1>Central de Automações</h1>
-
 <p>
 Monitoramento das regras e execuções automatizadas.
 </p>
-
 </div>
 """,
         unsafe_allow_html=True,
@@ -2030,14 +1976,11 @@ elif page == "API":
     st.markdown(
         """
 <div class="hero">
-
 <h1>API & Integrações</h1>
-
 <p>
 Camada REST para integração com sistemas externos,
 BI e parceiros.
 </p>
-
 </div>
 """,
         unsafe_allow_html=True,
@@ -2061,9 +2004,7 @@ BI e parceiros.
     )
 
     st.markdown(
-        '<div class="section-title">'
-        'Endpoints'
-        '</div>',
+        '<div class="section-title">Endpoints</div>',
         unsafe_allow_html=True,
     )
 
@@ -2083,15 +2024,10 @@ BI e parceiros.
     ]
 
     for endpoint in endpoints:
-
-        st.code(
-            endpoint
-        )
+        st.code(endpoint)
 
     st.markdown(
-        '<div class="section-title">'
-        '⚙️ Configuração de dados'
-        '</div>',
+        '<div class="section-title">⚙️ Configuração de dados</div>',
         unsafe_allow_html=True,
     )
 
@@ -2100,7 +2036,7 @@ BI e parceiros.
 O frontend está configurado para solicitar até
 {number(MAX_VISTORIAS)} vistorias por consulta.
 
-Para alterar o limite, defina a variável de ambiente:
+Para alterar o limite, defina:
 
 ECV_MAX_VISTORIAS
 
@@ -2120,13 +2056,10 @@ elif page == "Power BI":
     st.markdown(
         """
 <div class="hero">
-
 <h1>Power BI</h1>
-
 <p>
 Integração analítica para consumo dos dados da plataforma.
 </p>
-
 </div>
 """,
         unsafe_allow_html=True,
@@ -2139,13 +2072,10 @@ Integração analítica para consumo dos dados da plataforma.
         st.markdown(
             """
 <div class="card">
-
 <h3>🚗 Vistorias</h3>
-
 <div class="small">
 Dados operacionais das vistorias.
 </div>
-
 </div>
 """,
             unsafe_allow_html=True,
@@ -2162,13 +2092,10 @@ Dados operacionais das vistorias.
         st.markdown(
             """
 <div class="card">
-
 <h3>🏢 ECVs</h3>
-
 <div class="small">
 Dados consolidados das ECVs.
 </div>
-
 </div>
 """,
             unsafe_allow_html=True,
@@ -2185,13 +2112,10 @@ Dados consolidados das ECVs.
         st.markdown(
             """
 <div class="card">
-
 <h3>📊 Indicadores</h3>
-
 <div class="small">
 KPIs preparados para análise.
 </div>
-
 </div>
 """,
             unsafe_allow_html=True,
@@ -2204,9 +2128,7 @@ KPIs preparados para análise.
         )
 
     st.markdown(
-        '<div class="section-title">'
-        '📌 Integração'
-        '</div>',
+        '<div class="section-title">📌 Integração</div>',
         unsafe_allow_html=True,
     )
 
@@ -2228,13 +2150,10 @@ elif page == "Configurações":
     st.markdown(
         """
 <div class="hero">
-
 <h1>Configurações</h1>
-
 <p>
 Preferências da plataforma ECV Intelligence.
 </p>
-
 </div>
 """,
         unsafe_allow_html=True,
@@ -2243,7 +2162,6 @@ Preferências da plataforma ECV Intelligence.
     st.markdown(
         f"""
 <div class="card">
-
 <h3>📊 Limite de dados</h3>
 
 <div class="small">
@@ -2253,7 +2171,7 @@ Limite atual de vistorias:
 
 <br><br>
 
-Esse valor é controlado pela variável de ambiente:
+Variável de ambiente:
 
 <strong>ECV_MAX_VISTORIAS</strong>
 
@@ -2264,7 +2182,6 @@ Exemplo:
 <strong>ECV_MAX_VISTORIAS=10000</strong>
 
 </div>
-
 </div>
 """,
         unsafe_allow_html=True,
@@ -2318,5 +2235,45 @@ Exemplo:
 st.divider()
 
 st.caption(
-    "ECV Intelligence • Analytics, IA e Automação"
+    "ECV Intelligence • Analytics, IA e Automação • V3"
 )
+```
+
+### O que foi corrigido neste `app.py`
+
+A principal alteração está na aba **Vistorias**. Agora ela reconhece corretamente o retorno que você mostrou:
+
+```text
+id
+ecv_id
+ecv
+cidade
+estado
+placa
+tipo_vistoria
+data_vistoria
+resultado
+tempo_minutos
+valor
+```
+
+E a tela passa a ter:
+
+* **6 KPIs**
+* filtro por **placa/ID**
+* filtro por **ECV**
+* filtro por **cidade**
+* filtro por **estado**
+* filtro por **tipo**
+* filtro por **resultado**
+* filtro por **período**
+* gráfico de **Aprovado × Reprovado**
+* gráfico de **tipos de vistoria**
+* gráfico de **volume por ECV**
+* tempo médio
+* faturamento
+* exportação CSV
+* tabela com `ecv_id`
+* limite de 5.000 registros preservado
+
+**Pode substituir seu `app.py` por esse código.** Depois faça o commit/push no GitHub e o Streamlit deverá fazer o novo deploy.
