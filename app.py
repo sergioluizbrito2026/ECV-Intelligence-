@@ -829,7 +829,7 @@ if page == "Visão Geral":
     performance_response = get_api_analytics_ecvs()
     daily_response = get_api_daily()
 
-```python
+
 # ============================================================
 # QUALIDADE
 # ============================================================
