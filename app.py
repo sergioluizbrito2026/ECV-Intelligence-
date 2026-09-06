@@ -2237,7 +2237,6 @@ st.divider()
 st.caption(
     "ECV Intelligence • Analytics, IA e Automação • V3"
 )
-```
 
 ### O que foi corrigido neste `app.py`
 
