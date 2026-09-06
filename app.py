@@ -1461,35 +1461,31 @@ tempo médio, faturamento e desempenho operacional.
     )
         # ----------------------------------------------------
 
-        if "ecv" in df.columns:
+        elif page == "IA & Insights":
 
-            ranking_ecv = (
-                df.groupby("ecv")
-                .agg(
-                    vistorias=("id", "count"),
-                    tempo_medio=("tempo_minutos", "mean"),
-                    faturamento=("valor", "sum"),
-                )
-                .reset_index()
-            )
+    vistorias_ia_response = get_api_vistorias()
+    ecvs_ia_response = get_api_ecvs()
+    performance_ia_response = get_api_analytics_ecvs()
 
-            ranking_ecv = ranking_ecv[
-                ranking_ecv["ecv"].astype(str).str.strip() != ""
-            ]
+    df_ia = build_vistorias_dataframe(
+        vistorias_ia_response.get("data")
+        if vistorias_ia_response.get("ok")
+        else {}
+    )
 
-            if not ranking_ecv.empty:
+    ecvs_ia_df = build_ecvs_dataframe(
+        ecvs_ia_response.get("data")
+        if ecvs_ia_response.get("ok")
+        else {}
+    )
 
-                melhor_ecv = ranking_ecv.sort_values(
-                    "vistorias",
-                    ascending=False,
-                ).iloc[0]
+    perf_ia = build_performance_dataframe(
+        performance_ia_response.get("data")
+        if performance_ia_response.get("ok")
+        else {}
+    )
 
-                insights.append(
-                    f"🏢 **ECV com maior volume:** "
-                    f"{melhor_ecv['ecv']} com "
-                    f"{number(melhor_ecv['vistorias'])} "
-                    f"vistorias."
-                )
+    # restante da IA usando df_ia
 
         # ----------------------------------------------------
         # TIPO MAIS UTILIZADO
