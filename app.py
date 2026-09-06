@@ -591,38 +591,29 @@ def build_vistorias_dataframe(data):
 
   return df
 
-    # --------------------------------------------------------
+   # --------------------------------------------------------
     # NORMALIZAÇÃO
     # --------------------------------------------------------
 
     rename_map = {
-
         "date": "data_vistoria",
         "datetime": "data_vistoria",
         "created_at": "data_vistoria",
-
         "type": "tipo_vistoria",
         "tipo": "tipo_vistoria",
-
         "result": "resultado",
         "status": "resultado",
-
         "time": "tempo_minutos",
         "tempo": "tempo_minutos",
-
         "amount": "valor",
         "price": "valor",
-
         "ecv_nome": "ecv",
         "nome_ecv": "ecv",
         "empresa": "ecv",
-
         "city": "cidade",
         "municipio": "cidade",
-
         "plate": "placa",
         "vehicle_plate": "placa",
-
         "inspection_id": "id",
     }
 
