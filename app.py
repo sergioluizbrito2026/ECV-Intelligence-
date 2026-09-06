@@ -2228,21 +2228,4 @@ Exemplo:
         )
 
 
-# ============================================================
-# RODAPÉ
-# ============================================================
-
-st.divider()
-
-st.caption(
-    "ECV Intelligence • Analytics, IA e Automação • V3"
-)
-
-
-st.divider()
-
-st.caption(
-    "ECV Intelligence • Analytics, IA e Automação • V3"
-)    
-    
     
