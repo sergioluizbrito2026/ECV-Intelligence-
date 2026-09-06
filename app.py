@@ -1,7 +1,7 @@
-
+```python
 import html
 import os
-from datetime import datetime, date
+from datetime import date
 
 import pandas as pd
 import plotly.express as px
@@ -41,8 +41,6 @@ MAX_VISTORIAS = int(
 
 if MAX_VISTORIAS < 100:
     MAX_VISTORIAS = 100
-
-PAGE_SIZE = 50
 
 
 # ============================================================
@@ -182,15 +180,6 @@ footer {
     margin: .65rem 0;
 }
 
-.badge {
-    display: inline-block;
-    padding: .22rem .55rem;
-    border-radius: 999px;
-    font-size: .72rem;
-    font-weight: 700;
-    background: #334155;
-}
-
 .small {
     font-size: .82rem;
     color: #94a3b8;
@@ -204,11 +193,6 @@ footer {
     color: #94a3b8;
     font-size: .8rem;
     margin-bottom: 1rem;
-}
-
-.kpi-subtitle {
-    color: #64748b;
-    font-size: .72rem;
 }
 
 hr {
@@ -247,13 +231,6 @@ def money(value):
 def safe_float(value, default=0.0):
     try:
         return float(value)
-    except Exception:
-        return default
-
-
-def safe_int(value, default=0):
-    try:
-        return int(float(value))
     except Exception:
         return default
 
@@ -771,12 +748,7 @@ page = st.session_state.page
 
 health = get_api_health()
 
-api_online = health.get(
-    "ok",
-    False,
-)
-
-if not api_online:
+if not health.get("ok", False):
 
     st.markdown(
         """
@@ -788,12 +760,14 @@ if not api_online:
         unsafe_allow_html=True,
     )
 
-    st.error("A API não respondeu corretamente.")
+    st.error(
+        "A API não respondeu corretamente."
+    )
 
-    error_message = health.get("error")
-
-    if error_message:
-        st.caption(error_message)
+    if health.get("error"):
+        st.caption(
+            health.get("error")
+        )
 
     st.link_button(
         "Abrir API",
@@ -805,17 +779,40 @@ if not api_online:
 
 
 # ============================================================
-# RESPOSTAS
+# RESPOSTAS PADRÃO
 # ============================================================
 
-dashboard_response = {"data": {}}
-indicadores_response = {"data": {}}
-vistorias_response = {"data": {}}
-ecvs_response = {"data": {}}
-performance_response = {"data": {}}
-quality_response = {"data": {}}
-daily_response = {"data": {}}
-automations_response = {"data": {}}
+dashboard_response = {
+    "data": {}
+}
+
+indicadores_response = {
+    "data": {}
+}
+
+vistorias_response = {
+    "data": {}
+}
+
+ecvs_response = {
+    "data": {}
+}
+
+performance_response = {
+    "data": {}
+}
+
+quality_response = {
+    "data": {}
+}
+
+daily_response = {
+    "data": {}
+}
+
+automations_response = {
+    "data": {}
+}
 
 
 # ============================================================
@@ -825,1024 +822,35 @@ automations_response = {"data": {}}
 if page == "Visão Geral":
 
     dashboard_response = get_api_dashboard()
+
     indicadores_response = get_api_indicadores()
+
     performance_response = get_api_analytics_ecvs()
+
     daily_response = get_api_daily()
 
+elif page == "Vistorias":
 
-# ============================================================
-# QUALIDADE
-# ============================================================
+    vistorias_response = get_api_vistorias()
 
 elif page == "Qualidade":
 
-    st.markdown(
-        """
-<div class="hero">
+    vistorias_response = get_api_vistorias()
 
-<h1>Qualidade dos Dados</h1>
-
-<p>
-Diagnóstico da confiabilidade, consistência e integridade
-da base operacional das vistorias.
-</p>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    # --------------------------------------------------------
-    # GARANTE QUE EXISTE UMA BASE PARA ANÁLISE
-    # --------------------------------------------------------
-
-    quality_df = df.copy()
-
-    if quality_df.empty:
-
-        st.warning(
-            "Não existem dados de vistorias disponíveis "
-            "para análise de qualidade."
-        )
-
-        st.stop()
-
-    # --------------------------------------------------------
-    # NORMALIZAÇÃO
-    # --------------------------------------------------------
-
-    total_registros = len(quality_df)
-
-    # --------------------------------------------------------
-    # CAMPOS VAZIOS
-    # --------------------------------------------------------
-
-    campos_criticos = [
-        "id",
-        "ecv_id",
-        "ecv",
-        "cidade",
-        "placa",
-        "tipo_vistoria",
-        "data_vistoria",
-        "resultado",
-        "tempo_minutos",
-        "valor",
-    ]
-
-    campos_existentes = [
-        c for c in campos_criticos
-        if c in quality_df.columns
-    ]
-
-    if campos_existentes:
-
-        campos_vazios = int(
-            quality_df[campos_existentes]
-            .isna()
-            .sum()
-            .sum()
-        )
-
-        for coluna in campos_existentes:
-
-            if quality_df[coluna].dtype == "object":
-
-                campos_vazios += int(
-                    quality_df[coluna]
-                    .astype(str)
-                    .str.strip()
-                    .eq("")
-                    .sum()
-                )
-
-    else:
-
-        campos_vazios = 0
-
-    # --------------------------------------------------------
-    # DUPLICADOS
-    # --------------------------------------------------------
-
-    if "id" in quality_df.columns:
-
-        duplicados_id = int(
-            quality_df["id"]
-            .duplicated()
-            .sum()
-        )
-
-    else:
-
-        duplicados_id = int(
-            quality_df.duplicated()
-            .sum()
-        )
-
-    # --------------------------------------------------------
-    # PLACAS INVÁLIDAS
-    # --------------------------------------------------------
-
-    placas_invalidas = 0
-
-    if "placa" in quality_df.columns:
-
-        placas = (
-            quality_df["placa"]
-            .fillna("")
-            .astype(str)
-            .str.upper()
-            .str.strip()
-        )
-
-        # Formatos aceitos:
-        # ABC-1234
-        # ABC1D23
-
-        formato_placa = (
-            placas.str.match(
-                r"^[A-Z]{3}-[0-9]{4}$"
-            )
-            |
-            placas.str.match(
-                r"^[A-Z]{3}[0-9][A-Z][0-9]{2}$"
-            )
-        )
-
-        placas_invalidas = int(
-            (~formato_placa).sum()
-        )
-
-    # --------------------------------------------------------
-    # ECVs SEM IDENTIFICAÇÃO
-    # --------------------------------------------------------
-
-    ecvs_sem_identificacao = 0
-
-    if "ecv" in quality_df.columns:
-
-        ecvs_sem_identificacao = int(
-            quality_df["ecv"]
-            .fillna("")
-            .astype(str)
-            .str.strip()
-            .eq("")
-            .sum()
-        )
-
-    # --------------------------------------------------------
-    # RESULTADOS INVÁLIDOS
-    # --------------------------------------------------------
-
-    resultados_invalidos = 0
-
-    if "resultado" in quality_df.columns:
-
-        resultados_validos = [
-            "aprovado",
-            "reprovado",
-        ]
-
-        resultados = (
-            quality_df["resultado"]
-            .fillna("")
-            .astype(str)
-            .str.lower()
-            .str.strip()
-        )
-
-        resultados_invalidos = int(
-            (~resultados.isin(resultados_validos))
-            .sum()
-        )
-
-    # --------------------------------------------------------
-    # TEMPOS INVÁLIDOS
-    # --------------------------------------------------------
-
-    tempos_invalidos = 0
-
-    if "tempo_minutos" in quality_df.columns:
-
-        tempos = pd.to_numeric(
-            quality_df["tempo_minutos"],
-            errors="coerce",
-        )
-
-        tempos_invalidos = int(
-            (
-                tempos.isna()
-                |
-                (tempos <= 0)
-            ).sum()
-        )
-
-    # --------------------------------------------------------
-    # VALORES INVÁLIDOS
-    # --------------------------------------------------------
-
-    valores_invalidos = 0
-
-    if "valor" in quality_df.columns:
-
-        valores = pd.to_numeric(
-            quality_df["valor"],
-            errors="coerce",
-        )
-
-        valores_invalidos = int(
-            (
-                valores.isna()
-                |
-                (valores < 0)
-            ).sum()
-        )
-
-    # --------------------------------------------------------
-    # ÍNDICE DE QUALIDADE
-    # --------------------------------------------------------
-
-    problemas = (
-        duplicados_id
-        + campos_vazios
-        + placas_invalidas
-        + resultados_invalidos
-        + tempos_invalidos
-        + valores_invalidos
-    )
-
-    if problemas == 0:
-
-        qualidade_score = 100.0
-
-    else:
-
-        penalidade = (
-            problemas
-            / max(
-                total_registros * 6,
-                1,
-            )
-        ) * 100
-
-        qualidade_score = max(
-            0.0,
-            100.0 - penalidade,
-        )
-
-    # --------------------------------------------------------
-    # STATUS
-    # --------------------------------------------------------
-
-    if qualidade_score >= 99:
-
-        status_qualidade = "Excelente"
-
-    elif qualidade_score >= 95:
-
-        status_qualidade = "Boa"
-
-    elif qualidade_score >= 85:
-
-        status_qualidade = "Atenção"
-
-    else:
-
-        status_qualidade = "Crítica"
-
-    # ========================================================
-    # KPIs PRINCIPAIS
-    # ========================================================
-
-    st.markdown(
-        '<div class="section-title">'
-        '📊 Indicadores de qualidade'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    q1, q2, q3, q4, q5, q6 = st.columns(6)
-
-    q1.metric(
-        "Registros",
-        number(total_registros),
-    )
-
-    q2.metric(
-        "Qualidade",
-        f"{qualidade_score:.1f}%",
-    )
-
-    q3.metric(
-        "Duplicados",
-        number(duplicados_id),
-    )
-
-    q4.metric(
-        "Campos vazios",
-        number(campos_vazios),
-    )
-
-    q5.metric(
-        "Placas inválidas",
-        number(placas_invalidas),
-    )
-
-    q6.metric(
-        "Resultado inválido",
-        number(resultados_invalidos),
-    )
-
-    # ========================================================
-    # STATUS DA BASE
-    # ========================================================
-
-    if status_qualidade == "Excelente":
-
-        st.success(
-            f"✅ Qualidade da base: {status_qualidade} "
-            f"— {qualidade_score:.1f}% dos dados estão consistentes."
-        )
-
-    elif status_qualidade == "Boa":
-
-        st.info(
-            f"ℹ️ Qualidade da base: {status_qualidade} "
-            f"— {qualidade_score:.1f}% dos dados estão consistentes."
-        )
-
-    elif status_qualidade == "Atenção":
-
-        st.warning(
-            f"⚠️ Qualidade da base: {status_qualidade} "
-            f"— existem inconsistências que merecem análise."
-        )
-
-    else:
-
-        st.error(
-            f"🚨 Qualidade da base: {status_qualidade} "
-            f"— existem problemas relevantes nos dados."
-        )
-
-    # ========================================================
-    # ANÁLISE DETALHADA
-    # ========================================================
-
-    st.markdown(
-        '<div class="section-title">'
-        '🔍 Diagnóstico detalhado'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    d1, d2 = st.columns(2)
-
-    with d1:
-
-        st.markdown(
-            """
-<div class="card">
-
-<h3>Integridade dos registros</h3>
-
-<div class="small">
-Verificações estruturais da base operacional.
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-        integridade = pd.DataFrame(
-            {
-                "Indicador": [
-                    "Registros duplicados",
-                    "Campos vazios",
-                    "Placas inválidas",
-                    "Resultados inválidos",
-                ],
-                "Ocorrências": [
-                    duplicados_id,
-                    campos_vazios,
-                    placas_invalidas,
-                    resultados_invalidos,
-                ],
-            }
-        )
-
-        st.dataframe(
-            integridade,
-            use_container_width=True,
-            hide_index=True,
-        )
-
-    with d2:
-
-        st.markdown(
-            """
-<div class="card">
-
-<h3>Validação operacional</h3>
-
-<div class="small">
-Verificações relacionadas aos dados das vistorias.
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-        operacional = pd.DataFrame(
-            {
-                "Indicador": [
-                    "Tempos inválidos",
-                    "Valores inválidos",
-                    "ECVs sem identificação",
-                ],
-                "Ocorrências": [
-                    tempos_invalidos,
-                    valores_invalidos,
-                    ecvs_sem_identificacao,
-                ],
-            }
-        )
-
-        st.dataframe(
-            operacional,
-            use_container_width=True,
-            hide_index=True,
-        )
-
-    # ========================================================
-    # GRÁFICO DE PROBLEMAS
-    # ========================================================
-
-    problemas_df = pd.DataFrame(
-        {
-            "Problema": [
-                "Duplicados",
-                "Campos vazios",
-                "Placas inválidas",
-                "Resultados inválidos",
-                "Tempos inválidos",
-                "Valores inválidos",
-            ],
-            "Quantidade": [
-                duplicados_id,
-                campos_vazios,
-                placas_invalidas,
-                resultados_invalidos,
-                tempos_invalidos,
-                valores_invalidos,
-            ],
-        }
-    )
-
-    problemas_df = problemas_df[
-        problemas_df["Quantidade"] > 0
-    ]
-
-    if not problemas_df.empty:
-
-        st.markdown(
-            '<div class="section-title">'
-            '📈 Ocorrências encontradas'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-
-        fig_quality = px.bar(
-            problemas_df,
-            x="Problema",
-            y="Quantidade",
-            text_auto=True,
-            title="Inconsistências identificadas na base",
-        )
-
-        fig_quality.update_layout(
-            plot_bgcolor="#1e293b",
-            paper_bgcolor="#1e293b",
-            font=dict(
-                color="#94a3b8"
-            ),
-            showlegend=False,
-        )
-
-        st.plotly_chart(
-            fig_quality,
-            use_container_width=True,
-        )
-
-    else:
-
-        st.success(
-            "✅ Nenhuma inconsistência foi encontrada "
-            "nos registros analisados."
-        )
-    # --------------------------------------------------------
-    # GARANTE QUE EXISTE UMA BASE PARA ANÁLISE
-    # --------------------------------------------------------
-
-    quality_df = df.copy()
-
-    if quality_df.empty:
-
-        st.warning(
-            "Não existem dados de vistorias disponíveis "
-            "para análise de qualidade."
-        )
-
-        st.stop()
-
-    # --------------------------------------------------------
-    # NORMALIZAÇÃO
-    # --------------------------------------------------------
-
-    total_registros = len(quality_df)
-
-    # --------------------------------------------------------
-    # CAMPOS VAZIOS
-    # --------------------------------------------------------
-
-    campos_criticos = [
-        "id",
-        "ecv_id",
-        "ecv",
-        "cidade",
-        "placa",
-        "tipo_vistoria",
-        "data_vistoria",
-        "resultado",
-        "tempo_minutos",
-        "valor",
-    ]
-
-    campos_existentes = [
-        c for c in campos_criticos
-        if c in quality_df.columns
-    ]
-
-    if campos_existentes:
-
-        campos_vazios = int(
-            quality_df[campos_existentes]
-            .isna()
-            .sum()
-            .sum()
-        )
-
-        for coluna in campos_existentes:
-
-            if quality_df[coluna].dtype == "object":
-
-                campos_vazios += int(
-                    quality_df[coluna]
-                    .astype(str)
-                    .str.strip()
-                    .eq("")
-                    .sum()
-                )
-
-    else:
-
-        campos_vazios = 0
-
-    # --------------------------------------------------------
-    # DUPLICADOS
-    # --------------------------------------------------------
-
-    if "id" in quality_df.columns:
-
-        duplicados_id = int(
-            quality_df["id"]
-            .duplicated()
-            .sum()
-        )
-
-    else:
-
-        duplicados_id = int(
-            quality_df.duplicated()
-            .sum()
-        )
-
-    # --------------------------------------------------------
-    # PLACAS INVÁLIDAS
-    # --------------------------------------------------------
-
-    placas_invalidas = 0
-
-    if "placa" in quality_df.columns:
-
-        placas = (
-            quality_df["placa"]
-            .fillna("")
-            .astype(str)
-            .str.upper()
-            .str.strip()
-        )
-
-        # Formatos aceitos:
-        # ABC-1234
-        # ABC1D23
-
-        formato_placa = (
-            placas.str.match(
-                r"^[A-Z]{3}-[0-9]{4}$"
-            )
-            |
-            placas.str.match(
-                r"^[A-Z]{3}[0-9][A-Z][0-9]{2}$"
-            )
-        )
-
-        placas_invalidas = int(
-            (~formato_placa).sum()
-        )
-
-    # --------------------------------------------------------
-    # ECVs SEM IDENTIFICAÇÃO
-    # --------------------------------------------------------
-
-    ecvs_sem_identificacao = 0
-
-    if "ecv" in quality_df.columns:
-
-        ecvs_sem_identificacao = int(
-            quality_df["ecv"]
-            .fillna("")
-            .astype(str)
-            .str.strip()
-            .eq("")
-            .sum()
-        )
-
-    # --------------------------------------------------------
-    # RESULTADOS INVÁLIDOS
-    # --------------------------------------------------------
-
-    resultados_invalidos = 0
-
-    if "resultado" in quality_df.columns:
-
-        resultados_validos = [
-            "aprovado",
-            "reprovado",
-        ]
-
-        resultados = (
-            quality_df["resultado"]
-            .fillna("")
-            .astype(str)
-            .str.lower()
-            .str.strip()
-        )
-
-        resultados_invalidos = int(
-            (~resultados.isin(resultados_validos))
-            .sum()
-        )
-
-    # --------------------------------------------------------
-    # TEMPOS INVÁLIDOS
-    # --------------------------------------------------------
-
-    tempos_invalidos = 0
-
-    if "tempo_minutos" in quality_df.columns:
-
-        tempos = pd.to_numeric(
-            quality_df["tempo_minutos"],
-            errors="coerce",
-        )
-
-        tempos_invalidos = int(
-            (
-                tempos.isna()
-                |
-                (tempos <= 0)
-            ).sum()
-        )
-
-    # --------------------------------------------------------
-    # VALORES INVÁLIDOS
-    # --------------------------------------------------------
-
-    valores_invalidos = 0
-
-    if "valor" in quality_df.columns:
-
-        valores = pd.to_numeric(
-            quality_df["valor"],
-            errors="coerce",
-        )
-
-        valores_invalidos = int(
-            (
-                valores.isna()
-                |
-                (valores < 0)
-            ).sum()
-        )
-
-    # --------------------------------------------------------
-    # ÍNDICE DE QUALIDADE
-    # --------------------------------------------------------
-
-    problemas = (
-        duplicados_id
-        + campos_vazios
-        + placas_invalidas
-        + resultados_invalidos
-        + tempos_invalidos
-        + valores_invalidos
-    )
-
-    if problemas == 0:
-
-        qualidade_score = 100.0
-
-    else:
-
-        penalidade = (
-            problemas
-            / max(
-                total_registros * 6,
-                1,
-            )
-        ) * 100
-
-        qualidade_score = max(
-            0.0,
-            100.0 - penalidade,
-        )
-
-    # --------------------------------------------------------
-    # STATUS
-    # --------------------------------------------------------
-
-    if qualidade_score >= 99:
-
-        status_qualidade = "Excelente"
-
-    elif qualidade_score >= 95:
-
-        status_qualidade = "Boa"
-
-    elif qualidade_score >= 85:
-
-        status_qualidade = "Atenção"
-
-    else:
-
-        status_qualidade = "Crítica"
-
-    # ========================================================
-    # KPIs PRINCIPAIS
-    # ========================================================
-
-    st.markdown(
-        '<div class="section-title">'
-        '📊 Indicadores de qualidade'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    q1, q2, q3, q4, q5, q6 = st.columns(6)
-
-    q1.metric(
-        "Registros",
-        number(total_registros),
-    )
-
-    q2.metric(
-        "Qualidade",
-        f"{qualidade_score:.1f}%",
-    )
-
-    q3.metric(
-        "Duplicados",
-        number(duplicados_id),
-    )
-
-    q4.metric(
-        "Campos vazios",
-        number(campos_vazios),
-    )
-
-    q5.metric(
-        "Placas inválidas",
-        number(placas_invalidas),
-    )
-
-    q6.metric(
-        "Resultado inválido",
-        number(resultados_invalidos),
-    )
-
-    # ========================================================
-    # STATUS DA BASE
-    # ========================================================
-
-    if status_qualidade == "Excelente":
-
-        st.success(
-            f"✅ Qualidade da base: {status_qualidade} "
-            f"— {qualidade_score:.1f}% dos dados estão consistentes."
-        )
-
-    elif status_qualidade == "Boa":
-
-        st.info(
-            f"ℹ️ Qualidade da base: {status_qualidade} "
-            f"— {qualidade_score:.1f}% dos dados estão consistentes."
-        )
-
-    elif status_qualidade == "Atenção":
-
-        st.warning(
-            f"⚠️ Qualidade da base: {status_qualidade} "
-            f"— existem inconsistências que merecem análise."
-        )
-
-    else:
-
-        st.error(
-            f"🚨 Qualidade da base: {status_qualidade} "
-            f"— existem problemas relevantes nos dados."
-        )
-
-    # ========================================================
-    # ANÁLISE DETALHADA
-    # ========================================================
-
-    st.markdown(
-        '<div class="section-title">'
-        '🔍 Diagnóstico detalhado'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    d1, d2 = st.columns(2)
-
-    with d1:
-
-        st.markdown(
-            """
-<div class="card">
-
-<h3>Integridade dos registros</h3>
-
-<div class="small">
-Verificações estruturais da base operacional.
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-        integridade = pd.DataFrame(
-            {
-                "Indicador": [
-                    "Registros duplicados",
-                    "Campos vazios",
-                    "Placas inválidas",
-                    "Resultados inválidos",
-                ],
-                "Ocorrências": [
-                    duplicados_id,
-                    campos_vazios,
-                    placas_invalidas,
-                    resultados_invalidos,
-                ],
-            }
-        )
-
-        st.dataframe(
-            integridade,
-            use_container_width=True,
-            hide_index=True,
-        )
-
-    with d2:
-
-        st.markdown(
-            """
-<div class="card">
-
-<h3>Validação operacional</h3>
-
-<div class="small">
-Verificações relacionadas aos dados das vistorias.
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-        operacional = pd.DataFrame(
-            {
-                "Indicador": [
-                    "Tempos inválidos",
-                    "Valores inválidos",
-                    "ECVs sem identificação",
-                ],
-                "Ocorrências": [
-                    tempos_invalidos,
-                    valores_invalidos,
-                    ecvs_sem_identificacao,
-                ],
-            }
-        )
-
-        st.dataframe(
-            operacional,
-            use_container_width=True,
-            hide_index=True,
-        )
-
-    # ========================================================
-    # GRÁFICO DE PROBLEMAS
-    # ========================================================
-
-    problemas_df = pd.DataFrame(
-        {
-            "Problema": [
-                "Duplicados",
-                "Campos vazios",
-                "Placas inválidas",
-                "Resultados inválidos",
-                "Tempos inválidos",
-                "Valores inválidos",
-            ],
-            "Quantidade": [
-                duplicados_id,
-                campos_vazios,
-                placas_invalidas,
-                resultados_invalidos,
-                tempos_invalidos,
-                valores_invalidos,
-            ],
-        }
-    )
-
-    problemas_df = problemas_df[
-        problemas_df["Quantidade"] > 0
-    ]
-
-    if not problemas_df.empty:
-
-        st.markdown(
-            '<div class="section-title">'
-            '📈 Ocorrências encontradas'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-
-        fig_quality = px.bar(
-            problemas_df,
-            x="Problema",
-            y="Quantidade",
-            text_auto=True,
-            title="Inconsistências identificadas na base",
-        )
-
-        fig_quality.update_layout(
-            plot_bgcolor="#1e293b",
-            paper_bgcolor="#1e293b",
-            font=dict(
-                color="#94a3b8"
-            ),
-            showlegend=False,
-        )
-
-        st.plotly_chart(
-            fig_quality,
-            use_container_width=True,
-        )
-
-    else:
-
-        st.success(
-            "✅ Nenhuma inconsistência foi encontrada "
-            "nos registros analisados."
-        )
-
+    quality_response = get_api_quality()
 
 elif page == "IA & Insights":
 
     vistorias_response = get_api_vistorias()
+
     ecvs_response = get_api_ecvs()
+
     performance_response = get_api_analytics_ecvs()
 
 elif page == "ECVs":
 
     ecvs_response = get_api_ecvs()
+
     performance_response = get_api_analytics_ecvs()
 
 elif page == "Automações":
@@ -1872,11 +880,18 @@ daily = build_daily_dataframe(
 
 
 # ============================================================
-# KPI
+# KPIs
 # ============================================================
 
-dashboard_data = dashboard_response.get("data") or {}
-indicadores_data = indicadores_response.get("data") or {}
+dashboard_data = (
+    dashboard_response.get("data")
+    or {}
+)
+
+indicadores_data = (
+    indicadores_response.get("data")
+    or {}
+)
 
 
 def extract_kpi(keys, default=0):
@@ -1997,7 +1012,9 @@ e inteligência para tomada de decisão.
     )
 
     st.markdown(
-        '<div class="section-title">Performance operacional</div>',
+        '<div class="section-title">'
+        'Performance operacional'
+        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -2020,7 +1037,9 @@ e inteligência para tomada de decisão.
         fig1.update_layout(
             plot_bgcolor="#1e293b",
             paper_bgcolor="#1e293b",
-            font=dict(color="#94a3b8"),
+            font=dict(
+                color="#94a3b8"
+            ),
         )
 
         a.plotly_chart(
@@ -2031,7 +1050,8 @@ e inteligência para tomada de decisão.
     else:
 
         a.info(
-            "Não existem dados suficientes para o gráfico diário."
+            "Não existem dados suficientes "
+            "para o gráfico diário."
         )
 
     if (
@@ -2051,7 +1071,9 @@ e inteligência para tomada de decisão.
         fig2.update_layout(
             plot_bgcolor="#1e293b",
             paper_bgcolor="#1e293b",
-            font=dict(color="#94a3b8"),
+            font=dict(
+                color="#94a3b8"
+            ),
             showlegend=False,
         )
 
@@ -2068,7 +1090,7 @@ e inteligência para tomada de decisão.
 
 
 # ============================================================
-# VISTORIAS — VERSÃO PROFISSIONAL
+# VISTORIAS
 # ============================================================
 
 elif page == "Vistorias":
@@ -2109,12 +1131,10 @@ detalhada das inspeções realizadas.
 
     else:
 
-        # ====================================================
-        # FILTROS
-        # ====================================================
-
         st.markdown(
-            '<div class="section-title">🔎 Filtros de pesquisa</div>',
+            '<div class="section-title">'
+            '🔎 Filtros de pesquisa'
+            '</div>',
             unsafe_allow_html=True,
         )
 
@@ -2123,8 +1143,8 @@ detalhada das inspeções realizadas.
         with f1:
 
             busca = st.text_input(
-                "Pesquisar",
-                placeholder="Placa ou ID...",
+                "Placa ou ID",
+                placeholder="Digite placa ou ID...",
                 key="busca_vistoria",
             )
 
@@ -2132,8 +1152,8 @@ detalhada das inspeções realizadas.
 
             ecv_values = sorted(
                 [
-                    x for x in
-                    df["ecv"].dropna().unique().tolist()
+                    str(x)
+                    for x in df["ecv"].dropna().unique()
                     if str(x).strip()
                 ]
             )
@@ -2148,8 +1168,8 @@ detalhada das inspeções realizadas.
 
             city_values = sorted(
                 [
-                    x for x in
-                    df["cidade"].dropna().unique().tolist()
+                    str(x)
+                    for x in df["cidade"].dropna().unique()
                     if str(x).strip()
                 ]
             )
@@ -2164,8 +1184,8 @@ detalhada das inspeções realizadas.
 
             state_values = sorted(
                 [
-                    x for x in
-                    df["estado"].dropna().unique().tolist()
+                    str(x)
+                    for x in df["estado"].dropna().unique()
                     if str(x).strip()
                 ]
             )
@@ -2182,8 +1202,8 @@ detalhada das inspeções realizadas.
 
             type_values = sorted(
                 [
-                    x for x in
-                    df["tipo_vistoria"].dropna().unique().tolist()
+                    str(x)
+                    for x in df["tipo_vistoria"].dropna().unique()
                     if str(x).strip()
                 ]
             )
@@ -2199,8 +1219,8 @@ detalhada das inspeções realizadas.
 
             result_values = sorted(
                 [
-                    x for x in
-                    df["resultado"].dropna().unique().tolist()
+                    str(x)
+                    for x in df["resultado"].dropna().unique()
                     if str(x).strip()
                 ]
             )
@@ -2223,7 +1243,10 @@ detalhada das inspeções realizadas.
 
                 date_filter = st.date_input(
                     "📅 Período",
-                    value=(min_date, max_date),
+                    value=(
+                        min_date,
+                        max_date,
+                    ),
                     min_value=min_date,
                     max_value=max_date,
                     key="filtro_periodo",
@@ -2237,14 +1260,20 @@ detalhada das inspeções realizadas.
 
             display_limit = st.selectbox(
                 "📊 Registros exibidos",
-                [25, 50, 100, 250, 500],
+                [
+                    25,
+                    50,
+                    100,
+                    250,
+                    500,
+                ],
                 index=1,
                 key="limite_tabela",
             )
 
-        # ====================================================
-        # APLICAÇÃO DOS FILTROS
-        # ====================================================
+        # ----------------------------------------------------
+        # FILTROS
+        # ----------------------------------------------------
 
         filtered = df.copy()
 
@@ -2297,18 +1326,21 @@ detalhada das inspeções realizadas.
         if type_filter:
 
             filtered = filtered[
-                filtered["tipo_vistoria"].isin(type_filter)
+                filtered["tipo_vistoria"].isin(
+                    type_filter
+                )
             ]
 
         if result_filter:
 
             filtered = filtered[
-                filtered["resultado"].isin(result_filter)
+                filtered["resultado"].isin(
+                    result_filter
+                )
             ]
 
         if (
-            date_filter
-            and isinstance(date_filter, tuple)
+            isinstance(date_filter, tuple)
             and len(date_filter) == 2
         ):
 
@@ -2327,9 +1359,9 @@ detalhada das inspeções realizadas.
                 )
             ]
 
-        # ====================================================
+        # ----------------------------------------------------
         # KPIs
-        # ====================================================
+        # ----------------------------------------------------
 
         total_filtrado = len(filtered)
 
@@ -2341,46 +1373,37 @@ detalhada das inspeções realizadas.
         )
 
         aprovados = int(
-            resultado_normalizado
-            .isin(
+            resultado_normalizado.isin(
                 [
                     "aprovado",
                     "aprovada",
                     "aprovados",
                     "aprovadas",
                 ]
-            )
-            .sum()
+            ).sum()
         )
 
         reprovados = int(
-            resultado_normalizado
-            .isin(
+            resultado_normalizado.isin(
                 [
                     "reprovado",
                     "reprovada",
                     "reprovados",
                     "reprovadas",
                 ]
-            )
-            .sum()
+            ).sum()
         )
 
         taxa_aprovacao_filtro = (
-            aprovados / total_filtrado * 100
-            if total_filtrado
-            else 0
-        )
-
-        taxa_reprovacao_filtro = (
-            reprovados / total_filtrado * 100
+            aprovados
+            / total_filtrado
+            * 100
             if total_filtrado
             else 0
         )
 
         tempo_medio_filtro = (
-            filtered["tempo_minutos"]
-            .mean()
+            filtered["tempo_minutos"].mean()
             if not filtered.empty
             else 0
         )
@@ -2392,7 +1415,9 @@ detalhada das inspeções realizadas.
         )
 
         st.markdown(
-            '<div class="section-title">📊 Indicadores filtrados</div>',
+            '<div class="section-title">'
+            '📊 Indicadores filtrados'
+            '</div>',
             unsafe_allow_html=True,
         )
 
@@ -2428,22 +1453,20 @@ detalhada das inspeções realizadas.
             money(faturamento_filtrado),
         )
 
-        # ====================================================
+        # ----------------------------------------------------
         # GRÁFICOS
-        # ====================================================
+        # ----------------------------------------------------
 
         if not filtered.empty:
 
             st.markdown(
-                '<div class="section-title">📈 Análise operacional</div>',
+                '<div class="section-title">'
+                '📈 Análise operacional'
+                '</div>',
                 unsafe_allow_html=True,
             )
 
             g1, g2 = st.columns(2)
-
-            # -----------------------------------------------
-            # RESULTADOS
-            # -----------------------------------------------
 
             result_chart = (
                 filtered["resultado"]
@@ -2460,24 +1483,22 @@ detalhada das inspeções realizadas.
                 result_chart,
                 names="resultado",
                 values="quantidade",
-                hole=.55,
-                title="Distribuição dos resultados",
+                hole=0.55,
+                title="Aprovado × Reprovado",
             )
 
             fig_result.update_layout(
                 plot_bgcolor="#1e293b",
                 paper_bgcolor="#1e293b",
-                font=dict(color="#94a3b8"),
+                font=dict(
+                    color="#94a3b8"
+                ),
             )
 
             g1.plotly_chart(
                 fig_result,
                 use_container_width=True,
             )
-
-            # -----------------------------------------------
-            # TIPOS
-            # -----------------------------------------------
 
             type_chart = (
                 filtered["tipo_vistoria"]
@@ -2495,13 +1516,15 @@ detalhada das inspeções realizadas.
                 x="tipo_vistoria",
                 y="quantidade",
                 text_auto=True,
-                title="Vistorias por tipo",
+                title="Tipos de vistoria",
             )
 
             fig_type.update_layout(
                 plot_bgcolor="#1e293b",
                 paper_bgcolor="#1e293b",
-                font=dict(color="#94a3b8"),
+                font=dict(
+                    color="#94a3b8"
+                ),
                 showlegend=False,
             )
 
@@ -2510,17 +1533,23 @@ detalhada das inspeções realizadas.
                 use_container_width=True,
             )
 
-            # -----------------------------------------------
-            # PERFORMANCE ECV
-            # -----------------------------------------------
+            # ------------------------------------------------
+            # VOLUME POR ECV
+            # ------------------------------------------------
 
             ecv_analysis = (
                 filtered
                 .groupby("ecv")
                 .agg(
                     vistorias=("id", "count"),
-                    tempo_medio=("tempo_minutos", "mean"),
-                    faturamento=("valor", "sum"),
+                    tempo_medio=(
+                        "tempo_minutos",
+                        "mean",
+                    ),
+                    faturamento=(
+                        "valor",
+                        "sum",
+                    ),
                 )
                 .reset_index()
                 .sort_values(
@@ -2532,7 +1561,9 @@ detalhada das inspeções realizadas.
             if not ecv_analysis.empty:
 
                 st.markdown(
-                    '<div class="section-title">🏢 Performance por ECV</div>',
+                    '<div class="section-title">'
+                    '🏢 Volume por ECV'
+                    '</div>',
                     unsafe_allow_html=True,
                 )
 
@@ -2547,7 +1578,9 @@ detalhada das inspeções realizadas.
                 fig_ecv.update_layout(
                     plot_bgcolor="#1e293b",
                     paper_bgcolor="#1e293b",
-                    font=dict(color="#94a3b8"),
+                    font=dict(
+                        color="#94a3b8"
+                    ),
                     showlegend=False,
                 )
 
@@ -2556,33 +1589,36 @@ detalhada das inspeções realizadas.
                     use_container_width=True,
                 )
 
-        # ====================================================
+        # ----------------------------------------------------
         # EXPORTAÇÃO
-        # ====================================================
+        # ----------------------------------------------------
 
         st.markdown(
-            '<div class="section-title">📋 Resultado da pesquisa</div>',
+            '<div class="section-title">'
+            '📋 Resultado da pesquisa'
+            '</div>',
             unsafe_allow_html=True,
+        )
+
+        export_df = filtered.copy()
+
+        if "data_dt" in export_df.columns:
+
+            export_df = export_df.drop(
+                columns=["data_dt"]
+            )
+
+        csv_data = (
+            export_df
+            .to_csv(
+                index=False
+            )
+            .encode("utf-8-sig")
         )
 
         e1, e2 = st.columns([1, 4])
 
         with e1:
-
-            export_df = filtered.copy()
-
-            if "data_dt" in export_df.columns:
-                export_df = export_df.drop(
-                    columns=["data_dt"]
-                )
-
-            csv_data = (
-                export_df
-                .to_csv(
-                    index=False
-                )
-                .encode("utf-8-sig")
-            )
 
             st.download_button(
                 "📥 Exportar CSV",
@@ -2595,12 +1631,14 @@ detalhada das inspeções realizadas.
         with e2:
 
             st.caption(
-                f"Encontrados {number(total_filtrado)} registros."
+                f"Encontrados "
+                f"{number(total_filtrado)} "
+                f"registros."
             )
 
-        # ====================================================
+        # ----------------------------------------------------
         # TABELA
-        # ====================================================
+        # ----------------------------------------------------
 
         preferred_columns = [
             "id",
@@ -2674,7 +1712,7 @@ detalhada das inspeções realizadas.
 
 
 # ============================================================
-# QUALIDADE
+# QUALIDADE DOS DADOS
 # ============================================================
 
 elif page == "Qualidade":
@@ -2682,72 +1720,518 @@ elif page == "Qualidade":
     st.markdown(
         """
 <div class="hero">
-<h1>Qualidade dos Dados</h1>
+<h1>🛡️ Qualidade dos Dados</h1>
 <p>
-Diagnóstico da confiabilidade da base operacional.
+Diagnóstico da confiabilidade, consistência e integridade
+da base operacional das vistorias.
 </p>
 </div>
 """,
         unsafe_allow_html=True,
     )
 
-    quality_data = quality_response.get("data") or {}
+    st.markdown(
+        f"""
+<div class="data-limit">
+📦 Análise realizada sobre até
+<strong>{number(MAX_VISTORIAS)}</strong> registros.
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
-    if not isinstance(quality_data, dict):
+    quality_df = df.copy()
 
-        st.info(
-            "A API não retornou informações de qualidade."
+    if quality_df.empty:
+
+        st.warning(
+            "Não existem dados de vistorias disponíveis "
+            "para análise de qualidade."
+        )
+
+        st.code(
+            f"GET {API_URL}/vistorias?limit={MAX_VISTORIAS}",
+            language="text",
         )
 
     else:
 
-        total = quality_data.get(
-            "total",
-            quality_data.get(
-                "registros",
-                0,
+        total_registros = len(
+            quality_df
+        )
+
+        # ----------------------------------------------------
+        # CAMPOS VAZIOS
+        # ----------------------------------------------------
+
+        campos_criticos = [
+            "id",
+            "ecv_id",
+            "ecv",
+            "cidade",
+            "estado",
+            "placa",
+            "tipo_vistoria",
+            "data_vistoria",
+            "resultado",
+            "tempo_minutos",
+            "valor",
+        ]
+
+        campos_vazios = 0
+
+        for coluna in campos_criticos:
+
+            if coluna not in quality_df.columns:
+                continue
+
+            serie = quality_df[coluna]
+
+            campos_vazios += int(
+                serie.isna().sum()
+            )
+
+            if serie.dtype == "object":
+
+                campos_vazios += int(
+                    serie
+                    .fillna("")
+                    .astype(str)
+                    .str.strip()
+                    .eq("")
+                    .sum()
+                )
+
+        # ----------------------------------------------------
+        # DUPLICADOS
+        # ----------------------------------------------------
+
+        if "id" in quality_df.columns:
+
+            ids = (
+                quality_df["id"]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+            )
+
+            ids_validos = ids[
+                ids != ""
+            ]
+
+            duplicados = int(
+                ids_validos
+                .duplicated()
+                .sum()
+            )
+
+        else:
+
+            duplicados = int(
+                quality_df.duplicated().sum()
+            )
+
+        # ----------------------------------------------------
+        # PLACAS INVÁLIDAS
+        # ----------------------------------------------------
+
+        placas_invalidas = 0
+
+        if "placa" in quality_df.columns:
+
+            placas = (
+                quality_df["placa"]
+                .fillna("")
+                .astype(str)
+                .str.upper()
+                .str.strip()
+            )
+
+            placa_valida = (
+                placas.str.match(
+                    r"^[A-Z]{3}-[0-9]{4}$",
+                    na=False,
+                )
+                |
+                placas.str.match(
+                    r"^[A-Z]{3}[0-9][A-Z][0-9]{2}$",
+                    na=False,
+                )
+            )
+
+            placas_invalidas = int(
+                (
+                    (~placa_valida)
+                    & (placas != "")
+                ).sum()
+            )
+
+        # ----------------------------------------------------
+        # ECV SEM IDENTIFICAÇÃO
+        # ----------------------------------------------------
+
+        ecvs_sem_identificacao = 0
+
+        if "ecv" in quality_df.columns:
+
+            ecvs_sem_identificacao = int(
+                quality_df["ecv"]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+                .eq("")
+                .sum()
+            )
+
+        # ----------------------------------------------------
+        # RESULTADOS INVÁLIDOS
+        # ----------------------------------------------------
+
+        resultados_invalidos = 0
+
+        if "resultado" in quality_df.columns:
+
+            resultados = (
+                quality_df["resultado"]
+                .fillna("")
+                .astype(str)
+                .str.lower()
+                .str.strip()
+            )
+
+            resultados_validos = [
+                "aprovado",
+                "aprovada",
+                "aprovados",
+                "aprovadas",
+                "reprovado",
+                "reprovada",
+                "reprovados",
+                "reprovadas",
+            ]
+
+            resultados_invalidos = int(
+                (
+                    (~resultados.isin(
+                        resultados_validos
+                    ))
+                    & (resultados != "")
+                ).sum()
+            )
+
+        # ----------------------------------------------------
+        # TEMPOS INVÁLIDOS
+        # ----------------------------------------------------
+
+        tempos_invalidos = 0
+
+        if "tempo_minutos" in quality_df.columns:
+
+            tempos = pd.to_numeric(
+                quality_df["tempo_minutos"],
+                errors="coerce",
+            )
+
+            tempos_invalidos = int(
+                (
+                    tempos.isna()
+                    |
+                    (tempos <= 0)
+                ).sum()
+            )
+
+        # ----------------------------------------------------
+        # VALORES INVÁLIDOS
+        # ----------------------------------------------------
+
+        valores_invalidos = 0
+
+        if "valor" in quality_df.columns:
+
+            valores = pd.to_numeric(
+                quality_df["valor"],
+                errors="coerce",
+            )
+
+            valores_invalidos = int(
+                (
+                    valores.isna()
+                    |
+                    (valores < 0)
+                ).sum()
+            )
+
+        # ----------------------------------------------------
+        # QUALIDADE
+        # ----------------------------------------------------
+
+        total_problemas = (
+            duplicados
+            + campos_vazios
+            + placas_invalidas
+            + resultados_invalidos
+            + tempos_invalidos
+            + valores_invalidos
+        )
+
+        total_validacoes = max(
+            total_registros * 6,
+            1,
+        )
+
+        qualidade_score = max(
+            0,
+            100
+            - (
+                total_problemas
+                / total_validacoes
+                * 100
             ),
         )
 
-        duplicados = quality_data.get(
-            "duplicados",
-            0,
+        if qualidade_score >= 99:
+
+            status = "Excelente"
+
+        elif qualidade_score >= 95:
+
+            status = "Boa"
+
+        elif qualidade_score >= 85:
+
+            status = "Atenção"
+
+        else:
+
+            status = "Crítica"
+
+        # ====================================================
+        # KPIs
+        # ====================================================
+
+        st.markdown(
+            '<div class="section-title">'
+            '📊 Indicadores de qualidade'
+            '</div>',
+            unsafe_allow_html=True,
         )
 
-        nulos = quality_data.get(
-            "nulos",
-            quality_data.get(
-                "campos_vazios",
-                0,
-            ),
-        )
+        q1, q2, q3, q4, q5, q6 = st.columns(6)
 
-        placas_invalidas = quality_data.get(
-            "placas_invalidas",
-            0,
-        )
-
-        a, b, c, d = st.columns(4)
-
-        a.metric(
+        q1.metric(
             "Registros",
-            number(total),
+            number(total_registros),
         )
 
-        b.metric(
+        q2.metric(
+            "Qualidade",
+            f"{qualidade_score:.1f}%",
+        )
+
+        q3.metric(
             "Duplicados",
             number(duplicados),
         )
 
-        c.metric(
+        q4.metric(
             "Campos vazios",
-            number(nulos),
+            number(campos_vazios),
         )
 
-        d.metric(
+        q5.metric(
             "Placas inválidas",
             number(placas_invalidas),
         )
+
+        q6.metric(
+            "Resultado inválido",
+            number(resultados_invalidos),
+        )
+
+        # ====================================================
+        # STATUS
+        # ====================================================
+
+        if status == "Excelente":
+
+            st.success(
+                f"✅ Qualidade da base: {status} — "
+                f"{qualidade_score:.1f}% de consistência."
+            )
+
+        elif status == "Boa":
+
+            st.info(
+                f"ℹ️ Qualidade da base: {status} — "
+                f"{qualidade_score:.1f}% de consistência."
+            )
+
+        elif status == "Atenção":
+
+            st.warning(
+                f"⚠️ Qualidade da base: {status} — "
+                f"existem inconsistências que precisam "
+                f"ser acompanhadas."
+            )
+
+        else:
+
+            st.error(
+                f"🚨 Qualidade da base: {status} — "
+                f"existem problemas relevantes."
+            )
+
+        # ====================================================
+        # DIAGNÓSTICO
+        # ====================================================
+
+        st.markdown(
+            '<div class="section-title">'
+            '🔍 Diagnóstico detalhado'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
+        d1, d2 = st.columns(2)
+
+        with d1:
+
+            st.markdown(
+                """
+<div class="card">
+<h3>Integridade dos registros</h3>
+<div class="small">
+Validação estrutural da base operacional.
+</div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+
+            integridade = pd.DataFrame(
+                {
+                    "Indicador": [
+                        "Registros duplicados",
+                        "Campos vazios",
+                        "Placas inválidas",
+                        "Resultados inválidos",
+                    ],
+                    "Ocorrências": [
+                        duplicados,
+                        campos_vazios,
+                        placas_invalidas,
+                        resultados_invalidos,
+                    ],
+                }
+            )
+
+            st.dataframe(
+                integridade,
+                use_container_width=True,
+                hide_index=True,
+            )
+
+        with d2:
+
+            st.markdown(
+                """
+<div class="card">
+<h3>Validação operacional</h3>
+<div class="small">
+Verificação dos principais dados das vistorias.
+</div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+
+            operacional = pd.DataFrame(
+                {
+                    "Indicador": [
+                        "Tempos inválidos",
+                        "Valores inválidos",
+                        "ECVs sem identificação",
+                    ],
+                    "Ocorrências": [
+                        tempos_invalidos,
+                        valores_invalidos,
+                        ecvs_sem_identificacao,
+                    ],
+                }
+            )
+
+            st.dataframe(
+                operacional,
+                use_container_width=True,
+                hide_index=True,
+            )
+
+        # ====================================================
+        # GRÁFICO DE PROBLEMAS
+        # ====================================================
+
+        problemas_df = pd.DataFrame(
+            {
+                "Problema": [
+                    "Duplicados",
+                    "Campos vazios",
+                    "Placas inválidas",
+                    "Resultados inválidos",
+                    "Tempos inválidos",
+                    "Valores inválidos",
+                ],
+                "Quantidade": [
+                    duplicados,
+                    campos_vazios,
+                    placas_invalidas,
+                    resultados_invalidos,
+                    tempos_invalidos,
+                    valores_invalidos,
+                ],
+            }
+        )
+
+        problemas_df = problemas_df[
+            problemas_df["Quantidade"] > 0
+        ]
+
+        if not problemas_df.empty:
+
+            st.markdown(
+                '<div class="section-title">'
+                '📈 Inconsistências encontradas'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            fig_quality = px.bar(
+                problemas_df,
+                x="Problema",
+                y="Quantidade",
+                text_auto=True,
+                title="Problemas identificados na base",
+            )
+
+            fig_quality.update_layout(
+                plot_bgcolor="#1e293b",
+                paper_bgcolor="#1e293b",
+                font=dict(
+                    color="#94a3b8"
+                ),
+                showlegend=False,
+            )
+
+            st.plotly_chart(
+                fig_quality,
+                use_container_width=True,
+            )
+
+        else:
+
+            st.success(
+                "✅ Nenhuma inconsistência relevante "
+                "foi encontrada nos registros analisados."
+            )
 
 
 # ============================================================
@@ -2759,7 +2243,7 @@ elif page == "IA & Insights":
     st.markdown(
         """
 <div class="hero">
-<h1>IA & Insights</h1>
+<h1>🤖 IA & Insights</h1>
 <p>
 Inteligência artificial aplicada aos dados operacionais.
 </p>
@@ -2803,7 +2287,9 @@ vistorias carregadas da base.
     )
 
     st.markdown(
-        '<div class="section-title">💬 Copilot de Dados</div>',
+        '<div class="section-title">'
+        '💬 Copilot de Dados'
+        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -2849,7 +2335,7 @@ vistorias carregadas da base.
                 st.markdown(
                     f"""
 <div class="card">
-<span class="badge">COPILOT</span>
+<strong>🤖 COPILOT</strong>
 <div style="margin-top:1rem">
 {html.escape(str(answer))}
 </div>
@@ -2878,7 +2364,7 @@ elif page == "ECVs":
     st.markdown(
         """
 <div class="hero">
-<h1>Gestão de ECVs</h1>
+<h1>🏢 Gestão de ECVs</h1>
 <p>
 Visão consolidada das Empresas Credenciadas de Vistoria.
 </p>
@@ -2916,7 +2402,7 @@ elif page == "Automações":
     st.markdown(
         """
 <div class="hero">
-<h1>Central de Automações</h1>
+<h1>⚙️ Central de Automações</h1>
 <p>
 Monitoramento das regras e execuções automatizadas.
 </p>
@@ -2973,7 +2459,7 @@ elif page == "API":
     st.markdown(
         """
 <div class="hero">
-<h1>API & Integrações</h1>
+<h1>🔌 API & Integrações</h1>
 <p>
 Camada REST para integração com sistemas externos,
 BI e parceiros.
@@ -3001,7 +2487,9 @@ BI e parceiros.
     )
 
     st.markdown(
-        '<div class="section-title">Endpoints</div>',
+        '<div class="section-title">'
+        'Endpoints'
+        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -3021,10 +2509,15 @@ BI e parceiros.
     ]
 
     for endpoint in endpoints:
-        st.code(endpoint)
+
+        st.code(
+            endpoint
+        )
 
     st.markdown(
-        '<div class="section-title">⚙️ Configuração de dados</div>',
+        '<div class="section-title">'
+        '⚙️ Configuração de dados'
+        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -3033,7 +2526,7 @@ BI e parceiros.
 O frontend está configurado para solicitar até
 {number(MAX_VISTORIAS)} vistorias por consulta.
 
-Para alterar o limite, defina:
+Variável de ambiente:
 
 ECV_MAX_VISTORIAS
 
@@ -3053,7 +2546,7 @@ elif page == "Power BI":
     st.markdown(
         """
 <div class="hero">
-<h1>Power BI</h1>
+<h1>📈 Power BI</h1>
 <p>
 Integração analítica para consumo dos dados da plataforma.
 </p>
@@ -3125,7 +2618,9 @@ KPIs preparados para análise.
         )
 
     st.markdown(
-        '<div class="section-title">📌 Integração</div>',
+        '<div class="section-title">'
+        '📌 Integração'
+        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -3147,7 +2642,7 @@ elif page == "Configurações":
     st.markdown(
         """
 <div class="hero">
-<h1>Configurações</h1>
+<h1>⚙️ Configurações</h1>
 <p>
 Preferências da plataforma ECV Intelligence.
 </p>
@@ -3169,13 +2664,11 @@ Limite atual de vistorias:
 <br><br>
 
 Variável de ambiente:
-
 <strong>ECV_MAX_VISTORIAS</strong>
 
 <br><br>
 
 Exemplo:
-
 <strong>ECV_MAX_VISTORIAS=10000</strong>
 
 </div>
@@ -3225,4 +2718,7 @@ Exemplo:
         )
 
 
-    
+# ============================================================
+# FIM DO APP
+# ============================================================
+```
