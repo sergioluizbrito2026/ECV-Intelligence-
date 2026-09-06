@@ -1,6 +1,6 @@
 import html
 import os
-from datetime import datetime
+from datetime import datetime, date
 
 import pandas as pd
 import plotly.express as px
@@ -28,6 +28,13 @@ API_TIMEOUT = int(
     os.getenv("ECV_API_TIMEOUT", "30")
 )
 
+# Limite de dados
+MAX_VISTORIAS = int(
+    os.getenv("ECV_MAX_VISTORIAS", "5000")
+)
+
+PAGE_SIZE = 50
+
 
 # ============================================================
 # CSS
@@ -36,10 +43,6 @@ API_TIMEOUT = int(
 st.markdown(
     """
 <style>
-
-/* ========================================================
-   APP
-   ======================================================== */
 
 .stApp{
     background:#0f172a;
@@ -57,15 +60,13 @@ footer{
 }
 
 
-/* ========================================================
-   SIDEBAR
-   ======================================================== */
+/* SIDEBAR */
 
 [data-testid="stSidebar"]{
     background:#0b1120;
     border-right:1px solid rgba(255,255,255,.08);
-    min-width:280px!important;
-    max-width:280px!important;
+    min-width:270px!important;
+    max-width:270px!important;
 }
 
 [data-testid="stSidebar"] *{
@@ -73,21 +74,19 @@ footer{
 }
 
 .sidebar-brand{
-    padding:8px 4px 16px 4px;
+    padding:8px 4px 18px 4px;
 }
 
 .sidebar-brand h2{
     margin:0;
     font-size:1.25rem;
     font-weight:750;
-    color:#f8fafc;
 }
 
 .sidebar-brand p{
     margin:5px 0 0;
     font-size:.76rem;
     color:#94a3b8;
-    line-height:1.4;
 }
 
 .sidebar-section{
@@ -100,11 +99,6 @@ footer{
     color:#64748b!important;
     text-transform:uppercase;
 }
-
-
-/* ========================================================
-   BOTÕES SIDEBAR
-   ======================================================== */
 
 [data-testid="stSidebar"] .stButton{
     margin-bottom:3px;
@@ -121,7 +115,6 @@ footer{
     font-size:.88rem;
     font-weight:500;
     padding:0 12px;
-    transition:all .15s ease;
 }
 
 [data-testid="stSidebar"] .stButton > button:hover{
@@ -130,17 +123,8 @@ footer{
     color:#ffffff!important;
 }
 
-.sidebar-active > div > button{
-    background:#1e293b!important;
-    border-color:rgba(255,255,255,.10)!important;
-    color:#ffffff!important;
-    font-weight:700!important;
-}
 
-
-/* ========================================================
-   HERO
-   ======================================================== */
+/* HERO */
 
 .hero{
     padding:1.5rem 1.8rem;
@@ -162,9 +146,7 @@ footer{
 }
 
 
-/* ========================================================
-   SEÇÕES
-   ======================================================== */
+/* SECTION */
 
 .section-title{
     font-size:1.1rem;
@@ -173,9 +155,7 @@ footer{
 }
 
 
-/* ========================================================
-   METRICS
-   ======================================================== */
+/* METRICS */
 
 [data-testid="stMetric"]{
     border:1px solid rgba(255,255,255,.08);
@@ -193,9 +173,7 @@ footer{
 }
 
 
-/* ========================================================
-   CARDS
-   ======================================================== */
+/* CARDS */
 
 .card{
     border:1px solid rgba(255,255,255,.08);
@@ -224,50 +202,19 @@ footer{
     color:#94a3b8;
 }
 
-.success{
-    color:#4ade80;
-}
 
-.danger{
-    color:#f87171;
-}
+/* FILTERS */
 
-
-/* ========================================================
-   INTEGRAÇÕES
-   ======================================================== */
-
-.integration-card{
+.filter-box{
     border:1px solid rgba(255,255,255,.08);
     border-radius:14px;
-    background:#1e293b;
-    padding:1.3rem;
-    min-height:150px;
-}
-
-.integration-card h3{
-    margin:.4rem 0;
-}
-
-.integration-card p{
-    color:#94a3b8;
-    font-size:.84rem;
+    padding:1rem;
+    background:#111827;
+    margin-bottom:1rem;
 }
 
 
-/* ========================================================
-   TABELAS
-   ======================================================== */
-
-[data-testid="stDataFrame"]{
-    border-radius:12px;
-    overflow:hidden;
-}
-
-
-/* ========================================================
-   DIVIDER
-   ======================================================== */
+/* FOOTER */
 
 hr{
     border-color:rgba(255,255,255,.08)!important;
@@ -321,8 +268,8 @@ def normalize_list_response(data, possible_keys=None):
             "items",
             "results",
             "records",
-            "ecvs",
             "vistorias",
+            "ecvs",
             "daily",
             "performance",
             "logs",
@@ -339,6 +286,24 @@ def normalize_list_response(data, possible_keys=None):
     return []
 
 
+def first_existing_column(df, candidates):
+
+    for column in candidates:
+
+        if column in df.columns:
+            return column
+
+    return None
+
+
+def clean_text(value):
+
+    if pd.isna(value):
+        return ""
+
+    return str(value).strip()
+
+
 # ============================================================
 # NAVEGAÇÃO
 # ============================================================
@@ -351,11 +316,27 @@ def navigate(page_name):
     st.session_state.page = page_name
 
 
+def sidebar_button(label, page_name):
+
+    clicked = st.sidebar.button(
+        label,
+        key=f"sidebar_{page_name}",
+        use_container_width=True,
+    )
+
+    if clicked:
+        navigate(page_name)
+        st.rerun()
+
+
 # ============================================================
-# CLIENTE DA API
+# API CLIENT
 # ============================================================
 
-@st.cache_data(ttl=30, show_spinner=False)
+@st.cache_data(
+    ttl=60,
+    show_spinner=False,
+)
 def api_get(endpoint, params=None):
 
     url = f"{API_URL}{endpoint}"
@@ -374,10 +355,15 @@ def api_get(endpoint, params=None):
 
         response.raise_for_status()
 
+        try:
+            data = response.json()
+        except Exception:
+            data = {}
+
         return {
             "ok": True,
             "status_code": response.status_code,
-            "data": response.json(),
+            "data": data,
             "error": None,
         }
 
@@ -387,7 +373,7 @@ def api_get(endpoint, params=None):
             "ok": False,
             "status_code": None,
             "data": None,
-            "error": "Tempo limite excedido ao consultar a API.",
+            "error": "Tempo limite excedido.",
         }
 
     except requests.exceptions.ConnectionError:
@@ -409,7 +395,7 @@ def api_get(endpoint, params=None):
                 None,
             ),
             "data": None,
-            "error": f"Erro HTTP na API: {exc}",
+            "error": f"Erro HTTP: {exc}",
         }
 
     except Exception as exc:
@@ -430,10 +416,6 @@ def get_api_health():
     return api_get("/health")
 
 
-def get_api_status():
-    return api_get("/status")
-
-
 def get_api_dashboard():
     return api_get("/dashboard")
 
@@ -443,7 +425,12 @@ def get_api_indicadores():
 
 
 def get_api_vistorias():
-    return api_get("/vistorias")
+    return api_get(
+        "/vistorias",
+        {
+            "limit": MAX_VISTORIAS
+        },
+    )
 
 
 def get_api_ecvs():
@@ -466,20 +453,8 @@ def get_api_automations():
     return api_get("/automations")
 
 
-def get_api_powerbi_vistorias():
-    return api_get("/powerbi/vistorias")
-
-
-def get_api_powerbi_ecvs():
-    return api_get("/powerbi/ecvs")
-
-
-def get_api_powerbi_indicadores():
-    return api_get("/powerbi/indicadores")
-
-
 # ============================================================
-# NORMALIZAÇÃO
+# NORMALIZAÇÃO VISTORIAS
 # ============================================================
 
 def build_vistorias_dataframe(data):
@@ -500,28 +475,127 @@ def build_vistorias_dataframe(data):
 
     df = pd.DataFrame(records)
 
+    # -----------------------------------------
+    # NORMALIZAÇÃO DOS NOMES
+    # -----------------------------------------
+
     rename_map = {
+
         "date": "data_vistoria",
-        "data": "data_vistoria",
+        "datetime": "data_vistoria",
+        "created_at": "data_vistoria",
+
         "type": "tipo_vistoria",
+        "tipo": "tipo_vistoria",
+
         "result": "resultado",
+        "status": "resultado",
+
         "time": "tempo_minutos",
+        "tempo": "tempo_minutos",
+
         "amount": "valor",
+        "price": "valor",
+
         "ecv_nome": "ecv",
         "nome_ecv": "ecv",
+        "empresa": "ecv",
+
+        "city": "cidade",
+        "municipio": "cidade",
+
+        "plate": "placa",
+        "vehicle_plate": "placa",
+
+        "inspection_id": "id",
     }
 
-    df = df.rename(columns=rename_map)
+    df = df.rename(
+        columns={
+            k: v
+            for k, v in rename_map.items()
+            if k in df.columns
+        }
+    )
 
-    if "data_vistoria" in df.columns:
+    # -----------------------------------------
+    # GARANTIR CAMPOS
+    # -----------------------------------------
 
-        df["data_dt"] = pd.to_datetime(
-            df["data_vistoria"],
-            errors="coerce",
+    expected_columns = [
+        "id",
+        "data_vistoria",
+        "ecv",
+        "cidade",
+        "placa",
+        "tipo_vistoria",
+        "resultado",
+        "tempo_minutos",
+        "valor",
+    ]
+
+    for column in expected_columns:
+
+        if column not in df.columns:
+            df[column] = ""
+
+    # -----------------------------------------
+    # DATA
+    # -----------------------------------------
+
+    df["data_dt"] = pd.to_datetime(
+        df["data_vistoria"],
+        errors="coerce",
+    )
+
+    # -----------------------------------------
+    # TEXTO
+    # -----------------------------------------
+
+    for column in [
+        "id",
+        "ecv",
+        "cidade",
+        "placa",
+        "tipo_vistoria",
+        "resultado",
+    ]:
+
+        df[column] = (
+            df[column]
+            .fillna("")
+            .astype(str)
+            .str.strip()
         )
+
+    # -----------------------------------------
+    # NUMÉRICOS
+    # -----------------------------------------
+
+    df["tempo_minutos"] = pd.to_numeric(
+        df["tempo_minutos"],
+        errors="coerce",
+    )
+
+    df["valor"] = pd.to_numeric(
+        df["valor"],
+        errors="coerce",
+    )
+
+    # -----------------------------------------
+    # LIMITE
+    # -----------------------------------------
+
+    if len(df) > MAX_VISTORIAS:
+
+        df = df.head(MAX_VISTORIAS)
 
     return df
 
+
+# ============================================================
+# OUTROS DATAFRAMES
+# ============================================================
 
 def build_ecvs_dataframe(data):
 
@@ -560,13 +634,15 @@ def build_daily_dataframe(data):
 
     df = pd.DataFrame(records)
 
-    rename_map = {
-        "date": "data",
-        "total": "vistorias",
-        "count": "vistorias",
-    }
+    df = df.rename(
+        columns={
+            "date": "data",
+            "total": "vistorias",
+            "count": "vistorias",
+        }
+    )
 
-    return df.rename(columns=rename_map)
+    return df
 
 
 def build_performance_dataframe(data):
@@ -588,14 +664,14 @@ def build_performance_dataframe(data):
 
     df = pd.DataFrame(records)
 
-    rename_map = {
-        "nome": "ecv",
-        "ecv_nome": "ecv",
-        "approval_rate": "taxa_aprovacao",
-        "taxa_aprovacao_percentual": "taxa_aprovacao",
-    }
-
-    df = df.rename(columns=rename_map)
+    df = df.rename(
+        columns={
+            "nome": "ecv",
+            "ecv_nome": "ecv",
+            "approval_rate": "taxa_aprovacao",
+            "taxa_aprovacao_percentual": "taxa_aprovacao",
+        }
+    )
 
     if "taxa_aprovacao" in df.columns:
 
@@ -608,35 +684,7 @@ def build_performance_dataframe(data):
 
 
 # ============================================================
-# CARREGAMENTO DA API
-# ============================================================
-
-with st.spinner("Carregando dados da ECV Intelligence..."):
-
-    health = get_api_health()
-
-    dashboard_response = get_api_dashboard()
-
-    indicadores_response = get_api_indicadores()
-
-    vistorias_response = get_api_vistorias()
-
-    ecvs_response = get_api_ecvs()
-
-    performance_response = get_api_analytics_ecvs()
-
-    quality_response = get_api_quality()
-
-    daily_response = get_api_daily()
-
-    automations_response = get_api_automations()
-
-
-api_online = health.get("ok", False)
-
-
-# ============================================================
-# SIDEBAR — 5 BLOCOS
+# SIDEBAR
 # ============================================================
 
 st.sidebar.markdown(
@@ -656,47 +704,13 @@ Analytics, IA e automação para ECVs
 
 
 # ============================================================
-# BLOCO 1 — WORKSPACE
+# BLOCO 1
 # ============================================================
 
 st.sidebar.markdown(
     '<div class="sidebar-section">WORKSPACE</div>',
     unsafe_allow_html=True,
 )
-
-
-def sidebar_button(label, page_name):
-
-    active = (
-        st.session_state.page == page_name
-    )
-
-    wrapper = (
-        '<div class="sidebar-active">'
-        if active
-        else '<div>'
-    )
-
-    st.sidebar.markdown(
-        wrapper,
-        unsafe_allow_html=True,
-    )
-
-    clicked = st.sidebar.button(
-        label,
-        key=f"sidebar_{page_name}",
-        use_container_width=True,
-    )
-
-    st.sidebar.markdown(
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    if clicked:
-        navigate(page_name)
-        st.rerun()
-
 
 sidebar_button(
     "📊  Visão Geral",
@@ -715,7 +729,7 @@ sidebar_button(
 
 
 # ============================================================
-# BLOCO 2 — INTELIGÊNCIA
+# BLOCO 2
 # ============================================================
 
 st.sidebar.markdown(
@@ -730,7 +744,7 @@ sidebar_button(
 
 
 # ============================================================
-# BLOCO 3 — INTEGRAÇÕES
+# BLOCO 3
 # ============================================================
 
 st.sidebar.markdown(
@@ -750,7 +764,7 @@ sidebar_button(
 
 
 # ============================================================
-# BLOCO 4 — GESTÃO
+# BLOCO 4
 # ============================================================
 
 st.sidebar.markdown(
@@ -770,17 +784,12 @@ sidebar_button(
 
 
 # ============================================================
-# BLOCO 5 — AMBIENTE / CONTA
+# BLOCO 5
 # ============================================================
 
 st.sidebar.markdown(
-    '<div class="sidebar-section">AMBIENTE / CONTA</div>',
+    '<div class="sidebar-section">SISTEMA</div>',
     unsafe_allow_html=True,
-)
-
-sidebar_button(
-    "👤  Meu Perfil",
-    "Meu Perfil",
 )
 
 sidebar_button(
@@ -790,13 +799,13 @@ sidebar_button(
 
 
 # ============================================================
-# AÇÕES
+# ATUALIZAÇÃO
 # ============================================================
 
 st.sidebar.divider()
 
 if st.sidebar.button(
-    "🔄  Atualizar dados",
+    "🔄 Atualizar dados",
     use_container_width=True,
     key="refresh_data",
 ):
@@ -806,7 +815,123 @@ if st.sidebar.button(
 
 
 # ============================================================
-# DADOS
+# CARREGAMENTO INTELIGENTE
+# ============================================================
+
+page = st.session_state.page
+
+health = get_api_health()
+
+api_online = health.get(
+    "ok",
+    False,
+)
+
+
+# ============================================================
+# SE API OFFLINE
+# ============================================================
+
+if not api_online:
+
+    st.markdown(
+        """
+<div class="hero">
+
+<h1>ECV Intelligence</h1>
+
+<p>
+Não foi possível conectar à API neste momento.
+</p>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    st.error(
+        "A API não respondeu corretamente."
+    )
+
+    st.link_button(
+        "Abrir API",
+        API_URL,
+        use_container_width=True,
+    )
+
+    st.stop()
+
+
+# ============================================================
+# CARREGAR DADOS DE ACORDO COM A ABA
+# ============================================================
+
+dashboard_response = {
+    "data": {}
+}
+
+indicadores_response = {
+    "data": {}
+}
+
+vistorias_response = {
+    "data": {}
+}
+
+ecvs_response = {
+    "data": {}
+}
+
+performance_response = {
+    "data": {}
+}
+
+quality_response = {
+    "data": {}
+}
+
+daily_response = {
+    "data": {}
+}
+
+automations_response = {
+    "data": {}
+}
+
+
+if page == "Visão Geral":
+
+    dashboard_response = get_api_dashboard()
+    indicadores_response = get_api_indicadores()
+    performance_response = get_api_analytics_ecvs()
+    daily_response = get_api_daily()
+
+elif page == "Vistorias":
+
+    vistorias_response = get_api_vistorias()
+
+elif page == "Qualidade":
+
+    quality_response = get_api_quality()
+
+elif page == "IA & Insights":
+
+    vistorias_response = get_api_vistorias()
+    ecvs_response = get_api_ecvs()
+    performance_response = get_api_analytics_ecvs()
+
+elif page == "ECVs":
+
+    ecvs_response = get_api_ecvs()
+    performance_response = get_api_analytics_ecvs()
+
+elif page == "Automações":
+
+    automations_response = get_api_automations()
+
+
+# ============================================================
+# DATAFRAMES
 # ============================================================
 
 df = build_vistorias_dataframe(
@@ -827,42 +952,21 @@ daily = build_daily_dataframe(
 
 
 # ============================================================
-# VERIFICAÇÃO API
-# ============================================================
-
-if not api_online:
-
-    st.error(
-        "A plataforma não conseguiu carregar os dados "
-        "da API neste momento."
-    )
-
-    st.link_button(
-        "Abrir serviço",
-        API_URL,
-        use_container_width=True,
-    )
-
-    st.stop()
-
-
-# ============================================================
 # KPI
 # ============================================================
 
 dashboard_data = (
-    dashboard_response.get("data") or {}
+    dashboard_response.get("data")
+    or {}
 )
 
 indicadores_data = (
-    indicadores_response.get("data") or {}
+    indicadores_response.get("data")
+    or {}
 )
 
 
-def extract_kpi(
-    keys,
-    default=0,
-):
+def extract_kpi(keys, default=0):
 
     for source in [
         dashboard_data,
@@ -931,7 +1035,7 @@ faturamento = extract_kpi(
 # VISÃO GERAL
 # ============================================================
 
-if st.session_state.page == "Visão Geral":
+if page == "Visão Geral":
 
     st.markdown(
         """
@@ -1007,20 +1111,18 @@ e inteligência para tomada de decisão.
         fig1.update_layout(
             plot_bgcolor="#1e293b",
             paper_bgcolor="#1e293b",
-            font=dict(
-                color="#94a3b8"
-            ),
-            margin=dict(
-                l=20,
-                r=20,
-                t=50,
-                b=30,
-            ),
+            font=dict(color="#94a3b8"),
         )
 
         a.plotly_chart(
             fig1,
             use_container_width=True,
+        )
+
+    else:
+
+        a.info(
+            "Não existem dados suficientes para o gráfico diário."
         )
 
     if (
@@ -1040,15 +1142,7 @@ e inteligência para tomada de decisão.
         fig2.update_layout(
             plot_bgcolor="#1e293b",
             paper_bgcolor="#1e293b",
-            font=dict(
-                color="#94a3b8"
-            ),
-            margin=dict(
-                l=20,
-                r=20,
-                t=50,
-                b=30,
-            ),
+            font=dict(color="#94a3b8"),
             showlegend=False,
         )
 
@@ -1057,98 +1151,10 @@ e inteligência para tomada de decisão.
             use_container_width=True,
         )
 
-    if (
-        not perf.empty
-        and "taxa_aprovacao" in perf.columns
-    ):
+    else:
 
-        perf_sorted = (
-            perf
-            .sort_values(
-                "taxa_aprovacao",
-                ascending=False,
-            )
-            .reset_index(drop=True)
-        )
-
-        best = perf_sorted.iloc[0]
-        worst = perf_sorted.iloc[-1]
-
-        x, y, z = st.columns(3)
-
-        x.markdown(
-            f"""
-<div class="card">
-
-<span class="badge">
-MELHOR DESEMPENHO
-</span>
-
-<h3>
-{html.escape(str(best.get("ecv", "N/D")))}
-</h3>
-
-<div class="success">
-{safe_float(best.get("taxa_aprovacao")):.1f}%
-de aprovação
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-        y.markdown(
-            f"""
-<div class="card">
-
-<span class="badge">
-PONTO DE ATENÇÃO
-</span>
-
-<h3>
-{html.escape(str(worst.get("ecv", "N/D")))}
-</h3>
-
-<div class="danger">
-{safe_float(worst.get("taxa_aprovacao")):.1f}%
-de aprovação
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-        diferenca = (
-            safe_float(
-                best.get("taxa_aprovacao")
-            )
-            -
-            safe_float(
-                worst.get("taxa_aprovacao")
-            )
-        )
-
-        z.markdown(
-            f"""
-<div class="card">
-
-<span class="badge">
-DIFERENCIAL
-</span>
-
-<h3>
-{diferenca:.1f} p.p.
-</h3>
-
-<div class="small">
-Distância entre melhor e pior ECV
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
+        b.info(
+            "Não existem dados de performance das ECVs."
         )
 
 
@@ -1156,7 +1162,7 @@ Distância entre melhor e pior ECV
 # VISTORIAS
 # ============================================================
 
-elif st.session_state.page == "Vistorias":
+elif page == "Vistorias":
 
     st.markdown(
         """
@@ -1173,315 +1179,437 @@ Pesquisa, filtros e análise dos registros operacionais.
         unsafe_allow_html=True,
     )
 
+    # --------------------------------------------------------
+    # API VAZIA
+    # --------------------------------------------------------
+
     if df.empty:
 
+        st.warning(
+            "A API não retornou registros de vistoria."
+        )
+
         st.info(
-            "Nenhuma vistoria disponível."
+            "A tela está pronta para receber os dados "
+            "assim que o endpoint /vistorias retornar registros."
+        )
+
+        st.code(
+            f"GET {API_URL}/vistorias",
+            language="text",
         )
 
     else:
 
-        if "data_dt" not in df.columns:
+        # ----------------------------------------------------
+        # FILTROS
+        # ----------------------------------------------------
 
-            df["data_dt"] = pd.to_datetime(
-                df.get("data_vistoria"),
-                errors="coerce",
-            )
-
-        valid_dates = (
-            df["data_dt"].dropna()
+        st.markdown(
+            '<div class="section-title">'
+            '🔎 Pesquisa e filtros'
+            '</div>',
+            unsafe_allow_html=True,
         )
 
-        if not valid_dates.empty:
+        # BUSCA
+        busca = st.text_input(
+            "Pesquisar",
+            placeholder="Digite placa ou ID da vistoria...",
+            key="busca_vistoria",
+        )
 
-            mn = valid_dates.min().date()
-            mx = valid_dates.max().date()
+        c1, c2, c3 = st.columns(3)
 
-            c1, c2, c3 = st.columns(3)
+        # ECV
+        with c1:
 
-            with c1:
-
-                periodo = st.date_input(
-                    "Período",
-                    [mn, mx],
-                    min_value=mn,
-                    max_value=mx,
-                )
-
-            with c2:
-
-                ecv_values = (
-                    sorted(
-                        df["ecv"]
-                        .dropna()
-                        .unique()
-                        .tolist()
-                    )
-                    if "ecv" in df.columns
-                    else []
-                )
-
-                ef = st.selectbox(
-                    "ECV",
-                    ["Todas"] + ecv_values,
-                )
-
-            with c3:
-
-                city_values = (
-                    sorted(
-                        df["cidade"]
-                        .dropna()
-                        .unique()
-                        .tolist()
-                    )
-                    if "cidade" in df.columns
-                    else []
-                )
-
-                cf = st.selectbox(
-                    "Cidade",
-                    ["Todas"] + city_values,
-                )
-
-            c4, c5, c6 = st.columns(3)
-
-            with c4:
-
-                tipos = (
-                    sorted(
-                        df["tipo_vistoria"]
-                        .dropna()
-                        .unique()
-                        .tolist()
-                    )
-                    if "tipo_vistoria"
-                    in df.columns
-                    else []
-                )
-
-                tf = st.multiselect(
-                    "Tipo",
-                    tipos,
-                    default=tipos,
-                )
-
-            with c5:
-
-                resultados = (
-                    sorted(
-                        df["resultado"]
-                        .dropna()
-                        .unique()
-                        .tolist()
-                    )
-                    if "resultado"
-                    in df.columns
-                    else []
-                )
-
-                rf = st.multiselect(
-                    "Resultado",
-                    resultados,
-                    default=resultados,
-                )
-
-            with c6:
-
-                busca = st.text_input(
-                    "Buscar",
-                    placeholder="Placa ou ID",
-                )
-
-            f = df.copy()
-
-            if (
-                isinstance(
-                    periodo,
-                    (list, tuple)
-                )
-                and len(periodo) == 2
-            ):
-
-                f = f[
-                    (
-                        f.data_dt.dt.date
-                        >= periodo[0]
-                    )
-                    &
-                    (
-                        f.data_dt.dt.date
-                        <= periodo[1]
-                    )
+            ecv_values = sorted(
+                [
+                    x for x in
+                    df["ecv"].dropna().unique().tolist()
+                    if str(x).strip()
                 ]
+            )
 
-            if (
-                ef != "Todas"
-                and "ecv" in f.columns
-            ):
-                f = f[f.ecv == ef]
+            ecv_filter = st.selectbox(
+                "🏢 ECV",
+                ["Todas"] + ecv_values,
+                key="filtro_ecv",
+            )
 
-            if (
-                cf != "Todas"
-                and "cidade" in f.columns
-            ):
-                f = f[f.cidade == cf]
+        # CIDADE
+        with c2:
 
-            if (
-                tf
-                and "tipo_vistoria"
-                in f.columns
-            ):
-                f = f[
-                    f.tipo_vistoria
-                    .isin(tf)
+            city_values = sorted(
+                [
+                    x for x in
+                    df["cidade"].dropna().unique().tolist()
+                    if str(x).strip()
                 ]
+            )
 
-            if (
-                rf
-                and "resultado"
-                in f.columns
-            ):
-                f = f[
-                    f.resultado
-                    .isin(rf)
+            city_filter = st.selectbox(
+                "📍 Cidade",
+                ["Todas"] + city_values,
+                key="filtro_cidade",
+            )
+
+        # TIPO
+        with c3:
+
+            type_values = sorted(
+                [
+                    x for x in
+                    df["tipo_vistoria"].dropna().unique().tolist()
+                    if str(x).strip()
                 ]
+            )
 
-            if busca:
+            type_filter = st.multiselect(
+                "📋 Tipo",
+                type_values,
+                default=type_values,
+                key="filtro_tipo",
+            )
 
-                q = busca.lower().strip()
+        c4, c5, c6 = st.columns(3)
 
-                mask = pd.Series(
-                    False,
-                    index=f.index,
-                )
+        # RESULTADO
+        with c4:
 
-                if "placa" in f.columns:
+            result_values = sorted(
+                [
+                    x for x in
+                    df["resultado"].dropna().unique().tolist()
+                    if str(x).strip()
+                ]
+            )
 
-                    mask |= (
-                        f["placa"]
-                        .astype(str)
-                        .str.lower()
-                        .str.contains(
-                            q,
-                            na=False,
-                        )
-                    )
+            result_filter = st.multiselect(
+                "🎯 Resultado",
+                result_values,
+                default=result_values,
+                key="filtro_resultado",
+            )
 
-                if "id" in f.columns:
+        # DATA
+        with c5:
 
-                    mask |= (
-                        f["id"]
-                        .astype(str)
-                        .str.contains(
-                            q,
-                            na=False,
-                        )
-                    )
+            valid_dates = (
+                df["data_dt"]
+                .dropna()
+            )
 
-                f = f[mask]
+            if not valid_dates.empty:
 
-            a, b, c, d = st.columns(4)
+                min_date = valid_dates.min().date()
+                max_date = valid_dates.max().date()
 
-            total = len(f)
-
-            if "resultado" in f.columns:
-
-                ap = int(
-                    (
-                        f["resultado"]
-                        .astype(str)
-                        .str.lower()
-                        == "aprovado"
-                    ).sum()
-                )
-
-                rp = int(
-                    (
-                        f["resultado"]
-                        .astype(str)
-                        .str.lower()
-                        == "reprovado"
-                    ).sum()
+                date_filter = st.date_input(
+                    "📅 Período",
+                    value=(
+                        min_date,
+                        max_date,
+                    ),
+                    min_value=min_date,
+                    max_value=max_date,
+                    key="filtro_periodo",
                 )
 
             else:
 
-                ap = 0
-                rp = 0
+                date_filter = None
 
-            a.metric(
-                "Registros",
-                number(total),
-            )
-
-            b.metric(
-                "Aprovação",
-                (
-                    f"{ap / total * 100:.1f}%"
-                    if total
-                    else "0,0%"
-                ),
-            )
-
-            c.metric(
-                "Reprovação",
-                (
-                    f"{rp / total * 100:.1f}%"
-                    if total
-                    else "0,0%"
-                ),
-            )
-
-            faturamento_filtro = (
-                pd.to_numeric(
-                    f["valor"],
-                    errors="coerce",
+                st.caption(
+                    "Período indisponível"
                 )
-                .fillna(0)
-                .sum()
-                if "valor" in f.columns
-                else 0
+
+        # LIMITE
+        with c6:
+
+            display_limit = st.selectbox(
+                "📊 Registros exibidos",
+                [
+                    25,
+                    50,
+                    100,
+                    250,
+                    500,
+                ],
+                index=1,
+                key="limite_tabela",
             )
 
-            d.metric(
-                "Faturamento",
-                money(
-                    faturamento_filtro
-                ),
+        # ----------------------------------------------------
+        # APLICAR FILTROS
+        # ----------------------------------------------------
+
+        filtered = df.copy()
+
+        # Busca placa / ID
+        if busca.strip():
+
+            q = busca.strip().lower()
+
+            mask = (
+                filtered["placa"]
+                .astype(str)
+                .str.lower()
+                .str.contains(
+                    q,
+                    na=False,
+                )
             )
 
-            preferred_cols = [
-                "id",
-                "data_vistoria",
-                "ecv",
-                "cidade",
-                "placa",
-                "tipo_vistoria",
-                "resultado",
-                "tempo_minutos",
-                "valor",
+            mask |= (
+                filtered["id"]
+                .astype(str)
+                .str.lower()
+                .str.contains(
+                    q,
+                    na=False,
+                )
+            )
+
+            filtered = filtered[mask]
+
+        # ECV
+        if ecv_filter != "Todas":
+
+            filtered = filtered[
+                filtered["ecv"]
+                == ecv_filter
             ]
 
-            cols = [
-                col
-                for col in preferred_cols
-                if col in f.columns
+        # Cidade
+        if city_filter != "Todas":
+
+            filtered = filtered[
+                filtered["cidade"]
+                == city_filter
             ]
 
-            st.dataframe(
-                f[cols],
-                use_container_width=True,
-                hide_index=True,
+        # Tipo
+        if type_values:
+
+            filtered = filtered[
+                filtered["tipo_vistoria"]
+                .isin(type_filter)
+            ]
+
+        # Resultado
+        if result_values:
+
+            filtered = filtered[
+                filtered["resultado"]
+                .isin(result_filter)
+            ]
+
+        # Período
+        if (
+            date_filter
+            and len(date_filter) == 2
+        ):
+
+            start_date = date_filter[0]
+            end_date = date_filter[1]
+
+            filtered = filtered[
+                (
+                    filtered["data_dt"]
+                    .dt.date
+                    >= start_date
+                )
+                &
+                (
+                    filtered["data_dt"]
+                    .dt.date
+                    <= end_date
+                )
+            ]
+
+        # ----------------------------------------------------
+        # KPIs
+        # ----------------------------------------------------
+
+        total_filtrado = len(filtered)
+
+        resultados_lower = (
+            filtered["resultado"]
+            .astype(str)
+            .str.lower()
+        )
+
+        aprovados = int(
+            resultados_lower
+            .isin(
+                [
+                    "aprovado",
+                    "aprovada",
+                    "aprovados",
+                    "aprovadas",
+                ]
             )
+            .sum()
+        )
+
+        reprovados = int(
+            resultados_lower
+            .isin(
+                [
+                    "reprovado",
+                    "reprovada",
+                    "reprovados",
+                    "reprovadas",
+                ]
+            )
+            .sum()
+        )
+
+        faturamento_filtrado = (
+            filtered["valor"]
+            .fillna(0)
+            .sum()
+        )
+
+        k1, k2, k3, k4 = st.columns(4)
+
+        k1.metric(
+            "Registros",
+            number(total_filtrado),
+        )
+
+        k2.metric(
+            "Aprovação",
+            (
+                f"{aprovados / total_filtrado * 100:.1f}%"
+                if total_filtrado
+                else "0,0%"
+            ),
+        )
+
+        k3.metric(
+            "Reprovação",
+            (
+                f"{reprovados / total_filtrado * 100:.1f}%"
+                if total_filtrado
+                else "0,0%"
+            ),
+        )
+
+        k4.metric(
+            "Faturamento",
+            money(
+                faturamento_filtrado
+            ),
+        )
+
+        # ----------------------------------------------------
+        # EXPORTAÇÃO
+        # ----------------------------------------------------
+
+        st.markdown(
+            '<div class="section-title">'
+            '📋 Resultado da pesquisa'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
+        e1, e2 = st.columns([1, 4])
+
+        with e1:
+
+            csv_data = filtered.to_csv(
+                index=False
+            ).encode("utf-8-sig")
 
             st.download_button(
                 "📥 Exportar CSV",
-                f.to_csv(
-                    index=False
-                ).encode("utf-8"),
+                csv_data,
                 "vistorias_filtradas.csv",
                 "text/csv",
+                use_container_width=True,
+            )
+
+        with e2:
+
+            st.caption(
+                f"Encontrados {number(total_filtrado)} registros."
+            )
+
+        # ----------------------------------------------------
+        # TABELA
+        # ----------------------------------------------------
+
+        preferred_columns = [
+            "id",
+            "data_vistoria",
+            "ecv",
+            "cidade",
+            "placa",
+            "tipo_vistoria",
+            "resultado",
+            "tempo_minutos",
+            "valor",
+        ]
+
+        table_columns = [
+            column
+            for column in preferred_columns
+            if column in filtered.columns
+        ]
+
+        table_df = filtered[
+            table_columns
+        ].copy()
+
+        # Formatação
+        if "data_vistoria" in table_df.columns:
+
+            table_df["data_vistoria"] = (
+                pd.to_datetime(
+                    table_df["data_vistoria"],
+                    errors="coerce",
+                )
+                .dt.strftime(
+                    "%d/%m/%Y %H:%M"
+                )
+            )
+
+        if "valor" in table_df.columns:
+
+            table_df["valor"] = (
+                table_df["valor"]
+                .apply(money)
+            )
+
+        if "tempo_minutos" in table_df.columns:
+
+            table_df["tempo_minutos"] = (
+                table_df["tempo_minutos"]
+                .round(1)
+            )
+
+        # Limite visual
+        table_df = table_df.head(
+            display_limit
+        )
+
+        st.dataframe(
+            table_df,
+            use_container_width=True,
+            hide_index=True,
+            height=560,
+        )
+
+        if total_filtrado > display_limit:
+
+            st.info(
+                f"Exibindo os primeiros "
+                f"{number(display_limit)} registros "
+                f"de {number(total_filtrado)} encontrados. "
+                f"O CSV contém todos os registros filtrados."
             )
 
 
@@ -1489,7 +1617,7 @@ Pesquisa, filtros e análise dos registros operacionais.
 # QUALIDADE
 # ============================================================
 
-elif st.session_state.page == "Qualidade":
+elif page == "Qualidade":
 
     st.markdown(
         """
@@ -1506,21 +1634,29 @@ Diagnóstico da confiabilidade da base operacional.
         unsafe_allow_html=True,
     )
 
+    quality_response = get_api_quality()
+
     quality_data = (
         quality_response.get("data")
         or {}
     )
 
-    if isinstance(
+    if not isinstance(
         quality_data,
         dict,
     ):
+
+        st.info(
+            "A API não retornou informações de qualidade."
+        )
+
+    else:
 
         total = quality_data.get(
             "total",
             quality_data.get(
                 "registros",
-                len(df),
+                0,
             ),
         )
 
@@ -1564,77 +1700,12 @@ Diagnóstico da confiabilidade da base operacional.
             number(placas_invalidas),
         )
 
-        if safe_float(total) > 0:
-
-            score = max(
-                0,
-                100
-                -
-                (
-                    safe_float(
-                        duplicados
-                    )
-                    +
-                    safe_float(
-                        nulos
-                    )
-                    +
-                    safe_float(
-                        placas_invalidas
-                    )
-                )
-                /
-                safe_float(total)
-                *
-                100,
-            )
-
-        else:
-
-            score = 0
-
-        st.markdown(
-            f"""
-<div class="card">
-
-<span class="badge">
-SCORE DE QUALIDADE
-</span>
-
-<h2>
-{score:.1f}%
-</h2>
-
-<div class="small">
-Índice calculado a partir das
-inconsistências identificadas.
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-        mensagens = quality_data.get(
-            "mensagens",
-            [],
-        )
-
-        for msg in mensagens:
-            st.write(msg)
-
-    else:
-
-        st.info(
-            "A API não retornou dados de qualidade."
-        )
-
 
 # ============================================================
 # IA & INSIGHTS
 # ============================================================
 
-elif st.session_state.page == "IA & Insights":
+elif page == "IA & Insights":
 
     st.markdown(
         """
@@ -1643,7 +1714,7 @@ elif st.session_state.page == "IA & Insights":
 <h1>IA & Insights</h1>
 
 <p>
-Inteligência artificial aplicada à análise operacional das ECVs.
+Inteligência artificial aplicada aos dados operacionais.
 </p>
 
 </div>
@@ -1654,14 +1725,7 @@ Inteligência artificial aplicada à análise operacional das ECVs.
     ecv_count = (
         len(ecvs_df)
         if not ecvs_df.empty
-        else (
-            perf["ecv"].nunique()
-            if (
-                not perf.empty
-                and "ecv" in perf.columns
-            )
-            else 0
-        )
+        else 0
     )
 
     a, b, c = st.columns(3)
@@ -1682,28 +1746,6 @@ Inteligência artificial aplicada à análise operacional das ECVs.
     )
 
     st.markdown(
-        """
-<div class="card">
-
-<span class="badge">
-ECV INTELLIGENCE AI
-</span>
-
-<h3>
-Copilot operacional
-</h3>
-
-<div class="small">
-Utilize a IA para interpretar indicadores,
-identificar oportunidades e apoiar decisões.
-</div>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
         '<div class="section-title">'
         '💬 Copilot de Dados'
         '</div>',
@@ -1713,13 +1755,6 @@ identificar oportunidades e apoiar decisões.
     question = st.text_input(
         "Pergunta",
         placeholder="Qual ECV teve melhor desempenho?",
-    )
-
-    st.caption(
-        "Exemplos: "
-        "Qual ECV teve melhor desempenho? • "
-        "Qual teve pior desempenho? • "
-        "Quantas vistorias existem?"
     )
 
     if st.button(
@@ -1768,92 +1803,19 @@ COPILOT
             except Exception as exc:
 
                 st.error(
-                    "Não foi possível executar "
-                    "o Copilot neste momento."
+                    "Não foi possível executar o Copilot."
                 )
 
                 st.caption(
-                    f"Detalhes técnicos: {exc}"
+                    f"Detalhes: {exc}"
                 )
-
-    if (
-        not perf.empty
-        and "taxa_aprovacao"
-        in perf.columns
-    ):
-
-        perf_sorted = (
-            perf
-            .sort_values(
-                "taxa_aprovacao",
-                ascending=False,
-            )
-            .reset_index(drop=True)
-        )
-
-        best = perf_sorted.iloc[0]
-        worst = perf_sorted.iloc[-1]
-
-        x, y = st.columns(2)
-
-        x.markdown(
-            f"""
-<div class="card">
-
-<span class="badge">
-OPORTUNIDADE
-</span>
-
-<h3>
-{html.escape(
-    str(best.get("ecv", "N/D"))
-)}
-</h3>
-
-<div class="small">
-Maior aprovação:
-{safe_float(
-    best.get("taxa_aprovacao")
-):.1f}%
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-        y.markdown(
-            f"""
-<div class="card">
-
-<span class="badge">
-ATENÇÃO
-</span>
-
-<h3>
-{html.escape(
-    str(worst.get("ecv", "N/D"))
-)}
-</h3>
-
-<div class="small">
-Menor aprovação:
-{safe_float(
-    worst.get("taxa_aprovacao")
-):.1f}%
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
 
 
 # ============================================================
 # ECVs
 # ============================================================
 
-elif st.session_state.page == "ECVs":
+elif page == "ECVs":
 
     st.markdown(
         """
@@ -1878,48 +1840,8 @@ Visão consolidada das Empresas Credenciadas de Vistoria.
 
     else:
 
-        display_df = ecvs_df.copy()
-
-        if (
-            not perf.empty
-            and "ecv" in perf.columns
-            and "taxa_aprovacao"
-            in perf.columns
-        ):
-
-            join_column = None
-
-            if "nome" in display_df.columns:
-                join_column = "nome"
-
-            elif "ecv" in display_df.columns:
-                join_column = "ecv"
-
-            if join_column:
-
-                performance_join = perf[
-                    [
-                        "ecv",
-                        "taxa_aprovacao",
-                    ]
-                ].copy()
-
-                display_df = display_df.merge(
-                    performance_join,
-                    left_on=join_column,
-                    right_on="ecv",
-                    how="left",
-                )
-
-                if join_column != "ecv":
-
-                    display_df = display_df.drop(
-                        columns=["ecv"],
-                        errors="ignore",
-                    )
-
         st.dataframe(
-            display_df,
+            ecvs_df,
             use_container_width=True,
             hide_index=True,
         )
@@ -1929,7 +1851,7 @@ Visão consolidada das Empresas Credenciadas de Vistoria.
 # AUTOMAÇÕES
 # ============================================================
 
-elif st.session_state.page == "Automações":
+elif page == "Automações":
 
     st.markdown(
         """
@@ -1965,132 +1887,18 @@ Monitoramento das regras e execuções automatizadas.
         )
     )
 
-    total = len(logs)
+    if logs.empty:
 
-    if not logs.empty:
-
-        status_column = None
-
-        for candidate in [
-            "status",
-            "resultado",
-            "state",
-        ]:
-
-            if candidate in logs.columns:
-
-                status_column = candidate
-                break
-
-        if status_column:
-
-            sucesso = int(
-                logs[
-                    status_column
-                ]
-                .astype(str)
-                .str.lower()
-                .isin(
-                    [
-                        "concluído",
-                        "concluido",
-                        "success",
-                        "sucesso",
-                        "completed",
-                    ]
-                )
-                .sum()
-            )
-
-        else:
-
-            sucesso = 0
+        st.info(
+            "Nenhuma execução registrada pela API."
+        )
 
     else:
 
-        sucesso = 0
-
-    taxa = (
-        sucesso / total * 100
-        if total
-        else 0
-    )
-
-    processados = 0
-
-    if not logs.empty:
-
-        for column in [
-            "registros_processados",
-            "processed",
-            "processados",
-        ]:
-
-            if column in logs.columns:
-
-                processados = int(
-                    pd.to_numeric(
-                        logs[column],
-                        errors="coerce",
-                    )
-                    .fillna(0)
-                    .sum()
-                )
-
-                break
-
-    a, b, c, d = st.columns(4)
-
-    a.metric(
-        "Execuções",
-        number(total),
-    )
-
-    b.metric(
-        "Sucesso",
-        f"{taxa:.1f}%",
-    )
-
-    c.metric(
-        "Processados",
-        number(processados),
-    )
-
-    d.metric(
-        "Status",
-        "Operacional",
-    )
-
-    st.markdown(
-        """
-<div class="card">
-
-<span class="badge">
-AUTOMATION ENGINE
-</span>
-
-<h3>
-Pipeline operacional
-</h3>
-
-<div class="small">
-Leitura → Validação → Duplicidades →
-Campos críticos → Indicadores → Log
-</div>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<div class="section-title">'
-        '📋 Histórico'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    if not logs.empty:
+        st.metric(
+            "Execuções",
+            number(len(logs)),
+        )
 
         st.dataframe(
             logs,
@@ -2098,18 +1906,12 @@ Campos críticos → Indicadores → Log
             hide_index=True,
         )
 
-    else:
-
-        st.info(
-            "Nenhuma execução registrada pela API."
-        )
-
 
 # ============================================================
 # API
 # ============================================================
 
-elif st.session_state.page == "API":
+elif page == "API":
 
     st.markdown(
         """
@@ -2130,85 +1932,51 @@ BI e parceiros.
     c1, c2, c3 = st.columns(3)
 
     c1.metric(
-        "API",
+        "Status",
         "Online",
     )
 
     c2.metric(
-        "Versão",
-        "3.0.0",
+        "Health",
+        "OK",
     )
 
     c3.metric(
-        "Endpoints",
-        "15+",
+        "API",
+        "REST",
     )
 
     st.markdown(
         '<div class="section-title">'
-        'Endpoints disponíveis'
+        'Endpoints'
         '</div>',
         unsafe_allow_html=True,
     )
 
     endpoints = [
         "GET /health",
-        "GET /status",
-        "GET /ecvs",
-        "GET /ecvs/{ecv_id}",
-        "GET /vistorias",
+        "GET /dashboard",
         "GET /indicadores",
+        "GET /ecvs",
+        "GET /vistorias",
         "GET /analytics/ecvs",
         "GET /analytics/quality",
         "GET /analytics/daily",
-        "GET /dashboard",
         "GET /automations",
         "GET /powerbi/vistorias",
         "GET /powerbi/ecvs",
         "GET /powerbi/indicadores",
     ]
 
-    cols = st.columns(2)
-
-    for index, endpoint in enumerate(
-        endpoints
-    ):
-
-        cols[index % 2].code(
-            endpoint
-        )
-
-    st.markdown(
-        '<div class="section-title">'
-        '🔗 Documentação'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.link_button(
-        "📚 Abrir Swagger / OpenAPI",
-        f"{API_URL}/docs",
-        use_container_width=True,
-    )
-
-    st.link_button(
-        "❤️ Health Check",
-        f"{API_URL}/health",
-        use_container_width=True,
-    )
-
-    st.link_button(
-        "📊 Status da API",
-        f"{API_URL}/status",
-        use_container_width=True,
-    )
+    for endpoint in endpoints:
+        st.code(endpoint)
 
 
 # ============================================================
 # POWER BI
 # ============================================================
 
-elif st.session_state.page == "Power BI":
+elif page == "Power BI":
 
     st.markdown(
         """
@@ -2217,36 +1985,11 @@ elif st.session_state.page == "Power BI":
 <h1>Power BI</h1>
 
 <p>
-Camada de integração analítica para consumo dos dados
-da plataforma ECV Intelligence.
+Integração analítica para consumo dos dados da plataforma.
 </p>
 
 </div>
 """,
-        unsafe_allow_html=True,
-    )
-
-    c1, c2, c3 = st.columns(3)
-
-    c1.metric(
-        "Vistorias",
-        "Dataset",
-    )
-
-    c2.metric(
-        "ECVs",
-        "Dataset",
-    )
-
-    c3.metric(
-        "Indicadores",
-        "Dataset",
-    )
-
-    st.markdown(
-        '<div class="section-title">'
-        'Fontes disponíveis'
-        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -2256,14 +1999,13 @@ da plataforma ECV Intelligence.
 
         st.markdown(
             """
-<div class="integration-card">
+<div class="card">
 
 <h3>🚗 Vistorias</h3>
 
-<p>
-Dados operacionais das vistorias
-para análise no Power BI.
-</p>
+<div class="small">
+Dados operacionais das vistorias.
+</div>
 
 </div>
 """,
@@ -2280,14 +2022,13 @@ para análise no Power BI.
 
         st.markdown(
             """
-<div class="integration-card">
+<div class="card">
 
 <h3>🏢 ECVs</h3>
 
-<p>
-Dados consolidados das empresas
-credenciadas.
-</p>
+<div class="small">
+Dados consolidados das ECVs.
+</div>
 
 </div>
 """,
@@ -2304,14 +2045,13 @@ credenciadas.
 
         st.markdown(
             """
-<div class="integration-card">
+<div class="card">
 
 <h3>📊 Indicadores</h3>
 
-<p>
-KPIs e indicadores preparados
-para camada analítica.
-</p>
+<div class="small">
+KPIs preparados para análise.
+</div>
 
 </div>
 """,
@@ -2324,138 +2064,12 @@ para camada analítica.
             use_container_width=True,
         )
 
-    st.markdown(
-        '<div class="section-title">'
-        'Arquitetura de integração'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-<div class="card">
-
-<span class="badge">
-BI PIPELINE
-</span>
-
-<h3>
-ECV Intelligence → API → Power BI
-</h3>
-
-<div class="small">
-
-Dados operacionais<br>
-↓<br>
-FastAPI<br>
-↓<br>
-Endpoints Power BI<br>
-↓<br>
-Power BI Dataset<br>
-↓<br>
-Dashboards executivos
-
-</div>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-
-# ============================================================
-# MEU PERFIL
-# ============================================================
-
-elif st.session_state.page == "Meu Perfil":
-
-    st.markdown(
-        """
-<div class="hero">
-
-<h1>Meu Perfil</h1>
-
-<p>
-Informações e preferências do usuário da plataforma.
-</p>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    a, b = st.columns(2)
-
-    with a:
-
-        st.markdown(
-            """
-<div class="card">
-
-<span class="badge">
-USUÁRIO
-</span>
-
-<h3>
-Administrador
-</h3>
-
-<div class="small">
-Perfil com acesso ao ambiente analítico.
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-    with b:
-
-        st.markdown(
-            """
-<div class="card">
-
-<span class="badge">
-ACESSO
-</span>
-
-<h3>
-Analytics + IA
-</h3>
-
-<div class="small">
-Permissões para análise operacional,
-indicadores e inteligência.
-</div>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-    st.markdown(
-        '<div class="section-title">'
-        'Preferências'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.checkbox(
-        "Receber alertas de desempenho",
-        value=True,
-    )
-
-    st.checkbox(
-        "Exibir indicadores avançados",
-        value=True,
-    )
-
 
 # ============================================================
 # CONFIGURAÇÕES
 # ============================================================
 
-elif st.session_state.page == "Configurações":
+elif page == "Configurações":
 
     st.markdown(
         """
@@ -2472,31 +2086,9 @@ Preferências da plataforma ECV Intelligence.
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        """
-<div class="card">
+    c1, c2 = st.columns(2)
 
-<span class="badge">
-PLATAFORMA
-</span>
-
-<h3>
-Preferências gerais
-</h3>
-
-<div class="small">
-Configure a experiência de utilização do
-dashboard.
-</div>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    col1, col2 = st.columns(2)
-
-    with col1:
+    with c1:
 
         st.checkbox(
             "Atualização automática",
@@ -2508,7 +2100,7 @@ dashboard.
             value=True,
         )
 
-    with col2:
+    with c2:
 
         st.checkbox(
             "Ativar sugestões da IA",
@@ -2537,8 +2129,5 @@ dashboard.
 st.divider()
 
 st.caption(
-    "ECV Intelligence • Plataforma de "
-    "Analytics, IA e Automação"
+    "ECV Intelligence • Analytics, IA e Automação"
 )
-
-
