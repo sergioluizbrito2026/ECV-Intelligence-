@@ -1461,87 +1461,95 @@ tempo médio, faturamento e desempenho operacional.
     )
         # ----------------------------------------------------
 
-elif page == "IA & Insights":
+    # ========================================================
+    # IA & INSIGHTS
+    # ========================================================
 
-    vistorias_ia_response = get_api_vistorias()
-    ecvs_ia_response = get_api_ecvs()
-    performance_ia_response = get_api_analytics_ecvs()
+    insights = []
 
-    df_ia = build_vistorias_dataframe(
-        vistorias_ia_response.get("data")
-        if vistorias_ia_response.get("ok")
-        else {}
-    )
+    # --------------------------------------------------------
+    # FATURAMENTO
+    # --------------------------------------------------------
 
-    ecvs_ia_df = build_ecvs_dataframe(
-        ecvs_ia_response.get("data")
-        if ecvs_ia_response.get("ok")
-        else {}
-    )
+    faturamento_ia = 0.0
 
-    perf_ia = build_performance_dataframe(
-        performance_ia_response.get("data")
-        if performance_ia_response.get("ok")
-        else {}
-    )
+    if "valor" in df_ia.columns:
 
-    # restante da IA usando df_ia
+        faturamento_ia = pd.to_numeric(
+            df_ia["valor"],
+            errors="coerce"
+        ).fillna(0).sum()
 
-        # ----------------------------------------------------
-        # TIPO MAIS UTILIZADO
-        # ----------------------------------------------------
+    elif "valor_vistoria" in df_ia.columns:
 
-        
-           if "tipo_vistoria" in df.columns:
+        faturamento_ia = pd.to_numeric(
+            df_ia["valor_vistoria"],
+            errors="coerce"
+        ).fillna(0).sum()
 
-            tipos = (
-                df["tipo_vistoria"]
-                .fillna("")
-                .astype(str)
-                .str.strip()
+    # --------------------------------------------------------
+    # TIPO MAIS UTILIZADO
+    # --------------------------------------------------------
+
+    if "tipo_vistoria" in df_ia.columns:
+
+        tipos = (
+            df_ia["tipo_vistoria"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
+
+        tipos = tipos[tipos != ""]
+
+        if not tipos.empty:
+
+            contagem_tipos = tipos.value_counts()
+
+            tipo_principal = str(
+                contagem_tipos.index[0]
             )
 
-            tipos = tipos[tipos != ""]
-
-            if not tipos.empty:
-
-                contagem_tipos = tipos.value_counts()
-
-                tipo_principal = str(contagem_tipos.index[0])
-                quantidade_tipo = int(contagem_tipos.iloc[0])
-
-                insights.append(
-                    f"📋 **Tipo de vistoria predominante:** "
-                    f"{tipo_principal}, com "
-                    f"{quantidade_tipo:,} registros."
-                )
-
-        # ----------------------------------------------------
-        # FATURAMENTO
-        # ----------------------------------------------------
-
-        if faturamento_ia > 0:
+            quantidade_tipo = int(
+                contagem_tipos.iloc[0]
+            )
 
             insights.append(
-                f"💰 **Receita analisada:** "
-                f"{money(faturamento_ia)} "
-                f"considerando os registros carregados."
+                f"📋 **Tipo de vistoria predominante:** "
+                f"{tipo_principal}, com "
+                f"{quantidade_tipo:,} registros."
             )
 
-        # ----------------------------------------------------
-        # EXIBIÇÃO DOS INSIGHTS
-        # ----------------------------------------------------
+    # --------------------------------------------------------
+    # FATURAMENTO
+    # --------------------------------------------------------
 
-        for insight in insights:
+    if faturamento_ia > 0:
 
-            st.markdown(
-                f"""
+        insights.append(
+            f"💰 **Receita analisada:** "
+            f"{money(faturamento_ia)} "
+            f"considerando os registros carregados."
+        )
+
+    # --------------------------------------------------------
+    # EXIBIÇÃO DOS INSIGHTS
+    # --------------------------------------------------------
+
+    for insight in insights:
+
+        st.markdown(
+            f"""
 <div class="card">
 {insight}
 </div>
 """,
-                unsafe_allow_html=True,
-            )
+            unsafe_allow_html=True,
+        )
+
+    # ========================================================
+    # ANÁLISE DE PERFORMANCE
+    # ========================================================
 
 
     # ========================================================
