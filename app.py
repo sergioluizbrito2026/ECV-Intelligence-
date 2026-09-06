@@ -552,26 +552,49 @@ def get_api_automations():
 # DATAFRAME — VISTORIAS
 # ============================================================
 
+
 def build_vistorias_dataframe(data):
+  records = normalize_list_response(
+      data,
+      [
+          "vistorias",
+          "data",
+          "items",
+          "results",
+          "records",
+      ],
+  )
 
-    records = normalize_list_response(
-        data,
-        [
-            "vistorias",
-            "data",
-            "items",
-            "results",
-            "records",
-        ],
-    )
+  if not records:
+    return pd.DataFrame()
 
-    if not records:
+  df = pd.DataFrame(records)
 
-        return pd.DataFrame()
+  # Mapeamento e normalização segura de colunas comuns (ajuste conforme os nomes reais do JSON da API)
+  # Exemplo: garante que colunas principais existam para evitar KeyError
+  colunas_esperadas = {
+      "id": "ID",
+      "data_hora": "Data/Hora",
+      "data": "Data/Hora",
+      "placa": "Placa",
+      "ecv": "ECV",
+      "cidade": "Cidade",
+      "tipo": "Tipo",
+      "resultado": "Resultado",
+      "tempo": "Tempo",
+      "valor": "Valor",
+  }
 
-    df = pd.DataFrame(
-        records
-    )
+  # Renomeia as colunas caso existam no DataFrame retornado
+  df = df.rename(
+      columns={
+          col: colunas_esperadas[col]
+          for col in df.columns
+          if col in colunas_esperadas
+      }
+  )
+
+  return df
 
     # --------------------------------------------------------
     # NORMALIZAÇÃO
