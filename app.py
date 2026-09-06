@@ -595,7 +595,7 @@ def build_vistorias_dataframe(data):
     # NORMALIZAÇÃO
     # --------------------------------------------------------
 
-    rename_map = {
+  rename_map = {
         "date": "data_vistoria",
         "datetime": "data_vistoria",
         "created_at": "data_vistoria",
