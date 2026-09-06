@@ -1492,7 +1492,7 @@ elif page == "IA & Insights":
         # ----------------------------------------------------
 
         
-           if "tipo_vistoria" in df.columns:
+       if "tipo_vistoria" in df.columns:
 
             tipos = (
                 df["tipo_vistoria"]
@@ -1503,7 +1503,7 @@ elif page == "IA & Insights":
 
             tipos = tipos[tipos != ""]
 
-            if not tipos.empty:
+         if not tipos.empty:
 
                 contagem_tipos = tipos.value_counts()
 
