@@ -570,9 +570,8 @@ def build_vistorias_dataframe(data):
 
   df = pd.DataFrame(records)
 
-  # Mapeamento e normalização segura de colunas comuns (ajuste conforme os nomes reais do JSON da API)
-  # Exemplo: garante que colunas principais existam para evitar KeyError
-  colunas_esperadas = {
+  # Mapeamento e normalização segura de colunas comuns
+  rename_map = {
       "id": "ID",
       "data_hora": "Data/Hora",
       "data": "Data/Hora",
@@ -588,9 +587,7 @@ def build_vistorias_dataframe(data):
   # Renomeia as colunas caso existam no DataFrame retornado
   df = df.rename(
       columns={
-          col: colunas_esperadas[col]
-          for col in df.columns
-          if col in colunas_esperadas
+          col: rename_map[col] for col in df.columns if col in rename_map
       }
   )
 
