@@ -321,13 +321,63 @@ def ecv_detail(ecv_id: int):
 )
 def vistorias(
     limit: int = Query(
-        100,
+        5000,
         ge=1,
-        le=5000,
+        le=50000,
+        description="Quantidade máxima de registros retornados",
     ),
-    resultado: Optional[str] = None,
-    ecv: Optional[str] = None,
+
+    # Busca geral
+    busca: Optional[str] = Query(
+        None,
+        description="Busca por placa ou ID da vistoria",
+    ),
+
+    # Filtros
+    vistoria_id: Optional[int] = Query(
+        None,
+        description="ID da vistoria",
+    ),
+
+    placa: Optional[str] = Query(
+        None,
+        description="Placa do veículo",
+    ),
+
+    ecv: Optional[str] = Query(
+        None,
+        description="Nome ou parte do nome da ECV",
+    ),
+
+    cidade: Optional[str] = Query(
+        None,
+        description="Cidade da ECV",
+    ),
+
+    tipo: Optional[str] = Query(
+        None,
+        description="Tipo da vistoria",
+    ),
+
+    resultado: Optional[str] = Query(
+        None,
+        description="Resultado da vistoria",
+    ),
+
+    data_inicio: Optional[str] = Query(
+        None,
+        description="Data inicial YYYY-MM-DD",
+    ),
+
+    data_fim: Optional[str] = Query(
+        None,
+        description="Data final YYYY-MM-DD",
+    ),
 ):
+
+    # --------------------------------------------------------
+    # QUERY BASE
+    # --------------------------------------------------------
 
     query = """
         SELECT
@@ -343,38 +393,194 @@ def vistorias(
             v.tempo_minutos,
             v.valor
         FROM vistorias v
-        JOIN ecvs e
+        INNER JOIN ecvs e
             ON e.id = v.ecv_id
         WHERE 1 = 1
     """
 
     params = []
 
-    if resultado:
+    # --------------------------------------------------------
+    # ID
+    # --------------------------------------------------------
+
+    if vistoria_id is not None:
 
         query += """
-            AND LOWER(v.resultado)
-            = LOWER(?)
+            AND v.id = ?
+        """
+
+        params.append(vistoria_id)
+
+    # --------------------------------------------------------
+    # BUSCA GERAL
+    # Placa OU ID
+    # --------------------------------------------------------
+
+    if busca:
+
+        busca = busca.strip()
+
+        query += """
+            AND (
+                CAST(v.id AS TEXT) LIKE ?
+                OR LOWER(COALESCE(v.placa, ''))
+                    LIKE LOWER(?)
+            )
+        """
+
+        termo = f"%{busca}%"
+
+        params.extend([
+            termo,
+            termo,
+        ])
+
+    # --------------------------------------------------------
+    # PLACA
+    # --------------------------------------------------------
+
+    if placa:
+
+        query += """
+            AND LOWER(COALESCE(v.placa, ''))
+                LIKE LOWER(?)
         """
 
         params.append(
-            resultado
+            f"%{placa.strip()}%"
         )
+
+    # --------------------------------------------------------
+    # ECV
+    # --------------------------------------------------------
 
     if ecv:
 
         query += """
-            AND LOWER(e.nome)
-            LIKE LOWER(?)
+            AND LOWER(COALESCE(e.nome, ''))
+                LIKE LOWER(?)
         """
 
         params.append(
-            f"%{ecv}%"
+            f"%{ecv.strip()}%"
         )
+
+    # --------------------------------------------------------
+    # CIDADE
+    # --------------------------------------------------------
+
+    if cidade:
+
+        query += """
+            AND LOWER(COALESCE(e.cidade, ''))
+                LIKE LOWER(?)
+        """
+
+        params.append(
+            f"%{cidade.strip()}%"
+        )
+
+    # --------------------------------------------------------
+    # TIPO
+    # --------------------------------------------------------
+
+    if tipo:
+
+        query += """
+            AND LOWER(COALESCE(v.tipo_vistoria, ''))
+                LIKE LOWER(?)
+        """
+
+        params.append(
+            f"%{tipo.strip()}%"
+        )
+
+    # --------------------------------------------------------
+    # RESULTADO
+    # --------------------------------------------------------
+
+    if resultado:
+
+        query += """
+            AND LOWER(COALESCE(v.resultado, ''))
+                = LOWER(?)
+        """
+
+        params.append(
+            resultado.strip()
+        )
+
+    # --------------------------------------------------------
+    # DATA INICIAL
+    # --------------------------------------------------------
+
+    if data_inicio:
+
+        # Validação da data
+        try:
+
+            datetime.strptime(
+                data_inicio,
+                "%Y-%m-%d",
+            )
+
+        except ValueError:
+
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "data_inicio inválida. "
+                    "Use o formato YYYY-MM-DD."
+                ),
+            )
+
+        query += """
+            AND DATE(v.data_vistoria) >= DATE(?)
+        """
+
+        params.append(
+            data_inicio
+        )
+
+    # --------------------------------------------------------
+    # DATA FINAL
+    # --------------------------------------------------------
+
+    if data_fim:
+
+        try:
+
+            datetime.strptime(
+                data_fim,
+                "%Y-%m-%d",
+            )
+
+        except ValueError:
+
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "data_fim inválida. "
+                    "Use o formato YYYY-MM-DD."
+                ),
+            )
+
+        query += """
+            AND DATE(v.data_vistoria) <= DATE(?)
+        """
+
+        params.append(
+            data_fim
+        )
+
+    # --------------------------------------------------------
+    # ORDENAÇÃO + LIMITE
+    # --------------------------------------------------------
 
     query += """
         ORDER BY
-            v.data_vistoria DESC,
+            DATE(v.data_vistoria) DESC,
             v.id DESC
         LIMIT ?
     """
@@ -383,16 +589,45 @@ def vistorias(
         _limit(
             limit,
             1,
-            5000,
+            50000,
         )
     )
 
-    return _query_df(
+    # --------------------------------------------------------
+    # EXECUÇÃO
+    # --------------------------------------------------------
+
+    df = _query_df(
         query,
         tuple(params),
-    ).to_dict(
-        orient="records"
     )
+
+    # --------------------------------------------------------
+    # RESPOSTA
+    # --------------------------------------------------------
+
+    return {
+        "data": df.to_dict(
+            orient="records"
+        ),
+        "total": len(df),
+        "limit": _limit(
+            limit,
+            1,
+            50000,
+        ),
+        "filtros": {
+            "busca": busca,
+            "vistoria_id": vistoria_id,
+            "placa": placa,
+            "ecv": ecv,
+            "cidade": cidade,
+            "tipo": tipo,
+            "resultado": resultado,
+            "data_inicio": data_inicio,
+            "data_fim": data_fim,
+        },
+    }
 
 
 # ============================================================
