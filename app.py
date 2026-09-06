@@ -1461,7 +1461,7 @@ tempo médio, faturamento e desempenho operacional.
     )
         # ----------------------------------------------------
 
-        elif page == "IA & Insights":
+elif page == "IA & Insights":
 
     vistorias_ia_response = get_api_vistorias()
     ecvs_ia_response = get_api_ecvs()
