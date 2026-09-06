@@ -1491,8 +1491,8 @@ elif page == "IA & Insights":
         # TIPO MAIS UTILIZADO
         # ----------------------------------------------------
 
-         if "tipo_vistoria" in df.columns:
-
+        ```python
+        if "tipo_vistoria" in df.columns:
             tipos = (
                 df["tipo_vistoria"]
                 .fillna("")
@@ -1503,7 +1503,6 @@ elif page == "IA & Insights":
             tipos = tipos[tipos != ""]
 
             if not tipos.empty:
-
                 contagem_tipos = tipos.value_counts()
 
                 tipo_principal = str(contagem_tipos.index[0])
@@ -1520,7 +1519,6 @@ elif page == "IA & Insights":
         # ----------------------------------------------------
 
         if faturamento_ia > 0:
-
             insights.append(
                 f"💰 **Receita analisada:** "
                 f"{money(faturamento_ia)} "
@@ -1528,7 +1526,6 @@ elif page == "IA & Insights":
             )
 
         for insight in insights:
-
             st.markdown(
                 f"""
 <div class="card">
@@ -1537,6 +1534,7 @@ elif page == "IA & Insights":
 """,
                 unsafe_allow_html=True,
             )
+```
 
     # ========================================================
     # ANÁLISE DE PERFORMANCE
