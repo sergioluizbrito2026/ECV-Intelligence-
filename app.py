@@ -617,7 +617,7 @@ def build_vistorias_dataframe(data):
         "inspection_id": "id",
     }
 
-    df = df.rename(
+  df = df.rename(
         columns={
             k: v
             for k, v in rename_map.items()
