@@ -570,7 +570,6 @@ def build_vistorias_dataframe(data):
 
   df = pd.DataFrame(records)
 
-  # Mapeamento e normalização segura de colunas comuns
   rename_map = {
       "id": "ID",
       "data_hora": "Data/Hora",
@@ -584,7 +583,6 @@ def build_vistorias_dataframe(data):
       "valor": "Valor",
   }
 
-  # Renomeia as colunas caso existam no DataFrame retornado
   df = df.rename(
       columns={
           col: rename_map[col] for col in df.columns if col in rename_map
