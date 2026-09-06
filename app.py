@@ -19,20 +19,48 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+
 API_URL = os.getenv(
     "ECV_API_URL",
     "https://ecv-intelligence-api-v3.onrender.com",
 ).rstrip("/")
 
+
 API_TIMEOUT = int(
-    os.getenv("ECV_API_TIMEOUT", "30")
+    os.getenv(
+        "ECV_API_TIMEOUT",
+        "30",
+    )
 )
 
-# Limite de dados
+
+# ============================================================
+# LIMITE CENTRAL DE DADOS
+# ============================================================
+
+# Quantidade máxima de vistorias que o frontend solicitará
+# para a API.
+#
+# Pode ser alterado no ambiente:
+#
+# ECV_MAX_VISTORIAS=10000
+#
+# Caso não exista, utiliza 5000.
+
 MAX_VISTORIAS = int(
-    os.getenv("ECV_MAX_VISTORIAS", "5000")
+    os.getenv(
+        "ECV_MAX_VISTORIAS",
+        "5000",
+    )
 )
 
+
+# Segurança: evita valores inválidos.
+if MAX_VISTORIAS < 100:
+    MAX_VISTORIAS = 100
+
+
+# Limite visual padrão da tabela.
 PAGE_SIZE = 50
 
 
@@ -60,7 +88,9 @@ footer{
 }
 
 
-/* SIDEBAR */
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
 
 [data-testid="stSidebar"]{
     background:#0b1120;
@@ -124,7 +154,9 @@ footer{
 }
 
 
-/* HERO */
+/* =========================================================
+   HERO
+   ========================================================= */
 
 .hero{
     padding:1.5rem 1.8rem;
@@ -146,7 +178,9 @@ footer{
 }
 
 
-/* SECTION */
+/* =========================================================
+   SECTION
+   ========================================================= */
 
 .section-title{
     font-size:1.1rem;
@@ -155,7 +189,9 @@ footer{
 }
 
 
-/* METRICS */
+/* =========================================================
+   METRICS
+   ========================================================= */
 
 [data-testid="stMetric"]{
     border:1px solid rgba(255,255,255,.08);
@@ -173,7 +209,9 @@ footer{
 }
 
 
-/* CARDS */
+/* =========================================================
+   CARDS
+   ========================================================= */
 
 .card{
     border:1px solid rgba(255,255,255,.08);
@@ -203,18 +241,24 @@ footer{
 }
 
 
-/* FILTERS */
+/* =========================================================
+   INFO DATA
+   ========================================================= */
 
-.filter-box{
+.data-limit{
+    padding:.7rem .9rem;
     border:1px solid rgba(255,255,255,.08);
-    border-radius:14px;
-    padding:1rem;
+    border-radius:10px;
     background:#111827;
+    color:#94a3b8;
+    font-size:.8rem;
     margin-bottom:1rem;
 }
 
 
-/* FOOTER */
+/* =========================================================
+   FOOTER
+   ========================================================= */
 
 hr{
     border-color:rgba(255,255,255,.08)!important;
@@ -256,7 +300,17 @@ def safe_float(value, default=0.0):
         return default
 
 
-def normalize_list_response(data, possible_keys=None):
+def safe_int(value, default=0):
+    try:
+        return int(float(value))
+    except Exception:
+        return default
+
+
+def normalize_list_response(
+    data,
+    possible_keys=None,
+):
 
     if isinstance(data, list):
         return data
@@ -286,7 +340,10 @@ def normalize_list_response(data, possible_keys=None):
     return []
 
 
-def first_existing_column(df, candidates):
+def first_existing_column(
+    df,
+    candidates,
+):
 
     for column in candidates:
 
@@ -309,14 +366,19 @@ def clean_text(value):
 # ============================================================
 
 if "page" not in st.session_state:
+
     st.session_state.page = "Visão Geral"
 
 
 def navigate(page_name):
+
     st.session_state.page = page_name
 
 
-def sidebar_button(label, page_name):
+def sidebar_button(
+    label,
+    page_name,
+):
 
     clicked = st.sidebar.button(
         label,
@@ -325,7 +387,9 @@ def sidebar_button(label, page_name):
     )
 
     if clicked:
+
         navigate(page_name)
+
         st.rerun()
 
 
@@ -337,7 +401,10 @@ def sidebar_button(label, page_name):
     ttl=60,
     show_spinner=False,
 )
-def api_get(endpoint, params=None):
+def api_get(
+    endpoint,
+    params=None,
+):
 
     url = f"{API_URL}{endpoint}"
 
@@ -356,8 +423,11 @@ def api_get(endpoint, params=None):
         response.raise_for_status()
 
         try:
+
             data = response.json()
+
         except Exception:
+
             data = {}
 
         return {
@@ -413,48 +483,73 @@ def api_get(endpoint, params=None):
 # ============================================================
 
 def get_api_health():
-    return api_get("/health")
+
+    return api_get(
+        "/health"
+    )
 
 
 def get_api_dashboard():
-    return api_get("/dashboard")
+
+    return api_get(
+        "/dashboard"
+    )
 
 
 def get_api_indicadores():
-    return api_get("/indicadores")
+
+    return api_get(
+        "/indicadores"
+    )
 
 
 def get_api_vistorias():
+
     return api_get(
         "/vistorias",
         {
-            "limit": MAX_VISTORIAS
+            "limit": MAX_VISTORIAS,
         },
     )
 
 
 def get_api_ecvs():
-    return api_get("/ecvs")
+
+    return api_get(
+        "/ecvs"
+    )
 
 
 def get_api_analytics_ecvs():
-    return api_get("/analytics/ecvs")
+
+    return api_get(
+        "/analytics/ecvs"
+    )
 
 
 def get_api_quality():
-    return api_get("/analytics/quality")
+
+    return api_get(
+        "/analytics/quality"
+    )
 
 
 def get_api_daily():
-    return api_get("/analytics/daily")
+
+    return api_get(
+        "/analytics/daily"
+    )
 
 
 def get_api_automations():
-    return api_get("/automations")
+
+    return api_get(
+        "/automations"
+    )
 
 
 # ============================================================
-# NORMALIZAÇÃO VISTORIAS
+# DATAFRAME — VISTORIAS
 # ============================================================
 
 def build_vistorias_dataframe(data):
@@ -471,13 +566,16 @@ def build_vistorias_dataframe(data):
     )
 
     if not records:
+
         return pd.DataFrame()
 
-    df = pd.DataFrame(records)
+    df = pd.DataFrame(
+        records
+    )
 
-    # -----------------------------------------
-    # NORMALIZAÇÃO DOS NOMES
-    # -----------------------------------------
+    # --------------------------------------------------------
+    # NORMALIZAÇÃO
+    # --------------------------------------------------------
 
     rename_map = {
 
@@ -518,11 +616,12 @@ def build_vistorias_dataframe(data):
         }
     )
 
-    # -----------------------------------------
-    # GARANTIR CAMPOS
-    # -----------------------------------------
+    # --------------------------------------------------------
+    # CAMPOS ESPERADOS
+    # --------------------------------------------------------
 
     expected_columns = [
+
         "id",
         "data_vistoria",
         "ecv",
@@ -532,33 +631,37 @@ def build_vistorias_dataframe(data):
         "resultado",
         "tempo_minutos",
         "valor",
+
     ]
 
     for column in expected_columns:
 
         if column not in df.columns:
+
             df[column] = ""
 
-    # -----------------------------------------
+    # --------------------------------------------------------
     # DATA
-    # -----------------------------------------
+    # --------------------------------------------------------
 
     df["data_dt"] = pd.to_datetime(
         df["data_vistoria"],
         errors="coerce",
     )
 
-    # -----------------------------------------
+    # --------------------------------------------------------
     # TEXTO
-    # -----------------------------------------
+    # --------------------------------------------------------
 
     for column in [
+
         "id",
         "ecv",
         "cidade",
         "placa",
         "tipo_vistoria",
         "resultado",
+
     ]:
 
         df[column] = (
@@ -568,9 +671,9 @@ def build_vistorias_dataframe(data):
             .str.strip()
         )
 
-    # -----------------------------------------
+    # --------------------------------------------------------
     # NUMÉRICOS
-    # -----------------------------------------
+    # --------------------------------------------------------
 
     df["tempo_minutos"] = pd.to_numeric(
         df["tempo_minutos"],
@@ -582,19 +685,21 @@ def build_vistorias_dataframe(data):
         errors="coerce",
     )
 
-    # -----------------------------------------
-    # LIMITE
-    # -----------------------------------------
+    # --------------------------------------------------------
+    # LIMITE DE SEGURANÇA
+    # --------------------------------------------------------
 
     if len(df) > MAX_VISTORIAS:
 
-        df = df.head(MAX_VISTORIAS)
+        df = df.head(
+            MAX_VISTORIAS
+        )
 
     return df
 
 
 # ============================================================
-# OUTROS DATAFRAMES
+# DATAFRAME — ECVs
 # ============================================================
 
 def build_ecvs_dataframe(data):
@@ -611,10 +716,17 @@ def build_ecvs_dataframe(data):
     )
 
     if not records:
+
         return pd.DataFrame()
 
-    return pd.DataFrame(records)
+    return pd.DataFrame(
+        records
+    )
 
+
+# ============================================================
+# DATAFRAME — DAILY
+# ============================================================
 
 def build_daily_dataframe(data):
 
@@ -630,9 +742,12 @@ def build_daily_dataframe(data):
     )
 
     if not records:
+
         return pd.DataFrame()
 
-    df = pd.DataFrame(records)
+    df = pd.DataFrame(
+        records
+    )
 
     df = df.rename(
         columns={
@@ -644,6 +759,10 @@ def build_daily_dataframe(data):
 
     return df
 
+
+# ============================================================
+# DATAFRAME — PERFORMANCE
+# ============================================================
 
 def build_performance_dataframe(data):
 
@@ -660,9 +779,12 @@ def build_performance_dataframe(data):
     )
 
     if not records:
+
         return pd.DataFrame()
 
-    df = pd.DataFrame(records)
+    df = pd.DataFrame(
+        records
+    )
 
     df = df.rename(
         columns={
@@ -704,7 +826,7 @@ Analytics, IA e automação para ECVs
 
 
 # ============================================================
-# BLOCO 1
+# WORKSPACE
 # ============================================================
 
 st.sidebar.markdown(
@@ -729,7 +851,7 @@ sidebar_button(
 
 
 # ============================================================
-# BLOCO 2
+# INTELIGÊNCIA
 # ============================================================
 
 st.sidebar.markdown(
@@ -744,7 +866,7 @@ sidebar_button(
 
 
 # ============================================================
-# BLOCO 3
+# INTEGRAÇÕES
 # ============================================================
 
 st.sidebar.markdown(
@@ -764,7 +886,7 @@ sidebar_button(
 
 
 # ============================================================
-# BLOCO 4
+# GESTÃO
 # ============================================================
 
 st.sidebar.markdown(
@@ -784,7 +906,7 @@ sidebar_button(
 
 
 # ============================================================
-# BLOCO 5
+# SISTEMA
 # ============================================================
 
 st.sidebar.markdown(
@@ -799,10 +921,30 @@ sidebar_button(
 
 
 # ============================================================
-# ATUALIZAÇÃO
+# STATUS DO LIMITE
 # ============================================================
 
 st.sidebar.divider()
+
+st.sidebar.caption(
+    "Limite de dados"
+)
+
+st.sidebar.metric(
+    "Vistorias máximas",
+    number(MAX_VISTORIAS),
+)
+
+
+st.sidebar.caption(
+    f"A API será consultada com limite de "
+    f"{number(MAX_VISTORIAS)} registros."
+)
+
+
+# ============================================================
+# ATUALIZAÇÃO
+# ============================================================
 
 if st.sidebar.button(
     "🔄 Atualizar dados",
@@ -811,14 +953,16 @@ if st.sidebar.button(
 ):
 
     st.cache_data.clear()
+
     st.rerun()
 
 
 # ============================================================
-# CARREGAMENTO INTELIGENTE
+# CARREGAMENTO
 # ============================================================
 
 page = st.session_state.page
+
 
 health = get_api_health()
 
@@ -829,7 +973,7 @@ api_online = health.get(
 
 
 # ============================================================
-# SE API OFFLINE
+# API OFFLINE
 # ============================================================
 
 if not api_online:
@@ -853,6 +997,16 @@ Não foi possível conectar à API neste momento.
         "A API não respondeu corretamente."
     )
 
+    error_message = health.get(
+        "error"
+    )
+
+    if error_message:
+
+        st.caption(
+            error_message
+        )
+
     st.link_button(
         "Abrir API",
         API_URL,
@@ -863,7 +1017,7 @@ Não foi possível conectar à API neste momento.
 
 
 # ============================================================
-# CARREGAR DADOS DE ACORDO COM A ABA
+# RESPOSTAS PADRÃO
 # ============================================================
 
 dashboard_response = {
@@ -899,35 +1053,74 @@ automations_response = {
 }
 
 
+# ============================================================
+# CARREGAMENTO POR ABA
+# ============================================================
+
 if page == "Visão Geral":
 
-    dashboard_response = get_api_dashboard()
-    indicadores_response = get_api_indicadores()
-    performance_response = get_api_analytics_ecvs()
-    daily_response = get_api_daily()
+    dashboard_response = (
+        get_api_dashboard()
+    )
+
+    indicadores_response = (
+        get_api_indicadores()
+    )
+
+    performance_response = (
+        get_api_analytics_ecvs()
+    )
+
+    daily_response = (
+        get_api_daily()
+    )
+
 
 elif page == "Vistorias":
 
-    vistorias_response = get_api_vistorias()
+    vistorias_response = (
+        get_api_vistorias()
+    )
+
 
 elif page == "Qualidade":
 
-    quality_response = get_api_quality()
+    quality_response = (
+        get_api_quality()
+    )
+
 
 elif page == "IA & Insights":
 
-    vistorias_response = get_api_vistorias()
-    ecvs_response = get_api_ecvs()
-    performance_response = get_api_analytics_ecvs()
+    vistorias_response = (
+        get_api_vistorias()
+    )
+
+    ecvs_response = (
+        get_api_ecvs()
+    )
+
+    performance_response = (
+        get_api_analytics_ecvs()
+    )
+
 
 elif page == "ECVs":
 
-    ecvs_response = get_api_ecvs()
-    performance_response = get_api_analytics_ecvs()
+    ecvs_response = (
+        get_api_ecvs()
+    )
+
+    performance_response = (
+        get_api_analytics_ecvs()
+    )
+
 
 elif page == "Automações":
 
-    automations_response = get_api_automations()
+    automations_response = (
+        get_api_automations()
+    )
 
 
 # ============================================================
@@ -935,19 +1128,30 @@ elif page == "Automações":
 # ============================================================
 
 df = build_vistorias_dataframe(
-    vistorias_response.get("data")
+    vistorias_response.get(
+        "data"
+    )
 )
+
 
 ecvs_df = build_ecvs_dataframe(
-    ecvs_response.get("data")
+    ecvs_response.get(
+        "data"
+    )
 )
+
 
 perf = build_performance_dataframe(
-    performance_response.get("data")
+    performance_response.get(
+        "data"
+    )
 )
 
+
 daily = build_daily_dataframe(
-    daily_response.get("data")
+    daily_response.get(
+        "data"
+    )
 )
 
 
@@ -956,28 +1160,40 @@ daily = build_daily_dataframe(
 # ============================================================
 
 dashboard_data = (
-    dashboard_response.get("data")
+    dashboard_response.get(
+        "data"
+    )
     or {}
 )
+
 
 indicadores_data = (
-    indicadores_response.get("data")
+    indicadores_response.get(
+        "data"
+    )
     or {}
 )
 
 
-def extract_kpi(keys, default=0):
+def extract_kpi(
+    keys,
+    default=0,
+):
 
     for source in [
         dashboard_data,
         indicadores_data,
     ]:
 
-        if isinstance(source, dict):
+        if isinstance(
+            source,
+            dict,
+        ):
 
             for key in keys:
 
                 if key in source:
+
                     return source[key]
 
     return default
@@ -1053,32 +1269,52 @@ e inteligência para tomada de decisão.
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        f"""
+<div class="data-limit">
+
+📊 Base operacional carregada com limite de
+<strong>{number(MAX_VISTORIAS)}</strong> vistorias.
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
     c1, c2, c3, c4, c5 = st.columns(5)
+
 
     c1.metric(
         "Vistorias",
         number(total_vistorias),
     )
 
+
     c2.metric(
         "Aprovação",
         f"{safe_float(taxa_aprovacao):.1f}%",
     )
+
 
     c3.metric(
         "Reprovação",
         f"{safe_float(taxa_reprovacao):.1f}%",
     )
 
+
     c4.metric(
         "Tempo médio",
         f"{safe_float(tempo_medio):.1f} min",
     )
 
+
     c5.metric(
         "Faturamento",
         money(faturamento),
     )
+
 
     st.markdown(
         '<div class="section-title">'
@@ -1087,7 +1323,13 @@ e inteligência para tomada de decisão.
         unsafe_allow_html=True,
     )
 
+
     a, b = st.columns(2)
+
+
+    # --------------------------------------------------------
+    # GRÁFICO DIÁRIO
+    # --------------------------------------------------------
 
     if (
         not daily.empty
@@ -1100,6 +1342,7 @@ e inteligência para tomada de decisão.
             errors="coerce",
         )
 
+
         fig1 = px.line(
             daily,
             x="data",
@@ -1108,11 +1351,15 @@ e inteligência para tomada de decisão.
             title="Volume diário de vistorias",
         )
 
+
         fig1.update_layout(
             plot_bgcolor="#1e293b",
             paper_bgcolor="#1e293b",
-            font=dict(color="#94a3b8"),
+            font=dict(
+                color="#94a3b8"
+            ),
         )
+
 
         a.plotly_chart(
             fig1,
@@ -1122,8 +1369,14 @@ e inteligência para tomada de decisão.
     else:
 
         a.info(
-            "Não existem dados suficientes para o gráfico diário."
+            "Não existem dados suficientes "
+            "para o gráfico diário."
         )
+
+
+    # --------------------------------------------------------
+    # PERFORMANCE ECV
+    # --------------------------------------------------------
 
     if (
         not perf.empty
@@ -1139,12 +1392,16 @@ e inteligência para tomada de decisão.
             title="Taxa de aprovação por ECV (%)",
         )
 
+
         fig2.update_layout(
             plot_bgcolor="#1e293b",
             paper_bgcolor="#1e293b",
-            font=dict(color="#94a3b8"),
+            font=dict(
+                color="#94a3b8"
+            ),
             showlegend=False,
         )
+
 
         b.plotly_chart(
             fig2,
@@ -1179,6 +1436,20 @@ Pesquisa, filtros e análise dos registros operacionais.
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        f"""
+<div class="data-limit">
+
+📦 Limite atual da consulta:
+<strong>{number(MAX_VISTORIAS)}</strong> registros.
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
     # --------------------------------------------------------
     # API VAZIA
     # --------------------------------------------------------
@@ -1189,15 +1460,18 @@ Pesquisa, filtros e análise dos registros operacionais.
             "A API não retornou registros de vistoria."
         )
 
+
         st.info(
             "A tela está pronta para receber os dados "
             "assim que o endpoint /vistorias retornar registros."
         )
 
+
         st.code(
-            f"GET {API_URL}/vistorias",
+            f"GET {API_URL}/vistorias?limit={MAX_VISTORIAS}",
             language="text",
         )
+
 
     else:
 
@@ -1212,25 +1486,35 @@ Pesquisa, filtros e análise dos registros operacionais.
             unsafe_allow_html=True,
         )
 
-        # BUSCA
+
         busca = st.text_input(
             "Pesquisar",
             placeholder="Digite placa ou ID da vistoria...",
             key="busca_vistoria",
         )
 
+
         c1, c2, c3 = st.columns(3)
 
+
+        # ----------------------------------------------------
         # ECV
+        # ----------------------------------------------------
+
         with c1:
 
             ecv_values = sorted(
                 [
-                    x for x in
-                    df["ecv"].dropna().unique().tolist()
+                    x
+                    for x in
+                    df["ecv"]
+                    .dropna()
+                    .unique()
+                    .tolist()
                     if str(x).strip()
                 ]
             )
+
 
             ecv_filter = st.selectbox(
                 "🏢 ECV",
@@ -1238,16 +1522,25 @@ Pesquisa, filtros e análise dos registros operacionais.
                 key="filtro_ecv",
             )
 
+
+        # ----------------------------------------------------
         # CIDADE
+        # ----------------------------------------------------
+
         with c2:
 
             city_values = sorted(
                 [
-                    x for x in
-                    df["cidade"].dropna().unique().tolist()
+                    x
+                    for x in
+                    df["cidade"]
+                    .dropna()
+                    .unique()
+                    .tolist()
                     if str(x).strip()
                 ]
             )
+
 
             city_filter = st.selectbox(
                 "📍 Cidade",
@@ -1255,16 +1548,25 @@ Pesquisa, filtros e análise dos registros operacionais.
                 key="filtro_cidade",
             )
 
+
+        # ----------------------------------------------------
         # TIPO
+        # ----------------------------------------------------
+
         with c3:
 
             type_values = sorted(
                 [
-                    x for x in
-                    df["tipo_vistoria"].dropna().unique().tolist()
+                    x
+                    for x in
+                    df["tipo_vistoria"]
+                    .dropna()
+                    .unique()
+                    .tolist()
                     if str(x).strip()
                 ]
             )
+
 
             type_filter = st.multiselect(
                 "📋 Tipo",
@@ -1273,18 +1575,28 @@ Pesquisa, filtros e análise dos registros operacionais.
                 key="filtro_tipo",
             )
 
+
         c4, c5, c6 = st.columns(3)
 
+
+        # ----------------------------------------------------
         # RESULTADO
+        # ----------------------------------------------------
+
         with c4:
 
             result_values = sorted(
                 [
-                    x for x in
-                    df["resultado"].dropna().unique().tolist()
+                    x
+                    for x in
+                    df["resultado"]
+                    .dropna()
+                    .unique()
+                    .tolist()
                     if str(x).strip()
                 ]
             )
+
 
             result_filter = st.multiselect(
                 "🎯 Resultado",
@@ -1293,7 +1605,11 @@ Pesquisa, filtros e análise dos registros operacionais.
                 key="filtro_resultado",
             )
 
+
+        # ----------------------------------------------------
         # DATA
+        # ----------------------------------------------------
+
         with c5:
 
             valid_dates = (
@@ -1301,10 +1617,21 @@ Pesquisa, filtros e análise dos registros operacionais.
                 .dropna()
             )
 
+
             if not valid_dates.empty:
 
-                min_date = valid_dates.min().date()
-                max_date = valid_dates.max().date()
+                min_date = (
+                    valid_dates
+                    .min()
+                    .date()
+                )
+
+                max_date = (
+                    valid_dates
+                    .max()
+                    .date()
+                )
+
 
                 date_filter = st.date_input(
                     "📅 Período",
@@ -1325,7 +1652,11 @@ Pesquisa, filtros e análise dos registros operacionais.
                     "Período indisponível"
                 )
 
-        # LIMITE
+
+        # ----------------------------------------------------
+        # LIMITE VISUAL
+        # ----------------------------------------------------
+
         with c6:
 
             display_limit = st.selectbox(
@@ -1341,16 +1672,19 @@ Pesquisa, filtros e análise dos registros operacionais.
                 key="limite_tabela",
             )
 
+
         # ----------------------------------------------------
         # APLICAR FILTROS
         # ----------------------------------------------------
 
         filtered = df.copy()
 
+
         # Busca placa / ID
         if busca.strip():
 
             q = busca.strip().lower()
+
 
             mask = (
                 filtered["placa"]
@@ -1359,8 +1693,10 @@ Pesquisa, filtros e análise dos registros operacionais.
                 .str.contains(
                     q,
                     na=False,
+                    regex=False,
                 )
             )
+
 
             mask |= (
                 filtered["id"]
@@ -1369,10 +1705,13 @@ Pesquisa, filtros e análise dos registros operacionais.
                 .str.contains(
                     q,
                     na=False,
+                    regex=False,
                 )
             )
 
+
             filtered = filtered[mask]
+
 
         # ECV
         if ecv_filter != "Todas":
@@ -1382,6 +1721,7 @@ Pesquisa, filtros e análise dos registros operacionais.
                 == ecv_filter
             ]
 
+
         # Cidade
         if city_filter != "Todas":
 
@@ -1390,21 +1730,30 @@ Pesquisa, filtros e análise dos registros operacionais.
                 == city_filter
             ]
 
+
         # Tipo
-        if type_values:
+        if type_filter:
 
             filtered = filtered[
-                filtered["tipo_vistoria"]
-                .isin(type_filter)
+                filtered[
+                    "tipo_vistoria"
+                ].isin(
+                    type_filter
+                )
             ]
+
 
         # Resultado
-        if result_values:
+        if result_filter:
 
             filtered = filtered[
-                filtered["resultado"]
-                .isin(result_filter)
+                filtered[
+                    "resultado"
+                ].isin(
+                    result_filter
+                )
             ]
+
 
         # Período
         if (
@@ -1414,6 +1763,7 @@ Pesquisa, filtros e análise dos registros operacionais.
 
             start_date = date_filter[0]
             end_date = date_filter[1]
+
 
             filtered = filtered[
                 (
@@ -1429,17 +1779,23 @@ Pesquisa, filtros e análise dos registros operacionais.
                 )
             ]
 
+
         # ----------------------------------------------------
         # KPIs
         # ----------------------------------------------------
 
-        total_filtrado = len(filtered)
+        total_filtrado = len(
+            filtered
+        )
+
 
         resultados_lower = (
             filtered["resultado"]
             .astype(str)
             .str.lower()
+            .str.strip()
         )
+
 
         aprovados = int(
             resultados_lower
@@ -1454,6 +1810,7 @@ Pesquisa, filtros e análise dos registros operacionais.
             .sum()
         )
 
+
         reprovados = int(
             resultados_lower
             .isin(
@@ -1467,18 +1824,22 @@ Pesquisa, filtros e análise dos registros operacionais.
             .sum()
         )
 
+
         faturamento_filtrado = (
             filtered["valor"]
             .fillna(0)
             .sum()
         )
 
+
         k1, k2, k3, k4 = st.columns(4)
+
 
         k1.metric(
             "Registros",
             number(total_filtrado),
         )
+
 
         k2.metric(
             "Aprovação",
@@ -1489,6 +1850,7 @@ Pesquisa, filtros e análise dos registros operacionais.
             ),
         )
 
+
         k3.metric(
             "Reprovação",
             (
@@ -1498,12 +1860,14 @@ Pesquisa, filtros e análise dos registros operacionais.
             ),
         )
 
+
         k4.metric(
             "Faturamento",
             money(
                 faturamento_filtrado
             ),
         )
+
 
         # ----------------------------------------------------
         # EXPORTAÇÃO
@@ -1516,13 +1880,24 @@ Pesquisa, filtros e análise dos registros operacionais.
             unsafe_allow_html=True,
         )
 
-        e1, e2 = st.columns([1, 4])
+
+        e1, e2 = st.columns(
+            [1, 4]
+        )
+
 
         with e1:
 
-            csv_data = filtered.to_csv(
-                index=False
-            ).encode("utf-8-sig")
+            csv_data = (
+                filtered
+                .to_csv(
+                    index=False
+                )
+                .encode(
+                    "utf-8-sig"
+                )
+            )
+
 
             st.download_button(
                 "📥 Exportar CSV",
@@ -1532,17 +1907,22 @@ Pesquisa, filtros e análise dos registros operacionais.
                 use_container_width=True,
             )
 
+
         with e2:
 
             st.caption(
-                f"Encontrados {number(total_filtrado)} registros."
+                f"Encontrados "
+                f"{number(total_filtrado)} "
+                f"registros."
             )
+
 
         # ----------------------------------------------------
         # TABELA
         # ----------------------------------------------------
 
         preferred_columns = [
+
             "id",
             "data_vistoria",
             "ecv",
@@ -1552,24 +1932,37 @@ Pesquisa, filtros e análise dos registros operacionais.
             "resultado",
             "tempo_minutos",
             "valor",
+
         ]
 
+
         table_columns = [
+
             column
             for column in preferred_columns
             if column in filtered.columns
+
         ]
 
-        table_df = filtered[
-            table_columns
-        ].copy()
 
-        # Formatação
+        table_df = (
+            filtered[
+                table_columns
+            ]
+            .copy()
+        )
+
+
+        # Formatação da data
         if "data_vistoria" in table_df.columns:
 
-            table_df["data_vistoria"] = (
+            table_df[
+                "data_vistoria"
+            ] = (
                 pd.to_datetime(
-                    table_df["data_vistoria"],
+                    table_df[
+                        "data_vistoria"
+                    ],
                     errors="coerce",
                 )
                 .dt.strftime(
@@ -1577,24 +1970,41 @@ Pesquisa, filtros e análise dos registros operacionais.
                 )
             )
 
+
+        # Formatação financeira
         if "valor" in table_df.columns:
 
-            table_df["valor"] = (
-                table_df["valor"]
+            table_df[
+                "valor"
+            ] = (
+                table_df[
+                    "valor"
+                ]
                 .apply(money)
             )
 
+
+        # Formatação tempo
         if "tempo_minutos" in table_df.columns:
 
-            table_df["tempo_minutos"] = (
-                table_df["tempo_minutos"]
+            table_df[
+                "tempo_minutos"
+            ] = (
+                table_df[
+                    "tempo_minutos"
+                ]
                 .round(1)
             )
 
-        # Limite visual
+
+        # ----------------------------------------------------
+        # LIMITE VISUAL
+        # ----------------------------------------------------
+
         table_df = table_df.head(
             display_limit
         )
+
 
         st.dataframe(
             table_df,
@@ -1602,6 +2012,7 @@ Pesquisa, filtros e análise dos registros operacionais.
             hide_index=True,
             height=560,
         )
+
 
         if total_filtrado > display_limit:
 
@@ -1634,12 +2045,14 @@ Diagnóstico da confiabilidade da base operacional.
         unsafe_allow_html=True,
     )
 
-    quality_response = get_api_quality()
 
     quality_data = (
-        quality_response.get("data")
+        quality_response.get(
+            "data"
+        )
         or {}
     )
+
 
     if not isinstance(
         quality_data,
@@ -1660,10 +2073,12 @@ Diagnóstico da confiabilidade da base operacional.
             ),
         )
 
+
         duplicados = quality_data.get(
             "duplicados",
             0,
         )
+
 
         nulos = quality_data.get(
             "nulos",
@@ -1673,27 +2088,33 @@ Diagnóstico da confiabilidade da base operacional.
             ),
         )
 
+
         placas_invalidas = quality_data.get(
             "placas_invalidas",
             0,
         )
 
+
         a, b, c, d = st.columns(4)
+
 
         a.metric(
             "Registros",
             number(total),
         )
 
+
         b.metric(
             "Duplicados",
             number(duplicados),
         )
 
+
         c.metric(
             "Campos vazios",
             number(nulos),
         )
+
 
         d.metric(
             "Placas inválidas",
@@ -1722,28 +2143,48 @@ Inteligência artificial aplicada aos dados operacionais.
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        f"""
+<div class="data-limit">
+
+🤖 O Copilot está analisando até
+<strong>{number(MAX_VISTORIAS)}</strong>
+vistorias carregadas da base.
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
     ecv_count = (
         len(ecvs_df)
         if not ecvs_df.empty
         else 0
     )
 
+
     a, b, c = st.columns(3)
+
 
     a.metric(
         "ECVs analisadas",
         number(ecv_count),
     )
 
+
     b.metric(
         "Vistorias analisadas",
         number(len(df)),
     )
 
+
     c.metric(
         "Copilot",
         "Ativo",
     )
+
 
     st.markdown(
         '<div class="section-title">'
@@ -1752,14 +2193,20 @@ Inteligência artificial aplicada aos dados operacionais.
         unsafe_allow_html=True,
     )
 
+
     question = st.text_input(
         "Pergunta",
-        placeholder="Qual ECV teve melhor desempenho?",
+        placeholder=(
+            "Qual ECV teve melhor desempenho?"
+        ),
+        key="copilot_question",
     )
+
 
     if st.button(
         "🔎 Consultar dados",
         type="primary",
+        key="consultar_copilot",
     ):
 
         if not question.strip():
@@ -1772,7 +2219,10 @@ Inteligência artificial aplicada aos dados operacionais.
 
             try:
 
-                from services.ai_service import ask_data
+                from services.ai_service import (
+                    ask_data
+                )
+
 
                 with st.spinner(
                     "Analisando dados..."
@@ -1782,6 +2232,7 @@ Inteligência artificial aplicada aos dados operacionais.
                         question,
                         df,
                     )
+
 
                 st.markdown(
                     f"""
@@ -1800,11 +2251,13 @@ COPILOT
                     unsafe_allow_html=True,
                 )
 
+
             except Exception as exc:
 
                 st.error(
                     "Não foi possível executar o Copilot."
                 )
+
 
                 st.caption(
                     f"Detalhes: {exc}"
@@ -1832,6 +2285,7 @@ Visão consolidada das Empresas Credenciadas de Vistoria.
         unsafe_allow_html=True,
     )
 
+
     if ecvs_df.empty:
 
         st.info(
@@ -1839,6 +2293,12 @@ Visão consolidada das Empresas Credenciadas de Vistoria.
         )
 
     else:
+
+        st.metric(
+            "ECVs cadastradas",
+            number(len(ecvs_df)),
+        )
+
 
         st.dataframe(
             ecvs_df,
@@ -1868,11 +2328,17 @@ Monitoramento das regras e execuções automatizadas.
         unsafe_allow_html=True,
     )
 
+
     automation_data = (
-        automations_response.get("data")
-        if automations_response.get("ok")
+        automations_response.get(
+            "data"
+        )
+        if automations_response.get(
+            "ok"
+        )
         else None
     )
+
 
     logs = pd.DataFrame(
         normalize_list_response(
@@ -1887,6 +2353,7 @@ Monitoramento das regras e execuções automatizadas.
         )
     )
 
+
     if logs.empty:
 
         st.info(
@@ -1899,6 +2366,7 @@ Monitoramento das regras e execuções automatizadas.
             "Execuções",
             number(len(logs)),
         )
+
 
         st.dataframe(
             logs,
@@ -1929,22 +2397,27 @@ BI e parceiros.
         unsafe_allow_html=True,
     )
 
+
     c1, c2, c3 = st.columns(3)
+
 
     c1.metric(
         "Status",
         "Online",
     )
 
+
     c2.metric(
         "Health",
         "OK",
     )
 
+
     c3.metric(
         "API",
         "REST",
     )
+
 
     st.markdown(
         '<div class="section-title">'
@@ -1953,12 +2426,14 @@ BI e parceiros.
         unsafe_allow_html=True,
     )
 
+
     endpoints = [
+
         "GET /health",
         "GET /dashboard",
         "GET /indicadores",
         "GET /ecvs",
-        "GET /vistorias",
+        f"GET /vistorias?limit={MAX_VISTORIAS}",
         "GET /analytics/ecvs",
         "GET /analytics/quality",
         "GET /analytics/daily",
@@ -1966,10 +2441,39 @@ BI e parceiros.
         "GET /powerbi/vistorias",
         "GET /powerbi/ecvs",
         "GET /powerbi/indicadores",
+
     ]
 
+
     for endpoint in endpoints:
-        st.code(endpoint)
+
+        st.code(
+            endpoint
+        )
+
+
+    st.markdown(
+        '<div class="section-title">'
+        '⚙️ Configuração de dados'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+
+    st.info(
+        f"""
+O frontend está configurado para solicitar até
+{number(MAX_VISTORIAS)} vistorias por consulta.
+
+Para alterar o limite, defina a variável de ambiente:
+
+ECV_MAX_VISTORIAS
+
+Exemplo:
+
+ECV_MAX_VISTORIAS=10000
+"""
+    )
 
 
 # ============================================================
@@ -1993,7 +2497,13 @@ Integração analítica para consumo dos dados da plataforma.
         unsafe_allow_html=True,
     )
 
+
     a, b, c = st.columns(3)
+
+
+    # --------------------------------------------------------
+    # VISTORIAS
+    # --------------------------------------------------------
 
     with a:
 
@@ -2012,11 +2522,17 @@ Dados operacionais das vistorias.
             unsafe_allow_html=True,
         )
 
+
         st.link_button(
             "Abrir endpoint",
             f"{API_URL}/powerbi/vistorias",
             use_container_width=True,
         )
+
+
+    # --------------------------------------------------------
+    # ECVs
+    # --------------------------------------------------------
 
     with b:
 
@@ -2035,11 +2551,17 @@ Dados consolidados das ECVs.
             unsafe_allow_html=True,
         )
 
+
         st.link_button(
             "Abrir endpoint",
             f"{API_URL}/powerbi/ecvs",
             use_container_width=True,
         )
+
+
+    # --------------------------------------------------------
+    # INDICADORES
+    # --------------------------------------------------------
 
     with c:
 
@@ -2058,11 +2580,29 @@ KPIs preparados para análise.
             unsafe_allow_html=True,
         )
 
+
         st.link_button(
             "Abrir endpoint",
             f"{API_URL}/powerbi/indicadores",
             use_container_width=True,
         )
+
+
+    st.markdown(
+        '<div class="section-title">'
+        '📌 Integração'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+
+    st.info(
+        """
+Os endpoints Power BI estão separados dos endpoints
+operacionais para facilitar a integração do dashboard
+com o Power BI.
+"""
+    )
 
 
 # ============================================================
@@ -2086,35 +2626,77 @@ Preferências da plataforma ECV Intelligence.
         unsafe_allow_html=True,
     )
 
+
+    st.markdown(
+        f"""
+<div class="card">
+
+<h3>📊 Limite de dados</h3>
+
+<div class="small">
+
+Limite atual de vistorias:
+<strong>{number(MAX_VISTORIAS)}</strong>
+
+<br><br>
+
+Esse valor é controlado pela variável de ambiente:
+
+<strong>ECV_MAX_VISTORIAS</strong>
+
+<br><br>
+
+Exemplo:
+
+<strong>ECV_MAX_VISTORIAS=10000</strong>
+
+</div>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
     c1, c2 = st.columns(2)
+
 
     with c1:
 
-        st.checkbox(
+        atualizacao = st.checkbox(
             "Atualização automática",
             value=True,
+            key="config_atualizacao",
         )
 
-        st.checkbox(
+
+        graficos = st.checkbox(
             "Mostrar gráficos avançados",
             value=True,
+            key="config_graficos",
         )
+
 
     with c2:
 
-        st.checkbox(
+        ia = st.checkbox(
             "Ativar sugestões da IA",
             value=True,
+            key="config_ia",
         )
 
-        st.checkbox(
+
+        compacto = st.checkbox(
             "Modo compacto",
             value=False,
+            key="config_compacto",
         )
+
 
     if st.button(
         "💾 Salvar preferências",
         type="primary",
+        key="salvar_config",
     ):
 
         st.success(
@@ -2127,6 +2709,7 @@ Preferências da plataforma ECV Intelligence.
 # ============================================================
 
 st.divider()
+
 
 st.caption(
     "ECV Intelligence • Analytics, IA e Automação"
