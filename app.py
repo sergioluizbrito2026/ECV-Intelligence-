@@ -1491,7 +1491,7 @@ elif page == "IA & Insights":
         # TIPO MAIS UTILIZADO
         # ----------------------------------------------------
 
-        ```python
+        
         if "tipo_vistoria" in df.columns:
             tipos = (
                 df["tipo_vistoria"]
