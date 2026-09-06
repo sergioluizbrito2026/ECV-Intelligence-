@@ -2238,23 +2238,10 @@ st.caption(
     "ECV Intelligence • Analytics, IA e Automação • V3"
 )
 
-### O que foi corrigido neste `app.py`
+
 
 A principal alteração está na aba **Vistorias**. Agora ela reconhece corretamente o retorno que você mostrou:
 
-```text
-id
-ecv_id
-ecv
-cidade
-estado
-placa
-tipo_vistoria
-data_vistoria
-resultado
-tempo_minutos
-valor
-```
 
 E a tela passa a ter:
 
@@ -2274,4 +2261,10 @@ E a tela passa a ter:
 * tabela com `ecv_id`
 * limite de 5.000 registros preservado
 
-**Pode substituir seu `app.py` por esse código.** Depois faça o commit/push no GitHub e o Streamlit deverá fazer o novo deploy.
+st.divider()
+
+st.caption(
+    "ECV Intelligence • Analytics, IA e Automação • V3"
+)    
+    
+    
