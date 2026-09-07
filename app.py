@@ -110,43 +110,65 @@ footer {
 }
 
 [data-testid="stSidebar"] .stButton {
-    margin-bottom: 4px;
+    margin: 0 0 6px 0;
 }
 
+/* Botões principais da navegação */
 [data-testid="stSidebar"] .stButton > button {
     width: 100%;
-    min-height: 42px;
-    border: 1px solid transparent !important;
-    border-radius: 11px !important;
-    background: transparent !important;
+    min-height: 44px;
+    border: 1px solid rgba(148,163,184,.06) !important;
+    border-radius: 13px !important;
+    background: rgba(15,23,42,.34) !important;
     color: #cbd5e1 !important;
     text-align: left !important;
-    font-size: .84rem;
-    font-weight: 600;
-    padding: 0 12px !important;
-    box-shadow: none;
-    transition: all .18s ease;
+    font-size: .82rem;
+    font-weight: 650;
+    letter-spacing: -.01em;
+    padding: 0 13px !important;
+    box-shadow: 0 2px 7px rgba(0,0,0,.08);
+    transition: background .18s ease, border-color .18s ease,
+                box-shadow .18s ease, transform .18s ease, color .18s ease;
 }
 
 [data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(51,65,85,.42) !important;
-    border-color: rgba(148,163,184,.13) !important;
+    background: linear-gradient(135deg, rgba(30,41,59,.96), rgba(30,41,59,.70)) !important;
+    border-color: rgba(96,165,250,.20) !important;
     color: #ffffff !important;
-    transform: translateX(2px);
-    box-shadow: 0 5px 14px rgba(0,0,0,.16);
+    transform: translateX(3px);
+    box-shadow: 0 7px 18px rgba(0,0,0,.22);
 }
 
+/* Página selecionada */
 [data-testid="stSidebar"] .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
-    border-color: rgba(96,165,250,.45) !important;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    border: 1px solid rgba(147,197,253,.34) !important;
     color: #ffffff !important;
-    box-shadow: 0 7px 18px rgba(37,99,235,.28);
+    box-shadow: 0 8px 22px rgba(37,99,235,.30),
+                inset 0 1px 0 rgba(255,255,255,.10);
 }
 
 [data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
-    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-    box-shadow: 0 9px 22px rgba(37,99,235,.34);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    border-color: rgba(147,197,253,.46) !important;
+    box-shadow: 0 10px 26px rgba(37,99,235,.38),
+                inset 0 1px 0 rgba(255,255,255,.13);
     transform: translateY(-1px);
+}
+
+/* Botão de atualização */
+[data-testid="stSidebar"] button[key="refresh_data"] {
+    min-height: 38px;
+    margin-top: .25rem;
+    background: rgba(30,41,59,.48) !important;
+    border-color: rgba(148,163,184,.12) !important;
+    color: #94a3b8 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,.12);
+}
+
+[data-testid="stSidebar"] button[key="refresh_data"]:hover {
+    color: #ffffff !important;
+    border-color: rgba(96,165,250,.24) !important;
 }
 
 .sidebar-data-card {
@@ -3775,8 +3797,63 @@ do ECV Intelligence.
 
     elif logs.empty:
 
-        st.info(
-            "Nenhuma execução de automação foi registrada pela API."
+        # Estado vazio profissional: não inventamos execuções.
+        st.markdown(
+            """
+<div class="card" style="padding:1.35rem 1.4rem; margin-bottom:1rem;">
+    <div style="font-size:1.05rem; font-weight:800; margin-bottom:.35rem;">
+        📭 Nenhuma execução registrada
+    </div>
+    <div style="color:#94a3b8; line-height:1.6; font-size:.86rem;">
+        A API está acessível, mas ainda não existem registros de
+        execuções de automação para exibir nesta área.
+    </div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            '<div class="section-title">🤖 Automações disponíveis</div>',
+            unsafe_allow_html=True,
+        )
+
+        a1, a2, a3, a4 = st.columns(4)
+
+        automation_cards = [
+            (a1, "🔎", "Monitoramento", "Acompanhe indicadores e eventos operacionais."),
+            (a2, "⚠️", "Anomalias", "Identifique comportamentos fora do padrão."),
+            (a3, "📊", "Desempenho", "Monitore resultados e performance das ECVs."),
+            (a4, "🔔", "Alertas", "Prepare notificações para situações críticas."),
+        ]
+
+        for column, icon, title, description in automation_cards:
+            with column:
+                st.markdown(
+                    f"""
+<div class="card" style="min-height:145px;">
+    <div style="font-size:1.35rem; margin-bottom:.45rem;">{icon}</div>
+    <div style="font-weight:800; margin-bottom:.35rem;">{title}</div>
+    <div style="color:#94a3b8; font-size:.76rem; line-height:1.5;">
+        {description}
+    </div>
+</div>
+""",
+                    unsafe_allow_html=True,
+                )
+
+        st.markdown(
+            '<div class="section-title">📡 Status da automação</div>',
+            unsafe_allow_html=True,
+        )
+
+        s1, s2, s3 = st.columns(3)
+        s1.metric("Execuções registradas", "0")
+        s2.metric("Falhas registradas", "0")
+        s3.metric("Status da API", "Online")
+
+        st.caption(
+            "Quando novas execuções forem registradas pela API, o histórico e os indicadores serão exibidos automaticamente."
         )
 
     else:
