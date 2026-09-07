@@ -1805,7 +1805,7 @@ tempo médio, faturamento e desempenho operacional.
             "Não existem dados suficientes para análise."
         )
 
-    ```python
+    
 # ========================================================
 # COPILOT
 # ========================================================
