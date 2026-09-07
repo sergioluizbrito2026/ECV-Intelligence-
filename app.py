@@ -1805,17 +1805,18 @@ tempo médio, faturamento e desempenho operacional.
             "Não existem dados suficientes para análise."
         )
 
-    # ========================================================
-    # COPILOT
-    # ========================================================
+    ```python
+# ========================================================
+# COPILOT
+# ========================================================
 
-    st.markdown(
-        '<div class="section-title">💬 Copilot de Dados</div>',
-        unsafe_allow_html=True,
-    )
+st.markdown(
+    '<div class="section-title">💬 Copilot de Dados</div>',
+    unsafe_allow_html=True,
+)
 
-    st.markdown(
-        """
+st.markdown(
+    """
 <div class="card">
 
 <h3>🤖 Pergunte aos seus dados</h3>
@@ -1827,88 +1828,136 @@ perguntas sobre ECVs, resultados, volume, tempo e faturamento.
 
 </div>
 """,
-        unsafe_allow_html=True,
-    )
+    unsafe_allow_html=True,
+)
 
-    question = st.text_input(
-        "Pergunta",
-        placeholder=(
-            "Ex.: Qual ECV realizou mais vistorias?"
-        ),
-        key="copilot_question_v3",
-    )
+# ========================================================
+# BASE DE DADOS DO COPILOT
+# ========================================================
 
-    st.markdown(
-        '<div class="small">Sugestões de perguntas:</div>',
-        unsafe_allow_html=True,
-    )
+copilot_df = pd.DataFrame()
 
-    s1, s2, s3, s4 = st.columns(4)
+try:
 
-    if s1.button(
-        "🏢 Melhor ECV",
-        use_container_width=True,
-        key="sugestao_melhor_ecv",
-    ):
-        question = "Qual ECV realizou mais vistorias?"
+    # Caso a resposta da API seja um DataFrame
+    if isinstance(vistorias_response, pd.DataFrame):
 
-    if s2.button(
-        "📊 Aprovação",
-        use_container_width=True,
-        key="sugestao_aprovacao",
-    ):
-        question = "Qual é a taxa de aprovação das vistorias?"
+        copilot_df = vistorias_response.copy()
 
-    if s3.button(
-        "⏱️ Tempo médio",
-        use_container_width=True,
-        key="sugestao_tempo",
-    ):
-        question = "Qual é o tempo médio das vistorias?"
+    # Caso a API retorne um dicionário
+    elif isinstance(vistorias_response, dict):
 
-    if s4.button(
-        "💰 Faturamento",
-        use_container_width=True,
-        key="sugestao_faturamento",
-    ):
-        question = "Qual é o faturamento total?"
+        dados = (
+            vistorias_response.get("data")
+            or vistorias_response.get("vistorias")
+            or vistorias_response.get("results")
+            or []
+        )
 
-    if st.button(
-        "🔎 Analisar dados",
-        type="primary",
-        use_container_width=True,
-        key="consultar_copilot_v3",
-    ):
+        if isinstance(dados, list):
 
-        if not question.strip():
+            copilot_df = pd.DataFrame(dados)
 
-            st.warning(
-                "Digite uma pergunta ou escolha uma sugestão."
-            )
+except Exception:
 
-        elif df.empty:
+    copilot_df = pd.DataFrame()
 
-            st.warning(
-                "Não existem dados de vistorias disponíveis."
-            )
 
-        else:
+# ========================================================
+# COPILOT — PERGUNTA
+# ========================================================
 
-            try:
+question = st.text_input(
+    "Pergunta",
+    placeholder=(
+        "Ex.: Qual ECV realizou mais vistorias?"
+    ),
+    key="copilot_question_v3",
+)
 
-                from services.ai_service import ask_data
+st.markdown(
+    '<div class="small">Sugestões de perguntas:</div>',
+    unsafe_allow_html=True,
+)
 
-                with st.spinner(
-                    "🤖 O Copilot está analisando os dados..."
-                ):
+s1, s2, s3, s4 = st.columns(4)
 
-                    answer = ask_data(
-                        question,
-                        df,
-                    )
+if s1.button(
+    "🏢 Melhor ECV",
+    use_container_width=True,
+    key="sugestao_melhor_ecv",
+):
 
-                st.markdown(
-                    f"""
+    question = "Qual ECV realizou mais vistorias?"
+
+
+if s2.button(
+    "📊 Aprovação",
+    use_container_width=True,
+    key="sugestao_aprovacao",
+):
+
+    question = "Qual é a taxa de aprovação das vistorias?"
+
+
+if s3.button(
+    "⏱️ Tempo médio",
+    use_container_width=True,
+    key="sugestao_tempo",
+):
+
+    question = "Qual é o tempo médio das vistorias?"
+
+
+if s4.button(
+    "💰 Faturamento",
+    use_container_width=True,
+    key="sugestao_faturamento",
+):
+
+    question = "Qual é o faturamento total?"
+
+
+# ========================================================
+# ANALISAR
+# ========================================================
+
+if st.button(
+    "🔎 Analisar dados",
+    type="primary",
+    use_container_width=True,
+    key="consultar_copilot_v3",
+):
+
+    if not question.strip():
+
+        st.warning(
+            "Digite uma pergunta ou escolha uma sugestão."
+        )
+
+    elif copilot_df.empty:
+
+        st.warning(
+            "Não existem dados de vistorias disponíveis para análise."
+        )
+
+    else:
+
+        try:
+
+            from services.ai_service import ask_data
+
+            with st.spinner(
+                "🤖 O Copilot está analisando os dados..."
+            ):
+
+                answer = ask_data(
+                    question,
+                    copilot_df,
+                )
+
+            st.markdown(
+                f"""
 <div class="card">
 
 <span class="badge">COPILOT IA</span>
@@ -1921,8 +1970,20 @@ perguntas sobre ECVs, resultados, volume, tempo e faturamento.
 
 </div>
 """,
-                    unsafe_allow_html=True,
-                )
+                unsafe_allow_html=True,
+            )
+
+        except Exception as exc:
+
+            st.error(
+                "Não foi possível executar o Copilot."
+            )
+
+            st.caption(
+                f"Detalhes técnicos: {exc}"
+            )
+
+
 
             except Exception:
 
