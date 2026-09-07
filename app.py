@@ -3841,44 +3841,7 @@ no Power BI e outras ferramentas de BI.
         "`ECV_MAX_VISTORIAS`."
     )
 
-    # ========================================================
-    # ENDPOINTS
-    # ========================================================
-
-    st.markdown(
-        '<div class="section-title">🌐 Endpoints da plataforma</div>',
-        unsafe_allow_html=True,
-    )
-
-    with st.expander("📊 Dados operacionais", expanded=False):
-
-        st.code(
-            """GET /health
-GET /dashboard
-GET /indicadores
-GET /ecvs
-GET /vistorias?limit=5000""",
-            language="http",
-        )
-
-    with st.expander("📈 Analytics e automações", expanded=False):
-
-        st.code(
-            """GET /analytics/ecvs
-GET /analytics/quality
-GET /analytics/daily
-GET /automations""",
-            language="http",
-        )
-
-    with st.expander("📊 Power BI", expanded=False):
-
-        st.code(
-            """GET /powerbi/vistorias
-GET /powerbi/ecvs
-GET /powerbi/indicadores""",
-            language="http",
-        )
+   
 
     # ========================================================
     # HEALTH CHECK
@@ -3951,17 +3914,7 @@ ECV_MAX_VISTORIAS""",
             language="text",
         )
 
-    st.caption(
-        "ECV Intelligence • API & Integrações"
-    )
-
-
-# ============================================================
-# POWER BI
-# ============================================================
-
-
-
+    
 
 # ============================================================
 # POWER BI
