@@ -3810,53 +3810,7 @@ no Power BI e outras ferramentas de BI.
    
    
 
-    # ========================================================
-    # HEALTH CHECK
-    # ========================================================
-
-    st.markdown(
-        '<div class="section-title">🩺 Monitoramento</div>',
-        unsafe_allow_html=True,
-    )
-
-    h1, h2 = st.columns(2)
-
-    with h1:
-        st.markdown(
-            """
-<div class="card">
-
-<h3>🟢 API operacional</h3>
-
-<p>
-A camada REST está disponível para consumo
-pelas aplicações integradas.
-</p>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-    with h2:
-        st.markdown(
-            """
-<div class="card">
-
-<h3>🔎 Health Check</h3>
-
-<p>
-Utilize o endpoint para validar a disponibilidade
-do serviço.
-</p>
-
-<code>GET /health</code>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
+    
  
     
 
