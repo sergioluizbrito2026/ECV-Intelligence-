@@ -2317,7 +2317,10 @@ e inteligência para tomada de decisão.
 # GRÁFICOS (ANÁLISE OPERACIONAL)
 # ====================================================
 
-if not filtered.empty:
+# Define uma base segura para evitar erros caso 'filtered' não exista na página atual
+base_analise = filtered if 'filtered' in locals() and not filtered.empty else (df if 'df' in locals() else None)
+
+if base_analise is not None and not base_analise.empty:
 
     st.markdown(
         '<div class="section-title">📈 Análise operacional</div>',
@@ -2327,7 +2330,7 @@ if not filtered.empty:
     g1, g2 = st.columns(2)
 
     result_chart = (
-        filtered["resultado"]
+        base_analise["resultado"]
         .value_counts()
         .reset_index()
     )
@@ -2359,7 +2362,7 @@ if not filtered.empty:
     )
 
     type_chart = (
-        filtered["tipo_vistoria"]
+        base_analise["tipo_vistoria"]
         .value_counts()
         .reset_index()
     )
@@ -2395,7 +2398,7 @@ if not filtered.empty:
     )
 
     ecv_analysis = (
-        filtered
+        base_analise
         .groupby("ecv")
         .agg(
             vistorias=("id", "count"),
