@@ -3956,40 +3956,7 @@ KPIs estratégicos
 
     
 
-    # ========================================================
-    # INFORMAÇÕES TÉCNICAS
-    # ========================================================
-
-    st.markdown(
-        '<div class="section-title">🛠️ Informações técnicas</div>',
-        unsafe_allow_html=True,
-    )
-
-    with st.expander("Ver detalhes técnicos da API"):
-
-        st.code(
-            f"""
-Protocolo: REST
-Formato: JSON
-Status: Online
-Health Check: OK
-
-Limite de vistorias:
-{MAX_VISTORIAS}
-
-Variável:
-ECV_MAX_VISTORIAS
-
-Endpoints:
-12
-""",
-            language="text",
-        )
-
-    st.caption(
-        "ECV Intelligence • Camada de integração e disponibilização de dados"
-    )
-
+    
 
 # ============================================================
 # POWER BI
