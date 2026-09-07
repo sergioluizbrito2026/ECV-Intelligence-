@@ -37,6 +37,61 @@ if MAX_VISTORIAS < 100:
 
 
 # ============================================================
+# PALETA DOS GRÁFICOS
+# ============================================================
+
+CHART_BLUE = "#60A5FA"
+CHART_CYAN = "#38BDF8"
+CHART_GREEN = "#22C55E"
+CHART_RED = "#EF4444"
+CHART_AMBER = "#F59E0B"
+CHART_PURPLE = "#A78BFA"
+CHART_TEAL = "#2DD4BF"
+CHART_SLATE = "#94A3B8"
+CHART_PALETTE = [
+    CHART_BLUE,
+    CHART_CYAN,
+    CHART_GREEN,
+    CHART_PURPLE,
+    CHART_AMBER,
+    CHART_TEAL,
+    CHART_RED,
+]
+
+
+def result_chart_colors(labels):
+    """Cores semânticas: aprovado=verde, reprovado=vermelho."""
+    colors = []
+    for label in labels:
+        normalized = str(label).strip().lower()
+        if "aprov" in normalized:
+            colors.append(CHART_GREEN)
+        elif "reprov" in normalized:
+            colors.append(CHART_RED)
+        elif "pend" in normalized or "analis" in normalized:
+            colors.append(CHART_AMBER)
+        else:
+            colors.append(CHART_SLATE)
+    return colors
+
+
+def status_chart_colors(labels):
+    """Cores semânticas para status operacionais."""
+    colors = []
+    for label in labels:
+        normalized = str(label).strip().lower()
+        if normalized in {"ativo", "ativa", "sucesso", "sucesso", "ok", "concluído", "concluido", "executado"}:
+            colors.append(CHART_GREEN)
+        elif normalized in {"inativo", "inativa", "falha", "erro", "failed", "reprovado", "reprovada"}:
+            colors.append(CHART_RED)
+        elif "aten" in normalized or "pend" in normalized or "process" in normalized:
+            colors.append(CHART_AMBER)
+        else:
+            colors.append(CHART_BLUE)
+    return colors
+
+
+# ============================================================
 # CSS
 # ============================================================
 
@@ -1283,6 +1338,8 @@ Possíveis pontos de atenção encontrados pela análise.
                     title="ECVs com melhor taxa de aprovação",
                 )
 
+                fig_top.update_traces(marker_color=CHART_GREEN)
+
                 fig_top.update_layout(
                     plot_bgcolor="#1e293b",
                     paper_bgcolor="#1e293b",
@@ -1314,6 +1371,8 @@ Possíveis pontos de atenção encontrados pela análise.
                     text_auto=".1f",
                     title="ECVs que merecem atenção",
                 )
+
+                fig_attention.update_traces(marker_color=CHART_AMBER)
 
                 fig_attention.update_layout(
                     plot_bgcolor="#1e293b",
@@ -1682,6 +1741,8 @@ tempo médio, faturamento e desempenho operacional.
                     title="Top ECVs por volume",
                 )
 
+                fig_volume.update_traces(marker_color=CHART_BLUE)
+
                 fig_volume.update_layout(
                     plot_bgcolor="#1e293b",
                     paper_bgcolor="#1e293b",
@@ -1722,6 +1783,8 @@ tempo médio, faturamento e desempenho operacional.
                 hole=0.55,
                 title="Distribuição dos resultados",
             )
+
+            fig_resultado.update_traces(marker=dict(colors=result_chart_colors(resultado_chart["resultado"])))
 
             fig_resultado.update_layout(
                 plot_bgcolor="#1e293b",
@@ -2184,6 +2247,8 @@ e inteligência para tomada de decisão.
             title="Volume diário de vistorias",
         )
 
+        fig1.update_traces(line=dict(color=CHART_CYAN), marker=dict(color=CHART_CYAN))
+
         fig1.update_layout(
             plot_bgcolor="#1e293b",
             paper_bgcolor="#1e293b",
@@ -2214,6 +2279,8 @@ e inteligência para tomada de decisão.
             text_auto=".1f",
             title="Taxa de aprovação por ECV (%)",
         )
+
+        fig2.update_traces(marker_color=CHART_BLUE)
 
         fig2.update_layout(
             plot_bgcolor="#1e293b",
@@ -2614,6 +2681,8 @@ detalhada das inspeções realizadas.
                 title="Distribuição dos resultados",
             )
 
+            fig_result.update_traces(marker=dict(colors=result_chart_colors(result_chart["resultado"])))
+
             fig_result.update_layout(
                 plot_bgcolor="#1e293b",
                 paper_bgcolor="#1e293b",
@@ -2643,6 +2712,8 @@ detalhada das inspeções realizadas.
                 text_auto=True,
                 title="Vistorias por tipo",
             )
+
+            fig_type.update_traces(marker_color=CHART_PALETTE)
 
             fig_type.update_layout(
                 plot_bgcolor="#1e293b",
@@ -2691,6 +2762,8 @@ detalhada das inspeções realizadas.
                     text_auto=True,
                     title="Volume de vistorias por ECV",
                 )
+
+                fig_ecv.update_traces(marker_color=CHART_CYAN)
 
                 fig_ecv.update_layout(
                     plot_bgcolor="#1e293b",
@@ -3399,6 +3472,8 @@ Verificações relacionadas aos dados das vistorias.
             title="Inconsistências identificadas na base",
         )
 
+        fig_quality.update_traces(marker_color=CHART_AMBER)
+
         fig_quality.update_layout(
             plot_bgcolor="#1e293b",
             paper_bgcolor="#1e293b",
@@ -3735,6 +3810,7 @@ com visão operacional da base cadastrada.
                     text_auto=True,
                     title="Distribuição das ECVs por status",
                 )
+                fig_ecv.update_traces(marker=dict(color=status_chart_colors(status_chart["status"])))
                 fig_ecv.update_layout(
                     plot_bgcolor="#1e293b",
                     paper_bgcolor="#1e293b",
@@ -4017,6 +4093,8 @@ do ECV Intelligence.
                 text_auto=True,
                 title="Execuções por status",
             )
+
+            fig_auto.update_traces(marker=dict(color=status_chart_colors(status_chart["status"])))
 
             fig_auto.update_layout(
                 plot_bgcolor="#1e293b",
