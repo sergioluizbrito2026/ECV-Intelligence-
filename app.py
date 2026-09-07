@@ -2776,137 +2776,279 @@ detalhada das inspeções realizadas.
             money(faturamento_filtrado),
         )
 
-        # ====================================================
-        # GRÁFICOS
-        # ====================================================
+        ```python
+# ====================================================
+# GRÁFICOS
+# ====================================================
 
-        if not filtered.empty:
+if not filtered.empty:
 
-            st.markdown(
-                '<div class="section-title">📈 Análise operacional</div>',
-                unsafe_allow_html=True,
+    st.markdown(
+        '<div class="section-title">📈 Análise operacional</div>',
+        unsafe_allow_html=True,
+    )
+
+    g1, g2 = st.columns(2)
+
+    # ====================================================
+    # PALETA PROFISSIONAL
+    # ====================================================
+
+    VISTORIAS_COLORS = [
+        "#3B82F6",  # Azul
+        "#22C55E",  # Verde
+        "#F59E0B",  # Amarelo
+        "#EF4444",  # Vermelho
+        "#8B5CF6",  # Roxo
+        "#06B6D4",  # Ciano
+        "#F97316",  # Laranja
+        "#EC4899",  # Rosa
+        "#14B8A6",  # Turquesa
+        "#6366F1",  # Índigo
+    ]
+
+    # ====================================================
+    # GRÁFICO 1 — DISTRIBUIÇÃO DOS RESULTADOS
+    # ====================================================
+
+    result_chart = (
+        filtered["resultado"]
+        .value_counts()
+        .reset_index()
+    )
+
+    result_chart.columns = [
+        "resultado",
+        "quantidade",
+    ]
+
+    fig_result = px.pie(
+        result_chart,
+        names="resultado",
+        values="quantidade",
+        hole=0.55,
+        title="Distribuição dos resultados",
+    )
+
+    # Mantém as cores semânticas para os resultados
+    fig_result.update_traces(
+        marker=dict(
+            colors=result_chart_colors(
+                result_chart["resultado"]
             )
+        ),
+        textinfo="percent+label",
+        hovertemplate=(
+            "<b>%{label}</b><br>"
+            "Quantidade: %{value}<br>"
+            "Percentual: %{percent}"
+            "<extra></extra>"
+        ),
+    )
 
-            g1, g2 = st.columns(2)
-
-            result_chart = (
-                filtered["resultado"]
-                .value_counts()
-                .reset_index()
+    fig_result.update_layout(
+        plot_bgcolor="#1e293b",
+        paper_bgcolor="#1e293b",
+        font=dict(
+            color="#94a3b8",
+        ),
+        title=dict(
+            font=dict(
+                size=17,
+                color="#F8FAFC",
             )
+        ),
+        legend=dict(
+            font=dict(
+                color="#CBD5E1",
+            )
+        ),
+    )
 
-            result_chart.columns = [
-                "resultado",
-                "quantidade",
+    g1.plotly_chart(
+        fig_result,
+        use_container_width=True,
+    )
+
+    # ====================================================
+    # GRÁFICO 2 — VISTORIAS POR TIPO
+    # ====================================================
+
+    type_chart = (
+        filtered["tipo_vistoria"]
+        .value_counts()
+        .reset_index()
+    )
+
+    type_chart.columns = [
+        "tipo_vistoria",
+        "quantidade",
+    ]
+
+    fig_type = px.bar(
+        type_chart,
+        x="tipo_vistoria",
+        y="quantidade",
+        text_auto=True,
+        title="Vistorias por tipo",
+    )
+
+    # Uma cor diferente para cada barra
+    type_colors = [
+        VISTORIAS_COLORS[
+            i % len(VISTORIAS_COLORS)
+        ]
+        for i in range(len(type_chart))
+    ]
+
+    fig_type.update_traces(
+        marker_color=type_colors,
+        marker_line_width=0,
+        textposition="outside",
+        hovertemplate=(
+            "<b>Tipo:</b> %{x}<br>"
+            "<b>Quantidade:</b> %{y:,}"
+            "<extra></extra>"
+        ),
+    )
+
+    fig_type.update_layout(
+        plot_bgcolor="#1e293b",
+        paper_bgcolor="#1e293b",
+        font=dict(
+            color="#94a3b8",
+        ),
+        title=dict(
+            font=dict(
+                size=17,
+                color="#F8FAFC",
+            )
+        ),
+        showlegend=False,
+        xaxis=dict(
+            title="Tipo de vistoria",
+            showgrid=False,
+        ),
+        yaxis=dict(
+            title="Quantidade",
+            gridcolor="rgba(148,163,184,0.12)",
+        ),
+        margin=dict(
+            t=60,
+            b=50,
+            l=50,
+            r=20,
+        ),
+    )
+
+    g2.plotly_chart(
+        fig_type,
+        use_container_width=True,
+    )
+
+    # ====================================================
+    # ANÁLISE POR ECV
+    # ====================================================
+
+    ecv_analysis = (
+        filtered
+        .groupby("ecv")
+        .agg(
+            vistorias=("id", "count"),
+            tempo_medio=(
+                "tempo_minutos",
+                "mean",
+            ),
+            faturamento=(
+                "valor",
+                "sum",
+            ),
+        )
+        .reset_index()
+        .sort_values(
+            "vistorias",
+            ascending=False,
+        )
+    )
+
+    if not ecv_analysis.empty:
+
+        st.markdown(
+            '<div class="section-title">🏢 Performance por ECV</div>',
+            unsafe_allow_html=True,
+        )
+
+        # ====================================================
+        # GRÁFICO 3 — VOLUME POR ECV
+        # ====================================================
+
+        fig_ecv = px.bar(
+            ecv_analysis,
+            x="ecv",
+            y="vistorias",
+            text_auto=True,
+            title="Volume de vistorias por ECV",
+        )
+
+        # Uma cor diferente para cada ECV
+        ecv_colors = [
+            VISTORIAS_COLORS[
+                i % len(VISTORIAS_COLORS)
             ]
+            for i in range(len(ecv_analysis))
+        ]
 
-            fig_result = px.pie(
-                result_chart,
-                names="resultado",
-                values="quantidade",
-                hole=0.55,
-                title="Distribuição dos resultados",
-            )
+        fig_ecv.update_traces(
+            marker_color=ecv_colors,
+            marker_line_width=0,
+            textposition="outside",
+            hovertemplate=(
+                "<b>ECV:</b> %{x}<br>"
+                "<b>Vistorias:</b> %{y:,}"
+                "<extra></extra>"
+            ),
+        )
 
-            fig_result.update_traces(marker=dict(colors=result_chart_colors(result_chart["resultado"])))
-
-            fig_result.update_layout(
-                plot_bgcolor="#1e293b",
-                paper_bgcolor="#1e293b",
-                font=dict(color="#94a3b8"),
-            )
-
-            g1.plotly_chart(
-                fig_result,
-                use_container_width=True,
-            )
-
-            type_chart = (
-                filtered["tipo_vistoria"]
-                .value_counts()
-                .reset_index()
-            )
-
-            type_chart.columns = [
-                "tipo_vistoria",
-                "quantidade",
-            ]
-
-            fig_type = px.bar(
-                type_chart,
-                x="tipo_vistoria",
-                y="quantidade",
-                text_auto=True,
-                title="Vistorias por tipo",
-            )
-
-            fig_type.update_traces(marker_color=CHART_PALETTE)
-
-            fig_type.update_layout(
-                plot_bgcolor="#1e293b",
-                paper_bgcolor="#1e293b",
-                font=dict(color="#94a3b8"),
-                showlegend=False,
-            )
-
-            g2.plotly_chart(
-                fig_type,
-                use_container_width=True,
-            )
-
-            ecv_analysis = (
-                filtered
-                .groupby("ecv")
-                .agg(
-                    vistorias=("id", "count"),
-                    tempo_medio=(
-                        "tempo_minutos",
-                        "mean",
-                    ),
-                    faturamento=(
-                        "valor",
-                        "sum",
-                    ),
+        fig_ecv.update_layout(
+            plot_bgcolor="#1e293b",
+            paper_bgcolor="#1e293b",
+            font=dict(
+                color="#94a3b8",
+            ),
+            title=dict(
+                font=dict(
+                    size=17,
+                    color="#F8FAFC",
                 )
-                .reset_index()
-                .sort_values(
-                    "vistorias",
-                    ascending=False,
-                )
-            )
+            ),
+            showlegend=False,
+            xaxis=dict(
+                title="ECV",
+                showgrid=False,
+            ),
+            yaxis=dict(
+                title="Quantidade de vistorias",
+                gridcolor="rgba(148,163,184,0.12)",
+            ),
+            margin=dict(
+                t=60,
+                b=50,
+                l=50,
+                r=20,
+            ),
+        )
 
-            if not ecv_analysis.empty:
+        st.plotly_chart(
+            fig_ecv,
+            use_container_width=True,
+        )
 
-                st.markdown(
-                    '<div class="section-title">🏢 Performance por ECV</div>',
-                    unsafe_allow_html=True,
-                )
 
-                fig_ecv = px.bar(
-                    ecv_analysis,
-                    x="ecv",
-                    y="vistorias",
-                    text_auto=True,
-                    title="Volume de vistorias por ECV",
-                )
+# ====================================================
+# EXPORTAÇÃO
+# ====================================================
 
-                fig_ecv.update_traces(marker_color=CHART_CYAN)
 
-                fig_ecv.update_layout(
-                    plot_bgcolor="#1e293b",
-                    paper_bgcolor="#1e293b",
-                    font=dict(color="#94a3b8"),
-                    showlegend=False,
-                )
-
-                st.plotly_chart(
-                    fig_ecv,
-                    use_container_width=True,
-                )
-
-        # ====================================================
-        # EXPORTAÇÃO
-        # ====================================================
 
         st.markdown(
             '<div class="section-title">📋 Resultado da pesquisa</div>',
