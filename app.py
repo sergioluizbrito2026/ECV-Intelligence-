@@ -1985,6 +1985,66 @@ if st.button(
 
 
 
+           ```python
+    # ========================================================
+    # ANALISAR DADOS
+    # ========================================================
+
+    if st.button(
+        "🔎 Analisar dados",
+        type="primary",
+        use_container_width=True,
+        key="consultar_copilot_v3",
+    ):
+
+        if not question.strip():
+
+            st.warning(
+                "Digite uma pergunta ou escolha uma sugestão."
+            )
+
+        elif copilot_df.empty:
+
+            st.warning(
+                "Não existem dados de vistorias disponíveis."
+            )
+
+        else:
+
+            # ------------------------------------------------
+            # ANÁLISE DO COPILOT
+            # ------------------------------------------------
+
+            try:
+
+                from services.ai_service import ask_data
+
+                with st.spinner(
+                    "🤖 O Copilot está analisando os dados..."
+                ):
+
+                    answer = ask_data(
+                        question,
+                        copilot_df,
+                    )
+
+                st.markdown(
+                    f"""
+<div class="card">
+
+<span class="badge">COPILOT IA</span>
+
+<h3>Resposta</h3>
+
+<div style="margin-top:1rem; line-height:1.7;">
+{html.escape(str(answer))}
+</div>
+
+</div>
+""",
+                    unsafe_allow_html=True,
+                )
+
             except Exception:
 
                 # ------------------------------------------------
@@ -1995,13 +2055,18 @@ if st.button(
 
                 resposta = None
 
+                # =================================================
+                # MAIOR VOLUME POR ECV
+                # =================================================
+
                 if (
                     "mais" in q
                     and "ecv" in q
+                    and "ecv" in copilot_df.columns
                 ):
 
                     ranking = (
-                        df["ecv"]
+                        copilot_df["ecv"]
                         .value_counts()
                     )
 
@@ -2014,36 +2079,95 @@ if st.button(
                             f"registros**."
                         )
 
+                # =================================================
+                # TAXA DE APROVAÇÃO
+                # =================================================
+
                 elif (
                     "aprovação" in q
                     or "aprovacao" in q
                 ):
 
-                    resposta = (
-                        f"A taxa de aprovação calculada "
-                        f"na base atual é de "
-                        f"**{taxa_aprovacao_ia:.1f}%**."
-                    )
+                    if "resultado" in copilot_df.columns:
+
+                        total_ia = len(copilot_df)
+
+                        aprovadas_ia = (
+                            copilot_df["resultado"]
+                            .astype(str)
+                            .str.lower()
+                            .str.contains(
+                                "aprov"
+                            )
+                            .sum()
+                        )
+
+                        taxa_aprovacao_ia = (
+                            (
+                                aprovadas_ia
+                                / total_ia
+                                * 100
+                            )
+                            if total_ia > 0
+                            else 0
+                        )
+
+                        resposta = (
+                            f"A taxa de aprovação calculada "
+                            f"na base atual é de "
+                            f"**{taxa_aprovacao_ia:.1f}%**."
+                        )
+
+                # =================================================
+                # TEMPO MÉDIO
+                # =================================================
 
                 elif (
                     "tempo" in q
-                    and "médio" in q
+                    and (
+                        "médio" in q
+                        or "medio" in q
+                    )
+                    and "tempo_minutos" in copilot_df.columns
                 ):
+
+                    tempo_ia = pd.to_numeric(
+                        copilot_df["tempo_minutos"],
+                        errors="coerce",
+                    ).mean()
 
                     resposta = (
                         f"O tempo médio das vistorias "
-                        f"é de **{safe_float(tempo_ia):.1f} minutos**."
+                        f"é de **{safe_float(tempo_ia):.1f} "
+                        f"minutos**."
                     )
 
+                # =================================================
+                # FATURAMENTO
+                # =================================================
+
                 elif (
-                    "faturamento" in q
-                    or "receita" in q
+                    (
+                        "faturamento" in q
+                        or "receita" in q
+                    )
+                    and "valor" in copilot_df.columns
                 ):
+
+                    faturamento_ia = pd.to_numeric(
+                        copilot_df["valor"],
+                        errors="coerce",
+                    ).sum()
 
                     resposta = (
                         f"O faturamento dos registros "
-                        f"analisados é de **{money(faturamento_ia)}**."
+                        f"analisados é de "
+                        f"**{money(faturamento_ia)}**."
                     )
+
+                # =================================================
+                # MOSTRAR RESULTADO DO FALLBACK
+                # =================================================
 
                 if resposta:
 
@@ -2067,14 +2191,17 @@ if st.button(
                 else:
 
                     st.warning(
-                        "O Copilot de IA não está disponível no momento "
-                        "e não foi possível interpretar essa pergunta "
-                        "automaticamente."
+                        "O Copilot de IA não está disponível no "
+                        "momento e não foi possível interpretar "
+                        "essa pergunta automaticamente."
                     )
+
 
     # ========================================================
     # RECOMENDAÇÕES
     # ========================================================
+
+
 
     st.markdown(
         '<div class="section-title">🎯 Recomendações inteligentes</div>',
