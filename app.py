@@ -4058,96 +4058,274 @@ Endpoints:
 # POWER BI
 # ============================================================
 
-
 elif page == "Power BI":
 
     st.markdown(
         """
 <div class="hero">
-<h1>Power BI</h1>
-<p>
-Integração analítica para consumo dos dados da plataforma.
-</p>
+    <h1>📊 Power BI</h1>
+    <p>
+        Camada analítica do ECV Intelligence para
+        indicadores, desempenho operacional e Business Intelligence.
+    </p>
 </div>
 """,
+        unsafe_allow_html=True,
+    )
+
+    # ========================================================
+    # STATUS DA INTEGRAÇÃO
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">📡 Status da integração</div>',
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        st.metric(
+            "Integração",
+            "Ativa",
+        )
+
+    with c2:
+        st.metric(
+            "Dados disponíveis",
+            number(MAX_VISTORIAS),
+        )
+
+    with c3:
+        st.metric(
+            "Formato",
+            "JSON",
+        )
+
+    with c4:
+        st.metric(
+            "Fontes",
+            "3",
+        )
+
+    # ========================================================
+    # DADOS DISPONÍVEIS
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">📦 Dados disponíveis para BI</div>',
         unsafe_allow_html=True,
     )
 
     a, b, c = st.columns(3)
 
     with a:
-
         st.markdown(
             """
 <div class="card">
-<h3>🚗 Vistorias</h3>
-<div class="small">
-Dados operacionais das vistorias.
-</div>
+    <h3>🚗 Vistorias</h3>
+    <p>
+        Dados operacionais para análise de volume,
+        resultados, períodos e desempenho.
+    </p>
 </div>
 """,
             unsafe_allow_html=True,
         )
 
+    with b:
+        st.markdown(
+            """
+<div class="card">
+    <h3>🏢 ECVs</h3>
+    <p>
+        Dados consolidados para comparação,
+        ranking e análise de desempenho.
+    </p>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+    with c:
+        st.markdown(
+            """
+<div class="card">
+    <h3>📈 Indicadores</h3>
+    <p>
+        KPIs operacionais preparados para
+        acompanhamento e tomada de decisão.
+    </p>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+    # ========================================================
+    # ENDPOINTS POWER BI
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">🔗 Fontes de dados</div>',
+        unsafe_allow_html=True,
+    )
+
+    p1, p2, p3 = st.columns(3)
+
+    with p1:
+
+        st.markdown(
+            """
+<div class="card">
+    <h3>🚗 Vistorias</h3>
+    <div class="small">
+        Dataset operacional
+    </div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        st.code(
+            "GET /powerbi/vistorias",
+            language="http",
+        )
+
         st.link_button(
-            "Abrir endpoint",
+            "Consultar dados",
             f"{API_URL}/powerbi/vistorias",
             use_container_width=True,
         )
 
-    with b:
+    with p2:
 
         st.markdown(
             """
 <div class="card">
-<h3>🏢 ECVs</h3>
-<div class="small">
-Dados consolidados das ECVs.
-</div>
+    <h3>🏢 ECVs</h3>
+    <div class="small">
+        Dataset consolidado
+    </div>
 </div>
 """,
             unsafe_allow_html=True,
         )
 
+        st.code(
+            "GET /powerbi/ecvs",
+            language="http",
+        )
+
         st.link_button(
-            "Abrir endpoint",
+            "Consultar dados",
             f"{API_URL}/powerbi/ecvs",
             use_container_width=True,
         )
 
-    with c:
+    with p3:
 
         st.markdown(
             """
 <div class="card">
-<h3>📊 Indicadores</h3>
-<div class="small">
-KPIs preparados para análise.
-</div>
+    <h3>📈 Indicadores</h3>
+    <div class="small">
+        KPIs estratégicos
+    </div>
 </div>
 """,
             unsafe_allow_html=True,
         )
 
+        st.code(
+            "GET /powerbi/indicadores",
+            language="http",
+        )
+
         st.link_button(
-            "Abrir endpoint",
+            "Consultar dados",
             f"{API_URL}/powerbi/indicadores",
             use_container_width=True,
         )
 
+    # ========================================================
+    # ARQUITETURA
+    # ========================================================
+
     st.markdown(
-        '<div class="section-title">📌 Integração</div>',
+        '<div class="section-title">🏗️ Arquitetura de integração</div>',
         unsafe_allow_html=True,
     )
 
-    st.info(
+    st.markdown(
         """
-Os endpoints Power BI estão separados dos endpoints
-operacionais para facilitar a integração do dashboard
-com o Power BI.
-"""
+<div class="card">
+
+<div style="text-align:center; font-size:18px;">
+
+<strong>ECV Intelligence</strong>
+
+<br><br>
+
+↓
+
+<br><br>
+
+<strong>API REST</strong>
+
+<br><br>
+
+↓
+
+<br><br>
+
+<strong>Power BI</strong>
+
+<br><br>
+
+<span class="small">
+Dashboards • Indicadores • Análises • Relatórios
+</span>
+
+</div>
+
+</div>
+""",
+        unsafe_allow_html=True,
     )
 
+    # ========================================================
+    # CAPACIDADE DE DADOS
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">⚙️ Configuração dos dados</div>',
+        unsafe_allow_html=True,
+    )
+
+    x1, x2, x3 = st.columns(3)
+
+    with x1:
+        st.metric(
+            "Limite por consulta",
+            number(MAX_VISTORIAS),
+        )
+
+    with x2:
+        st.metric(
+            "Protocolo",
+            "REST",
+        )
+
+    with x3:
+        st.metric(
+            "Formato",
+            "JSON",
+        )
+
+    st.caption(
+        "Os dados são disponibilizados pela API REST "
+        "para consumo pelo Power BI e outras ferramentas de BI."
+    )
 
 # ============================================================
 # CONFIGURAÇÕES
