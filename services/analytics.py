@@ -1,4 +1,4 @@
-```python
+
 """
 ECV Intelligence V3.1
 services/analytics.py
