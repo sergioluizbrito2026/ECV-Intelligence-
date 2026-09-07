@@ -3807,40 +3807,7 @@ no Power BI e outras ferramentas de BI.
             unsafe_allow_html=True,
         )
 
-    # ========================================================
-    # LIMITE DE DADOS
-    # ========================================================
-
-    st.markdown(
-        '<div class="section-title">⚙️ Capacidade de dados</div>',
-        unsafe_allow_html=True,
-    )
-
-    l1, l2, l3 = st.columns(3)
-
-    with l1:
-        st.metric(
-            "Vistorias por consulta",
-            number(MAX_VISTORIAS),
-        )
-
-    with l2:
-        st.metric(
-            "Formato",
-            "JSON",
-        )
-
-    with l3:
-        st.metric(
-            "Método",
-            "HTTP REST",
-        )
-
-    st.caption(
-        "Limite controlado pela variável de ambiente "
-        "`ECV_MAX_VISTORIAS`."
-    )
-
+   
    
 
     # ========================================================
