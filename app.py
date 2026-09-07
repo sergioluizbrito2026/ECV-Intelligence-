@@ -3554,6 +3554,7 @@ Monitoramento das regras e execuções automatizadas.
 
 
 
+```python
 # ============================================================
 # API & INTEGRAÇÕES
 # ============================================================
@@ -3565,8 +3566,8 @@ elif page == "API":
 <div class="hero">
     <h1>🔌 API & Integrações</h1>
     <p>
-        Integre o ECV Intelligence a sistemas corporativos,
-        plataformas de BI, parceiros e soluções de automação.
+        Integração do ECV Intelligence com sistemas externos,
+        BI e parceiros.
     </p>
 </div>
 """,
@@ -3579,85 +3580,10 @@ elif page == "API":
 
     c1, c2, c3, c4 = st.columns(4)
 
-    c1.metric(
-        "Status",
-        "Online",
-    )
-
-    c2.metric(
-        "Health",
-        "OK",
-    )
-
-    c3.metric(
-        "Protocolo",
-        "REST",
-    )
-
-    c4.metric(
-        "Endpoints",
-        "12",
-    )
-
-    st.markdown("")
-
-    # ========================================================
-    # RESUMO DA API
-    # ========================================================
-
-    st.markdown(
-        '<div class="section-title">🔗 Visão geral</div>',
-        unsafe_allow_html=True,
-    )
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        st.markdown(
-            """
-<div class="card">
-
-<h3>API REST</h3>
-
-<p>
-A API disponibiliza os principais dados operacionais
-e indicadores do ECV Intelligence para consumo externo.
-</p>
-
-<p>
-<strong>Formato:</strong> JSON<br>
-<strong>Método:</strong> HTTP REST<br>
-<strong>Status:</strong> Online
-</p>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
-    with col2:
-
-        st.markdown(
-            f"""
-<div class="card">
-
-<h3>📦 Dados</h3>
-
-<p>
-Consultas de vistorias podem retornar até
-<strong>{number(MAX_VISTORIAS)}</strong> registros.
-</p>
-
-<p>
-<strong>Variável:</strong><br>
-<code>ECV_MAX_VISTORIAS</code>
-</p>
-
-</div>
-""",
-            unsafe_allow_html=True,
-        )
+    c1.metric("Status", "Online")
+    c2.metric("Health", "OK")
+    c3.metric("API", "REST")
+    c4.metric("Endpoints", "12")
 
     # ========================================================
     # ENDPOINTS
@@ -3672,7 +3598,7 @@ Consultas de vistorias podem retornar até
 
     with col1:
 
-        st.markdown("#### 📊 Dados operacionais")
+        st.markdown("#### 📊 Dados")
 
         st.code(
             """GET /health
@@ -3682,12 +3608,6 @@ GET /ecvs
 GET /vistorias?limit=5000""",
             language="http",
         )
-
-        st.caption(
-            "Consulta de dados, indicadores e registros operacionais."
-        )
-
-    with col2:
 
         st.markdown("#### 📈 Analytics")
 
@@ -3699,11 +3619,38 @@ GET /automations""",
             language="http",
         )
 
-        st.caption(
-            "Análises de desempenho, qualidade e automações."
+    with col2:
+
+        st.markdown("#### 📊 Power BI")
+
+        st.code(
+            """GET /powerbi/vistorias
+GET /powerbi/ecvs
+GET /powerbi/indicadores""",
+            language="http",
         )
 
-    st.markdown("")
+    # ========================================================
+    # LIMITE DE DADOS
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">⚙️ Limite de dados</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.info(
+        f"""
+A API está configurada para retornar até
+**{number(MAX_VISTORIAS)} vistorias por consulta.**
+
+Variável de ambiente: `ECV_MAX_VISTORIAS`
+"""
+    )
+
+    st.caption("ECV Intelligence • API & Integrações")
+
+
 
     # ========================================================
     # POWER BI
