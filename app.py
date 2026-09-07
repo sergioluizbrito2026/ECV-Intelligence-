@@ -2170,6 +2170,7 @@ faturamento = extract_kpi(
 )
 
 
+```python
 # ============================================================
 # VISÃO GERAL
 # ============================================================
@@ -2259,7 +2260,6 @@ e inteligência para tomada de decisão.
             title="Volume diário de vistorias",
         )
 
-        # Azul/ciano para evolução operacional
         fig1.update_traces(
             line=dict(
                 color="#22D3EE",
@@ -2315,108 +2315,122 @@ e inteligência para tomada de decisão.
     # ========================================================
 
     if (
-    not perf.empty
-    and "ecv" in perf.columns
-    and "taxa_aprovacao" in perf.columns
-):
+        not perf.empty
+        and "ecv" in perf.columns
+        and "taxa_aprovacao" in perf.columns
+    ):
 
-    # Paleta com uma cor diferente para cada barra
-    cores_ecv = [
-        "#3B82F6",  # Azul
-        "#22C55E",  # Verde
-        "#F59E0B",  # Amarelo
-        "#EF4444",  # Vermelho
-        "#8B5CF6",  # Roxo
-        "#06B6D4",  # Ciano
-        "#F97316",  # Laranja
-        "#EC4899",  # Rosa
-        "#14B8A6",  # Turquesa
-        "#6366F1",  # Índigo
-    ]
+        # ====================================================
+        # PALETA DE CORES
+        # Uma cor diferente para cada barra
+        # ====================================================
 
-    # Repete a paleta caso existam mais ECVs
-    cores = [
-        cores_ecv[i % len(cores_ecv)]
-        for i in range(len(perf))
-    ]
+        cores_ecv = [
+            "#3B82F6",  # Azul
+            "#22C55E",  # Verde
+            "#F59E0B",  # Amarelo
+            "#EF4444",  # Vermelho
+            "#8B5CF6",  # Roxo
+            "#06B6D4",  # Ciano
+            "#F97316",  # Laranja
+            "#EC4899",  # Rosa
+            "#14B8A6",  # Turquesa
+            "#6366F1",  # Índigo
+        ]
 
-    fig2 = px.bar(
-        perf,
-        x="ecv",
-        y="taxa_aprovacao",
-        text_auto=".1f",
-        title="Taxa de aprovação por ECV (%)",
-    )
+        # Cria uma cor para cada ECV
+        cores = [
+            cores_ecv[i % len(cores_ecv)]
+            for i in range(len(perf))
+        ]
 
-    # Uma cor diferente em cada barra
-    fig2.update_traces(
-        marker_color=cores,
-        marker_line_width=0,
-        textposition="outside",
-        hovertemplate=(
-            "<b>ECV:</b> %{x}<br>"
-            "<b>Taxa de aprovação:</b> %{y:.1f}%"
-            "<extra></extra>"
-        ),
-    )
+        # ====================================================
+        # GRÁFICO
+        # ====================================================
 
-    fig2.update_layout(
-        plot_bgcolor="#1e293b",
-        paper_bgcolor="#1e293b",
+        fig2 = px.bar(
+            perf,
+            x="ecv",
+            y="taxa_aprovacao",
+            text_auto=".1f",
+            title="Taxa de aprovação por ECV (%)",
+        )
 
-        font=dict(
-            color="#94a3b8",
-        ),
+        # Cada barra recebe uma cor diferente
+        fig2.update_traces(
+            marker_color=cores,
+            marker_line_width=0,
+            textposition="outside",
+            hovertemplate=(
+                "<b>ECV:</b> %{x}<br>"
+                "<b>Taxa de aprovação:</b> %{y:.1f}%"
+                "<extra></extra>"
+            ),
+        )
 
-        title=dict(
+        # ====================================================
+        # LAYOUT
+        # ====================================================
+
+        fig2.update_layout(
+            plot_bgcolor="#1e293b",
+            paper_bgcolor="#1e293b",
+
             font=dict(
-                size=17,
-                color="#F8FAFC",
-            )
-        ),
+                color="#94a3b8",
+            ),
 
-        showlegend=False,
-
-        xaxis=dict(
-            title="ECV",
-            showgrid=False,
-        ),
-
-        yaxis=dict(
-            title="Taxa de aprovação (%)",
-            gridcolor="rgba(148,163,184,0.12)",
-            range=[
-                0,
-                max(
-                    100,
-                    float(perf["taxa_aprovacao"].max()) + 10
+            title=dict(
+                font=dict(
+                    size=17,
+                    color="#F8FAFC",
                 )
-            ],
-        ),
+            ),
 
-        margin=dict(
-            t=60,
-            b=50,
-            l=50,
-            r=20,
-        ),
-    )
+            showlegend=False,
 
-    b.plotly_chart(
-        fig2,
-        use_container_width=True,
-    )
+            xaxis=dict(
+                title="ECV",
+                showgrid=False,
+            ),
 
-else:
+            yaxis=dict(
+                title="Taxa de aprovação (%)",
+                gridcolor="rgba(148,163,184,0.12)",
+                range=[
+                    0,
+                    max(
+                        100,
+                        float(perf["taxa_aprovacao"].max()) + 10,
+                    ),
+                ],
+            ),
 
-    b.info(
-        "Não existem dados de performance das ECVs."
-    )
+            margin=dict(
+                t=60,
+                b=50,
+                l=50,
+                r=20,
+            ),
+        )
+
+        b.plotly_chart(
+            fig2,
+            use_container_width=True,
+        )
+
+    else:
+
+        b.info(
+            "Não existem dados de performance das ECVs."
+        )
 
 
 # ============================================================
 # VISTORIAS
 # ============================================================
+
+
 
 elif page == "Vistorias":
 
