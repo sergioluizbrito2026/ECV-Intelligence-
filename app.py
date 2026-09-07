@@ -1618,7 +1618,7 @@ tempo médio, faturamento e desempenho operacional.
         with p2:
 
             resultado_chart = (
-                df["resultado"]
+                df_ia["resultado"]
                 .fillna("Não informado")
                 .astype(str)
                 .value_counts()
@@ -1634,7 +1634,7 @@ tempo médio, faturamento e desempenho operacional.
                 resultado_chart,
                 names="resultado",
                 values="quantidade",
-                hole=.55,
+                hole=0.55,
                 title="Distribuição dos resultados",
             )
 
