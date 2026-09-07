@@ -1805,7 +1805,7 @@ tempo médio, faturamento e desempenho operacional.
             "Não existem dados suficientes para análise."
         )
 
-    
+```python
 # ========================================================
 # COPILOT
 # ========================================================
@@ -1839,12 +1839,10 @@ copilot_df = pd.DataFrame()
 
 try:
 
-    # Caso a resposta da API seja um DataFrame
     if isinstance(vistorias_response, pd.DataFrame):
 
         copilot_df = vistorias_response.copy()
 
-    # Caso a API retorne um dicionário
     elif isinstance(vistorias_response, dict):
 
         dados = (
@@ -1864,15 +1862,13 @@ except Exception:
 
 
 # ========================================================
-# COPILOT — PERGUNTA
+# PERGUNTA
 # ========================================================
 
 question = st.text_input(
     "Pergunta",
-    placeholder=(
-        "Ex.: Qual ECV realizou mais vistorias?"
-    ),
-    key="copilot_question_v3",
+    placeholder="Ex.: Qual ECV realizou mais vistorias?",
+    key="copilot_question_v4",
 )
 
 st.markdown(
@@ -1885,7 +1881,7 @@ s1, s2, s3, s4 = st.columns(4)
 if s1.button(
     "🏢 Melhor ECV",
     use_container_width=True,
-    key="sugestao_melhor_ecv",
+    key="sugestao_melhor_ecv_v4",
 ):
 
     question = "Qual ECV realizou mais vistorias?"
@@ -1894,7 +1890,7 @@ if s1.button(
 if s2.button(
     "📊 Aprovação",
     use_container_width=True,
-    key="sugestao_aprovacao",
+    key="sugestao_aprovacao_v4",
 ):
 
     question = "Qual é a taxa de aprovação das vistorias?"
@@ -1903,7 +1899,7 @@ if s2.button(
 if s3.button(
     "⏱️ Tempo médio",
     use_container_width=True,
-    key="sugestao_tempo",
+    key="sugestao_tempo_v4",
 ):
 
     question = "Qual é o tempo médio das vistorias?"
@@ -1912,21 +1908,108 @@ if s3.button(
 if s4.button(
     "💰 Faturamento",
     use_container_width=True,
-    key="sugestao_faturamento",
+    key="sugestao_faturamento_v4",
 ):
 
     question = "Qual é o faturamento total?"
 
 
 # ========================================================
-# ANALISAR
+# VARIÁVEIS PARA INSIGHTS
+# ========================================================
+
+taxa_aprovacao_ia = 0.0
+tempo_ia = 0.0
+faturamento_ia = 0.0
+ecvs_ia = 0
+
+
+if not copilot_df.empty:
+
+    # ----------------------------------------------------
+    # ECVs
+    # ----------------------------------------------------
+
+    if "ecv" in copilot_df.columns:
+
+        ecvs_ia = (
+            copilot_df["ecv"]
+            .dropna()
+            .nunique()
+        )
+
+    # ----------------------------------------------------
+    # TAXA DE APROVAÇÃO
+    # ----------------------------------------------------
+
+    if "resultado" in copilot_df.columns:
+
+        resultados = (
+            copilot_df["resultado"]
+            .astype(str)
+            .str.lower()
+            .str.strip()
+        )
+
+        total_resultados = len(resultados)
+
+        aprovadas_ia = (
+            resultados
+            .str.contains(
+                "aprov",
+                na=False,
+            )
+            .sum()
+        )
+
+        if total_resultados > 0:
+
+            taxa_aprovacao_ia = (
+                aprovadas_ia
+                / total_resultados
+                * 100
+            )
+
+    # ----------------------------------------------------
+    # TEMPO MÉDIO
+    # ----------------------------------------------------
+
+    if "tempo_minutos" in copilot_df.columns:
+
+        tempo_ia = pd.to_numeric(
+            copilot_df["tempo_minutos"],
+            errors="coerce",
+        ).mean()
+
+        if pd.isna(tempo_ia):
+
+            tempo_ia = 0.0
+
+    # ----------------------------------------------------
+    # FATURAMENTO
+    # ----------------------------------------------------
+
+    if "valor" in copilot_df.columns:
+
+        faturamento_ia = pd.to_numeric(
+            copilot_df["valor"],
+            errors="coerce",
+        ).sum()
+
+        if pd.isna(faturamento_ia):
+
+            faturamento_ia = 0.0
+
+
+# ========================================================
+# ANALISAR DADOS
 # ========================================================
 
 if st.button(
     "🔎 Analisar dados",
     type="primary",
     use_container_width=True,
-    key="consultar_copilot_v3",
+    key="consultar_copilot_ia_v4",
 ):
 
     if not question.strip():
@@ -1938,10 +2021,17 @@ if st.button(
     elif copilot_df.empty:
 
         st.warning(
-            "Não existem dados de vistorias disponíveis para análise."
+            "Não existem dados de vistorias disponíveis "
+            "para análise."
         )
 
     else:
+
+        resposta = None
+
+        # =================================================
+        # TENTATIVA — COPILOT IA
+        # =================================================
 
         try:
 
@@ -1973,206 +2063,94 @@ if st.button(
                 unsafe_allow_html=True,
             )
 
-        except Exception as exc:
+        except Exception:
 
-            st.error(
-                "Não foi possível executar o Copilot."
-            )
+            # =============================================
+            # FALLBACK ANALÍTICO
+            # =============================================
 
-            st.caption(
-                f"Detalhes técnicos: {exc}"
-            )
+            q = question.lower().strip()
 
+            # ---------------------------------------------
+            # MAIOR VOLUME POR ECV
+            # ---------------------------------------------
 
+            if (
+                "mais" in q
+                and "ecv" in q
+                and "ecv" in copilot_df.columns
+            ):
 
-           
-    # ========================================================
-    # ANALISAR DADOS
-    # ========================================================
+                ranking = (
+                    copilot_df["ecv"]
+                    .value_counts()
+                )
 
-    if st.button(
-        "🔎 Analisar dados",
-        type="primary",
-        use_container_width=True,
-        key="consultar_copilot_v3",
-    ):
+                if not ranking.empty:
 
-        if not question.strip():
-
-            st.warning(
-                "Digite uma pergunta ou escolha uma sugestão."
-            )
-
-        elif copilot_df.empty:
-
-            st.warning(
-                "Não existem dados de vistorias disponíveis."
-            )
-
-        else:
-
-            # ------------------------------------------------
-            # ANÁLISE DO COPILOT
-            # ------------------------------------------------
-
-            try:
-
-                from services.ai_service import ask_data
-
-                with st.spinner(
-                    "🤖 O Copilot está analisando os dados..."
-                ):
-
-                    answer = ask_data(
-                        question,
-                        copilot_df,
+                    resposta = (
+                        f"A ECV com maior volume de "
+                        f"vistorias é **{ranking.index[0]}**, "
+                        f"com **{number(ranking.iloc[0])} "
+                        f"registros**."
                     )
+
+            # ---------------------------------------------
+            # APROVAÇÃO
+            # ---------------------------------------------
+
+            elif (
+                "aprovação" in q
+                or "aprovacao" in q
+            ):
+
+                resposta = (
+                    f"A taxa de aprovação calculada "
+                    f"na base atual é de "
+                    f"**{taxa_aprovacao_ia:.1f}%**."
+                )
+
+            # ---------------------------------------------
+            # TEMPO MÉDIO
+            # ---------------------------------------------
+
+            elif (
+                "tempo" in q
+                and (
+                    "médio" in q
+                    or "medio" in q
+                )
+            ):
+
+                resposta = (
+                    f"O tempo médio das vistorias "
+                    f"é de **{safe_float(tempo_ia):.1f} "
+                    f"minutos**."
+                )
+
+            # ---------------------------------------------
+            # FATURAMENTO
+            # ---------------------------------------------
+
+            elif (
+                "faturamento" in q
+                or "receita" in q
+            ):
+
+                resposta = (
+                    f"O faturamento dos registros "
+                    f"analisados é de "
+                    f"**{money(faturamento_ia)}**."
+                )
+
+            # ---------------------------------------------
+            # RESULTADO DO FALLBACK
+            # ---------------------------------------------
+
+            if resposta:
 
                 st.markdown(
                     f"""
-<div class="card">
-
-<span class="badge">COPILOT IA</span>
-
-<h3>Resposta</h3>
-
-<div style="margin-top:1rem; line-height:1.7;">
-{html.escape(str(answer))}
-</div>
-
-</div>
-""",
-                    unsafe_allow_html=True,
-                )
-
-            except Exception:
-
-                # ------------------------------------------------
-                # FALLBACK ANALÍTICO
-                # ------------------------------------------------
-
-                q = question.lower()
-
-                resposta = None
-
-                # =================================================
-                # MAIOR VOLUME POR ECV
-                # =================================================
-
-                if (
-                    "mais" in q
-                    and "ecv" in q
-                    and "ecv" in copilot_df.columns
-                ):
-
-                    ranking = (
-                        copilot_df["ecv"]
-                        .value_counts()
-                    )
-
-                    if not ranking.empty:
-
-                        resposta = (
-                            f"A ECV com maior volume de "
-                            f"vistorias é **{ranking.index[0]}**, "
-                            f"com **{number(ranking.iloc[0])} "
-                            f"registros**."
-                        )
-
-                # =================================================
-                # TAXA DE APROVAÇÃO
-                # =================================================
-
-                elif (
-                    "aprovação" in q
-                    or "aprovacao" in q
-                ):
-
-                    if "resultado" in copilot_df.columns:
-
-                        total_ia = len(copilot_df)
-
-                        aprovadas_ia = (
-                            copilot_df["resultado"]
-                            .astype(str)
-                            .str.lower()
-                            .str.contains(
-                                "aprov"
-                            )
-                            .sum()
-                        )
-
-                        taxa_aprovacao_ia = (
-                            (
-                                aprovadas_ia
-                                / total_ia
-                                * 100
-                            )
-                            if total_ia > 0
-                            else 0
-                        )
-
-                        resposta = (
-                            f"A taxa de aprovação calculada "
-                            f"na base atual é de "
-                            f"**{taxa_aprovacao_ia:.1f}%**."
-                        )
-
-                # =================================================
-                # TEMPO MÉDIO
-                # =================================================
-
-                elif (
-                    "tempo" in q
-                    and (
-                        "médio" in q
-                        or "medio" in q
-                    )
-                    and "tempo_minutos" in copilot_df.columns
-                ):
-
-                    tempo_ia = pd.to_numeric(
-                        copilot_df["tempo_minutos"],
-                        errors="coerce",
-                    ).mean()
-
-                    resposta = (
-                        f"O tempo médio das vistorias "
-                        f"é de **{safe_float(tempo_ia):.1f} "
-                        f"minutos**."
-                    )
-
-                # =================================================
-                # FATURAMENTO
-                # =================================================
-
-                elif (
-                    (
-                        "faturamento" in q
-                        or "receita" in q
-                    )
-                    and "valor" in copilot_df.columns
-                ):
-
-                    faturamento_ia = pd.to_numeric(
-                        copilot_df["valor"],
-                        errors="coerce",
-                    ).sum()
-
-                    resposta = (
-                        f"O faturamento dos registros "
-                        f"analisados é de "
-                        f"**{money(faturamento_ia)}**."
-                    )
-
-                # =================================================
-                # MOSTRAR RESULTADO DO FALLBACK
-                # =================================================
-
-                if resposta:
-
-                    st.markdown(
-                        f"""
 <div class="card">
 
 <span class="badge">ANÁLISE AUTOMÁTICA</span>
@@ -2185,81 +2163,112 @@ if st.button(
 
 </div>
 """,
-                        unsafe_allow_html=True,
-                    )
+                    unsafe_allow_html=True,
+                )
 
-                else:
+            else:
 
-                    st.warning(
-                        "O Copilot de IA não está disponível no "
-                        "momento e não foi possível interpretar "
-                        "essa pergunta automaticamente."
-                    )
-
-
-    # ========================================================
-    # RECOMENDAÇÕES
-    # ========================================================
+                st.warning(
+                    "O Copilot de IA não está disponível "
+                    "no momento e não foi possível interpretar "
+                    "essa pergunta automaticamente."
+                )
 
 
+# ========================================================
+# RECOMENDAÇÕES INTELIGENTES
+# ========================================================
 
-    st.markdown(
-        '<div class="section-title">🎯 Recomendações inteligentes</div>',
-        unsafe_allow_html=True,
-    )
+st.markdown(
+    '<div class="section-title">🎯 Recomendações inteligentes</div>',
+    unsafe_allow_html=True,
+)
 
-    recomendacoes = []
+recomendacoes = []
 
-    if taxa_aprovacao_ia < 75:
 
-        recomendacoes.append(
-            "🔴 Revisar os principais motivos de reprovação "
-            "e identificar ECVs com desempenho abaixo da média."
-        )
+# ========================================================
+# RECOMENDAÇÃO — APROVAÇÃO
+# ========================================================
 
-    elif taxa_aprovacao_ia < 90:
-
-        recomendacoes.append(
-            "🟡 Monitorar a taxa de aprovação e comparar "
-            "o desempenho entre as ECVs."
-        )
-
-    else:
-
-        recomendacoes.append(
-            "🟢 Manter o padrão atual de aprovação e "
-            "identificar as práticas das ECVs de melhor desempenho."
-        )
-
-    if safe_float(tempo_ia) > 60:
-
-        recomendacoes.append(
-            "⏱️ Avaliar o tempo operacional das vistorias "
-            "para identificar possíveis gargalos."
-        )
-
-    if ecvs_ia > 0:
-
-        recomendacoes.append(
-            "🏢 Comparar volume, tempo médio e resultados "
-            "entre as ECVs para identificar oportunidades."
-        )
+if taxa_aprovacao_ia < 75:
 
     recomendacoes.append(
-        "🤖 Utilizar o Copilot para consultas rápidas "
-        "sobre a operação e apoio à tomada de decisão."
+        "🔴 Revisar os principais motivos de reprovação "
+        "e identificar ECVs com desempenho abaixo da média."
     )
 
-    for recomendacao in recomendacoes:
+elif taxa_aprovacao_ia < 90:
 
-        st.markdown(
-            f"""
+    recomendacoes.append(
+        "🟡 Monitorar a taxa de aprovação e comparar "
+        "o desempenho entre as ECVs."
+    )
+
+else:
+
+    recomendacoes.append(
+        "🟢 Manter o padrão atual de aprovação e "
+        "identificar as práticas das ECVs de melhor desempenho."
+    )
+
+
+# ========================================================
+# RECOMENDAÇÃO — TEMPO
+# ========================================================
+
+if safe_float(tempo_ia) > 60:
+
+    recomendacoes.append(
+        "⏱️ Avaliar o tempo operacional das vistorias "
+        "para identificar possíveis gargalos."
+    )
+
+elif safe_float(tempo_ia) > 0:
+
+    recomendacoes.append(
+        "⏱️ Acompanhar o tempo médio das vistorias "
+        "e identificar oportunidades de ganho operacional."
+    )
+
+
+# ========================================================
+# RECOMENDAÇÃO — ECV
+# ========================================================
+
+if ecvs_ia > 0:
+
+    recomendacoes.append(
+        "🏢 Comparar volume, tempo médio e resultados "
+        "entre as ECVs para identificar oportunidades."
+    )
+
+
+# ========================================================
+# RECOMENDAÇÃO — COPILOT
+# ========================================================
+
+recomendacoes.append(
+    "🤖 Utilizar o Copilot para consultas rápidas "
+    "sobre a operação e apoio à tomada de decisão."
+)
+
+
+# ========================================================
+# EXIBIR RECOMENDAÇÕES
+# ========================================================
+
+for recomendacao in recomendacoes:
+
+    st.markdown(
+        f"""
 <div class="card">
 {recomendacao}
 </div>
 """,
-            unsafe_allow_html=True,
-        )
+        unsafe_allow_html=True,
+    )
+
 
 
 
