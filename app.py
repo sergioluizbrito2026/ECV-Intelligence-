@@ -4253,39 +4253,7 @@ Dashboards • Indicadores • Análises • Relatórios
         unsafe_allow_html=True,
     )
 
-    # ========================================================
-    # CAPACIDADE DE DADOS
-    # ========================================================
-
-    st.markdown(
-        '<div class="section-title">⚙️ Configuração dos dados</div>',
-        unsafe_allow_html=True,
-    )
-
-    x1, x2, x3 = st.columns(3)
-
-    with x1:
-        st.metric(
-            "Limite por consulta",
-            number(MAX_VISTORIAS),
-        )
-
-    with x2:
-        st.metric(
-            "Protocolo",
-            "REST",
-        )
-
-    with x3:
-        st.metric(
-            "Formato",
-            "JSON",
-        )
-
-    st.caption(
-        "Os dados são disponibilizados pela API REST "
-        "para consumo pelo Power BI e outras ferramentas de BI."
-    )
+    
 
 # ============================================================
 # CONFIGURAÇÕES
