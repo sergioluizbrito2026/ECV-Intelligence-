@@ -3977,47 +3977,7 @@ KPIs estratégicos
         unsafe_allow_html=True,
     )
 
-    # ========================================================
-    # ARQUITETURA
-    # ========================================================
-
-    st.markdown(
-        '<div class="section-title">🏗️ Arquitetura de integração</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-<div class="card">
-
-<p style="text-align:center; font-size:16px;">
-
-<strong>ECV Intelligence</strong>
-
-&nbsp;&nbsp;→&nbsp;&nbsp;
-
-<strong>API REST</strong>
-
-&nbsp;&nbsp;→&nbsp;&nbsp;
-
-<strong>Sistemas externos</strong>
-
-</p>
-
-<p style="
-    text-align:center;
-    color:#94a3b8;
-    margin-top:10px;
-">
-
-Power BI • Sistemas corporativos • Parceiros • Automação • IA
-
-</p>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+    
 
     # ========================================================
     # INFORMAÇÕES TÉCNICAS
