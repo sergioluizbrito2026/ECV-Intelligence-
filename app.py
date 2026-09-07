@@ -3552,8 +3552,9 @@ Monitoramento das regras e execuções automatizadas.
         )
 
 
+```python
 # ============================================================
-# API
+# API & INTEGRAÇÕES
 # ============================================================
 
 elif page == "API":
@@ -3561,17 +3562,26 @@ elif page == "API":
     st.markdown(
         """
 <div class="hero">
-<h1>API & Integrações</h1>
-<p>
-Camada REST para integração com sistemas externos,
-BI e parceiros.
-</p>
+    <h1>🔌 API & Integrações</h1>
+    <p>
+        Camada REST para integração segura com sistemas externos,
+        plataformas de BI, parceiros e aplicações corporativas.
+    </p>
 </div>
 """,
         unsafe_allow_html=True,
     )
 
-    c1, c2, c3 = st.columns(3)
+    # ========================================================
+    # STATUS DA API
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">📡 Status da integração</div>',
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
 
     c1.metric(
         "Status",
@@ -3584,59 +3594,352 @@ BI e parceiros.
     )
 
     c3.metric(
-        "API",
+        "Protocolo",
         "REST",
     )
 
+    c4.metric(
+        "Endpoints",
+        "12",
+    )
+
+    st.markdown("")
+
+    # ========================================================
+    # RESUMO
+    # ========================================================
+
+    r1, r2 = st.columns(2)
+
+    with r1:
+
+        st.markdown(
+            """
+<div class="card">
+    <h3>🔗 Integrações disponíveis</h3>
+
+    <p>
+    A API permite disponibilizar dados operacionais e
+    indicadores da plataforma ECV Intelligence para
+    aplicações externas.
+    </p>
+
+    <ul>
+        <li>📊 Dashboards corporativos</li>
+        <li>📈 Power BI</li>
+        <li>🏢 Sistemas de parceiros</li>
+        <li>🤖 Automação e IA</li>
+        <li>🗄️ Sistemas internos</li>
+    </ul>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+    with r2:
+
+        st.markdown(
+            f"""
+<div class="card">
+    <h3>⚙️ Configuração atual</h3>
+
+    <p>
+    O frontend está configurado para trabalhar com
+    até <strong>{number(MAX_VISTORIAS)}</strong> registros
+    de vistorias por consulta.
+    </p>
+
+    <p>
+        <strong>Variável:</strong><br>
+        <code>ECV_MAX_VISTORIAS</code>
+    </p>
+
+    <p>
+        <strong>Exemplo:</strong><br>
+        <code>ECV_MAX_VISTORIAS=10000</code>
+    </p>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+    # ========================================================
+    # ENDPOINTS
+    # ========================================================
+
     st.markdown(
-        '<div class="section-title">Endpoints</div>',
+        '<div class="section-title">🌐 Endpoints disponíveis</div>',
         unsafe_allow_html=True,
     )
 
     endpoints = [
-        "GET /health",
-        "GET /dashboard",
-        "GET /indicadores",
-        "GET /ecvs",
-        f"GET /vistorias?limit={MAX_VISTORIAS}",
-        "GET /analytics/ecvs",
-        "GET /analytics/quality",
-        "GET /analytics/daily",
-        "GET /automations",
-        "GET /powerbi/vistorias",
-        "GET /powerbi/ecvs",
-        "GET /powerbi/indicadores",
+        ("GET", "/health", "Verifica disponibilidade da API"),
+        ("GET", "/dashboard", "Retorna dados consolidados do dashboard"),
+        ("GET", "/indicadores", "Indicadores estratégicos da operação"),
+        ("GET", "/ecvs", "Lista ECVs cadastradas"),
+        (
+            "GET",
+            f"/vistorias?limit={MAX_VISTORIAS}",
+            "Consulta registros de vistorias",
+        ),
+        (
+            "GET",
+            "/analytics/ecvs",
+            "Indicadores de desempenho por ECV",
+        ),
+        (
+            "GET",
+            "/analytics/quality",
+            "Indicadores de qualidade das vistorias",
+        ),
+        (
+            "GET",
+            "/analytics/daily",
+            "Evolução diária das operações",
+        ),
+        (
+            "GET",
+            "/automations",
+            "Histórico e status das automações",
+        ),
+        (
+            "GET",
+            "/powerbi/vistorias",
+            "Dados preparados para Power BI",
+        ),
+        (
+            "GET",
+            "/powerbi/ecvs",
+            "Dados de ECVs para Power BI",
+        ),
+        (
+            "GET",
+            "/powerbi/indicadores",
+            "Indicadores preparados para Power BI",
+        ),
     ]
 
-    for endpoint in endpoints:
-        st.code(endpoint)
+    for method, endpoint, description in endpoints:
+
+        st.markdown(
+            f"""
+<div class="card" style="margin-bottom:10px;">
+
+<div style="
+    display:flex;
+    align-items:center;
+    gap:14px;
+">
+
+<span style="
+    background:#166534;
+    color:white;
+    padding:5px 10px;
+    border-radius:6px;
+    font-size:12px;
+    font-weight:700;
+">
+    {method}
+</span>
+
+<strong style="font-size:15px;">
+    {endpoint}
+</strong>
+
+</div>
+
+<p style="
+    margin-top:8px;
+    color:#94a3b8;
+    font-size:13px;
+">
+    {description}
+</p>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+    # ========================================================
+    # LIMITAÇÃO DE DADOS
+    # ========================================================
 
     st.markdown(
-        '<div class="section-title">'
-        '⚙️ Configuração de dados'
-        '</div>',
+        '<div class="section-title">📦 Limite de dados</div>',
         unsafe_allow_html=True,
+    )
+
+    l1, l2, l3 = st.columns(3)
+
+    l1.metric(
+        "Limite atual",
+        f"{number(MAX_VISTORIAS)}",
+        "vistorias / consulta",
+    )
+
+    l2.metric(
+        "Configuração",
+        "Variável de ambiente",
+    )
+
+    l3.metric(
+        "Formato",
+        "JSON",
     )
 
     st.info(
         f"""
-O frontend está configurado para solicitar até
-{number(MAX_VISTORIAS)} vistorias por consulta.
+A API utiliza o parâmetro **ECV_MAX_VISTORIAS** para
+controlar a quantidade máxima de registros retornados
+nas consultas de vistorias.
 
-Variável de ambiente:
+Valor atualmente configurado:
 
+**{number(MAX_VISTORIAS)} registros por consulta.**
+"""
+    )
+
+    # ========================================================
+    # POWER BI
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">📊 Integração com Power BI</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+<div class="card">
+
+<h3>🚀 Dados preparados para BI</h3>
+
+<p>
+A plataforma disponibiliza endpoints específicos para
+consumo de dados pelo Power BI e outras ferramentas
+de Business Intelligence.
+</p>
+
+<div style="
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-top:18px;
+">
+
+<div>
+<strong>📋 Vistorias</strong>
+<br>
+<span style="color:#94a3b8;">
+Dados operacionais
+</span>
+</div>
+
+<div>
+<strong>🏢 ECVs</strong>
+<br>
+<span style="color:#94a3b8;">
+Indicadores por empresa
+</span>
+</div>
+
+<div>
+<strong>📈 Indicadores</strong>
+<br>
+<span style="color:#94a3b8;">
+KPIs estratégicos
+</span>
+</div>
+
+</div>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    # ========================================================
+    # ARQUITETURA
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">🏗️ Arquitetura de integração</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+<div class="card">
+
+<p style="text-align:center; font-size:16px;">
+
+<strong>ECV Intelligence</strong>
+
+&nbsp;&nbsp;→&nbsp;&nbsp;
+
+<strong>API REST</strong>
+
+&nbsp;&nbsp;→&nbsp;&nbsp;
+
+<strong>Sistemas externos</strong>
+
+</p>
+
+<p style="
+    text-align:center;
+    color:#94a3b8;
+    margin-top:10px;
+">
+
+Power BI • Sistemas corporativos • Parceiros • Automação • IA
+
+</p>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    # ========================================================
+    # INFORMAÇÕES TÉCNICAS
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">🛠️ Informações técnicas</div>',
+        unsafe_allow_html=True,
+    )
+
+    with st.expander("Ver detalhes técnicos da API"):
+
+        st.code(
+            f"""
+Protocolo: REST
+Formato: JSON
+Status: Online
+Health Check: OK
+
+Limite de vistorias:
+{MAX_VISTORIAS}
+
+Variável:
 ECV_MAX_VISTORIAS
 
-Exemplo:
+Endpoints:
+12
+""",
+            language="text",
+        )
 
-ECV_MAX_VISTORIAS=10000
-"""
+    st.caption(
+        "ECV Intelligence • Camada de integração e disponibilização de dados"
     )
 
 
 # ============================================================
 # POWER BI
 # ============================================================
+```
 
 elif page == "Power BI":
 
