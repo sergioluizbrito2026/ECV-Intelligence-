@@ -4207,52 +4207,7 @@ elif page == "Power BI":
             use_container_width=True,
         )
 
-    # ========================================================
-    # ARQUITETURA
-    # ========================================================
-
-    st.markdown(
-        '<div class="section-title">🏗️ Arquitetura de integração</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-<div class="card">
-
-<div style="text-align:center; font-size:18px;">
-
-<strong>ECV Intelligence</strong>
-
-<br><br>
-
-↓
-
-<br><br>
-
-<strong>API REST</strong>
-
-<br><br>
-
-↓
-
-<br><br>
-
-<strong>Power BI</strong>
-
-<br><br>
-
-<span class="small">
-Dashboards • Indicadores • Análises • Relatórios
-</span>
-
-</div>
-
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
+    
     
 
 # ============================================================
