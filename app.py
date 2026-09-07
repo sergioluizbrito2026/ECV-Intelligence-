@@ -2776,7 +2776,7 @@ detalhada das inspeções realizadas.
             money(faturamento_filtrado),
         )
 
-        ```python
+        
 # ====================================================
 # GRÁFICOS
 # ====================================================
