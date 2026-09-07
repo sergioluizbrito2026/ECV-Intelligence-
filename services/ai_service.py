@@ -1,4 +1,4 @@
-```python
+
 """
 ECV Intelligence V4
 services/ai_service.py
