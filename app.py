@@ -2272,27 +2272,15 @@ e inteligência para tomada de decisão.
         and "taxa_aprovacao" in perf.columns
     ):
 
-        # GRÁFICO 2 ATUALIZADO: Cores diferentes por ECV e cantos arredondados
         fig2 = px.bar(
             perf,
             x="ecv",
             y="taxa_aprovacao",
-            color="ecv",
             text_auto=".1f",
             title="Taxa de aprovação por ECV (%)",
-            color_discrete_sequence=[
-                "#00d2ff",
-                "#3a7bd5",
-                "#00f2fe",
-                "#4facfe",
-                "#00c6ff",
-                "#0072ff",
-                "#2b580c",
-                "#6832a8",
-            ],
         )
 
-        fig2.update_traces(marker_cornerradius=6)
+        fig2.update_traces(marker_color=CHART_BLUE)
 
         fig2.update_layout(
             plot_bgcolor="#1e293b",
@@ -2310,153 +2298,6 @@ e inteligência para tomada de decisão.
 
         b.info(
             "Não existem dados de performance das ECVs."
-        )
-
-
-# ====================================================
-# GRÁFICOS (ANÁLISE OPERACIONAL)
-# ====================================================
-
-# Define uma base segura para evitar erros caso 'filtered' não exista na página atual
-base_analise = filtered if 'filtered' in locals() and not filtered.empty else (df if 'df' in locals() else None)
-
-if base_analise is not None and not base_analise.empty:
-
-    st.markdown(
-        '<div class="section-title">📈 Análise operacional</div>',
-        unsafe_allow_html=True,
-    )
-
-    g1, g2 = st.columns(2)
-
-    result_chart = (
-        base_analise["resultado"]
-        .value_counts()
-        .reset_index()
-    )
-
-    result_chart.columns = [
-        "resultado",
-        "quantidade",
-    ]
-
-    fig_result = px.pie(
-        result_chart,
-        names="resultado",
-        values="quantidade",
-        hole=0.55,
-        title="Distribuição dos resultados",
-    )
-
-    fig_result.update_traces(marker=dict(colors=result_chart_colors(result_chart["resultado"])))
-
-    fig_result.update_layout(
-        plot_bgcolor="#1e293b",
-        paper_bgcolor="#1e293b",
-        font=dict(color="#94a3b8"),
-    )
-
-    g1.plotly_chart(
-        fig_result,
-        use_container_width=True,
-    )
-
-    type_chart = (
-        base_analise["tipo_vistoria"]
-        .value_counts()
-        .reset_index()
-    )
-
-    type_chart.columns = [
-        "tipo_vistoria",
-        "quantidade",
-    ]
-
-    # GRÁFICO DE TIPO ATUALIZADO: Cores diferentes e cantos arredondados
-    fig_type = px.bar(
-        type_chart,
-        x="tipo_vistoria",
-        y="quantidade",
-        color="tipo_vistoria",
-        text_auto=True,
-        title="Vistorias por tipo",
-        color_discrete_sequence=px.colors.qualitative.Set2
-    )
-
-    fig_type.update_traces(marker_cornerradius=6)
-
-    fig_type.update_layout(
-        plot_bgcolor="#1e293b",
-        paper_bgcolor="#1e293b",
-        font=dict(color="#94a3b8"),
-        showlegend=False,
-    )
-
-    g2.plotly_chart(
-        fig_type,
-        use_container_width=True,
-    )
-
-    ecv_analysis = (
-        base_analise
-        .groupby("ecv")
-        .agg(
-            vistorias=("id", "count"),
-            tempo_medio=(
-                "tempo_minutos",
-                "mean",
-            ),
-            faturamento=(
-                "valor",
-                "sum",
-            ),
-        )
-        .reset_index()
-        .sort_values(
-            "vistorias",
-            ascending=False,
-        )
-    )
-
-    if not ecv_analysis.empty:
-
-        st.markdown(
-            '<div class="section-title">🏢 Performance por ECV</div>',
-            unsafe_allow_html=True,
-        )
-
-        # GRÁFICO DE ECV ATUALIZADO: Cores diferentes e cantos arredondados
-        fig_ecv = px.bar(
-            ecv_analysis,
-            x="ecv",
-            y="vistorias",
-            color="ecv",
-            text_auto=True,
-            title="Volume de vistorias por ECV",
-            color_discrete_sequence=[
-                "#00d2ff",
-                "#3a7bd5",
-                "#00f2fe",
-                "#4facfe",
-                "#00c6ff",
-                "#0072ff",
-                "#2b580c",
-                "#6832a8",
-            ],
-        )
-
-        fig_ecv.update_traces(marker_cornerradius=6)
-
-        fig_ecv.update_layout(
-            plot_bgcolor="#1e293b",
-            paper_bgcolor="#1e293b",
-            font=dict(color="#94a3b8"),
-            showlegend=False,
-        )
-
-        st.plotly_chart(
-            fig_ecv,
-            use_container_width=True,
         )
 
 
@@ -2864,25 +2705,21 @@ detalhada das inspeções realizadas.
                 "quantidade",
             ]
 
-            # ALTERAÇÃO AQUI: Adicionado color="tipo_vistoria" e color_discrete_sequence
             fig_type = px.bar(
                 type_chart,
                 x="tipo_vistoria",
                 y="quantidade",
-                color="tipo_vistoria",  # Garante cores diferentes para cada barra
                 text_auto=True,
                 title="Vistorias por tipo",
-                color_discrete_sequence=px.colors.qualitative.Set2  # Ou outra paleta (ex: Vivid, Bold, Safe)
             )
 
-            # ALTERAÇÃO AQUI: Adicionado cornerradius para o visual moderno
-            fig_type.update_traces(marker_cornerradius=6)
+            fig_type.update_traces(marker_color=CHART_PALETTE)
 
             fig_type.update_layout(
                 plot_bgcolor="#1e293b",
                 paper_bgcolor="#1e293b",
                 font=dict(color="#94a3b8"),
-                showlegend=False,  # Oculta a legenda lateral já que o eixo X identifica
+                showlegend=False,
             )
 
             g2.plotly_chart(
@@ -2918,25 +2755,21 @@ detalhada das inspeções realizadas.
                     unsafe_allow_html=True,
                 )
 
-                # ALTERAÇÃO AQUI: Adicionado color="ecv" e uma paleta moderna personalizada de tons de azul/ciano
                 fig_ecv = px.bar(
                     ecv_analysis,
                     x="ecv",
                     y="vistorias",
-                    color="ecv",  # Cada ECV terá uma cor diferente
                     text_auto=True,
                     title="Volume de vistorias por ECV",
-                    color_discrete_sequence=["#00d2ff", "#3a7bd5", "#00f2fe", "#4facfe", "#00c6ff", "#0072ff", "#2b580c", "#6832a8"]
                 )
 
-                # ALTERAÇÃO AQUI: Cantos arredondados nas barras
-                fig_ecv.update_traces(marker_cornerradius=6)
+                fig_ecv.update_traces(marker_color=CHART_CYAN)
 
                 fig_ecv.update_layout(
                     plot_bgcolor="#1e293b",
                     paper_bgcolor="#1e293b",
                     font=dict(color="#94a3b8"),
-                    showlegend=False,  # Oculta a legenda desnecessária
+                    showlegend=False,
                 )
 
                 st.plotly_chart(
