@@ -1561,7 +1561,7 @@ tempo médio, faturamento e desempenho operacional.
         unsafe_allow_html=True,
     )
 
-    if not df.empty:
+    if not df_ia.empty:
 
         p1, p2 = st.columns(2)
 
