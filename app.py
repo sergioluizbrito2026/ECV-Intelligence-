@@ -2199,6 +2199,10 @@ e inteligência para tomada de decisão.
         unsafe_allow_html=True,
     )
 
+    # ========================================================
+    # KPIs
+    # ========================================================
+
     c1, c2, c3, c4, c5 = st.columns(5)
 
     c1.metric(
@@ -2226,12 +2230,20 @@ e inteligência para tomada de decisão.
         money(faturamento),
     )
 
+    # ========================================================
+    # PERFORMANCE OPERACIONAL
+    # ========================================================
+
     st.markdown(
         '<div class="section-title">Performance operacional</div>',
         unsafe_allow_html=True,
     )
 
     a, b = st.columns(2)
+
+    # ========================================================
+    # GRÁFICO 1 — VOLUME DIÁRIO
+    # ========================================================
 
     if (
         not daily.empty
@@ -2247,12 +2259,44 @@ e inteligência para tomada de decisão.
             title="Volume diário de vistorias",
         )
 
-        fig1.update_traces(line=dict(color=CHART_CYAN), marker=dict(color=CHART_CYAN))
+        # Azul/ciano para evolução operacional
+        fig1.update_traces(
+            line=dict(
+                color="#22D3EE",
+                width=3,
+            ),
+            marker=dict(
+                color="#06B6D4",
+                size=7,
+            ),
+            hovertemplate=(
+                "<b>Data:</b> %{x}<br>"
+                "<b>Vistorias:</b> %{y:,}"
+                "<extra></extra>"
+            ),
+        )
 
         fig1.update_layout(
             plot_bgcolor="#1e293b",
             paper_bgcolor="#1e293b",
-            font=dict(color="#94a3b8"),
+            font=dict(
+                color="#94a3b8",
+            ),
+            title=dict(
+                font=dict(
+                    size=17,
+                    color="#F8FAFC",
+                )
+            ),
+            xaxis=dict(
+                title="Data",
+                showgrid=False,
+            ),
+            yaxis=dict(
+                title="Vistorias",
+                gridcolor="rgba(148,163,184,0.12)",
+            ),
+            hovermode="x unified",
         )
 
         a.plotly_chart(
@@ -2266,27 +2310,72 @@ e inteligência para tomada de decisão.
             "Não existem dados suficientes para o gráfico diário."
         )
 
+    # ========================================================
+    # GRÁFICO 2 — TAXA DE APROVAÇÃO POR ECV
+    # ========================================================
+
     if (
         not perf.empty
         and "ecv" in perf.columns
         and "taxa_aprovacao" in perf.columns
     ):
 
+        # Cria cores graduais de acordo com a performance
+        perf_chart = perf.copy()
+
+        perf_chart["cor"] = perf_chart["taxa_aprovacao"].apply(
+            lambda x:
+                "#22C55E" if x >= 90
+                else "#84CC16" if x >= 80
+                else "#FACC15" if x >= 70
+                else "#F97316" if x >= 60
+                else "#EF4444"
+        )
+
         fig2 = px.bar(
-            perf,
+            perf_chart,
             x="ecv",
             y="taxa_aprovacao",
             text_auto=".1f",
             title="Taxa de aprovação por ECV (%)",
         )
 
-        fig2.update_traces(marker_color=CHART_BLUE)
+        # Cada ECV recebe uma cor de acordo com seu desempenho
+        fig2.update_traces(
+            marker_color=perf_chart["cor"].tolist(),
+            marker_line_width=0,
+            hovertemplate=(
+                "<b>ECV:</b> %{x}<br>"
+                "<b>Aprovação:</b> %{y:.1f}%"
+                "<extra></extra>"
+            ),
+        )
 
         fig2.update_layout(
             plot_bgcolor="#1e293b",
             paper_bgcolor="#1e293b",
-            font=dict(color="#94a3b8"),
+            font=dict(
+                color="#94a3b8",
+            ),
+            title=dict(
+                font=dict(
+                    size=17,
+                    color="#F8FAFC",
+                )
+            ),
             showlegend=False,
+            xaxis=dict(
+                title="ECV",
+                showgrid=False,
+            ),
+            yaxis=dict(
+                title="Taxa de aprovação (%)",
+                gridcolor="rgba(148,163,184,0.12)",
+                range=[
+                    0,
+                    max(100, float(perf_chart["taxa_aprovacao"].max()) + 5)
+                ],
+            ),
         )
 
         b.plotly_chart(
