@@ -3890,30 +3890,7 @@ do serviço.
             unsafe_allow_html=True,
         )
 
-    # ========================================================
-    # INFORMAÇÕES TÉCNICAS
-    # ========================================================
-
-    with st.expander("🛠️ Informações técnicas"):
-
-        st.code(
-            f"""ECV Intelligence
-----------------
-API: REST
-Formato: JSON
-Status: Online
-Health: OK
-
-Endpoints: 12
-
-Limite de vistorias:
-{MAX_VISTORIAS}
-
-Variável:
-ECV_MAX_VISTORIAS""",
-            language="text",
-        )
-
+ 
     
 
 # ============================================================
