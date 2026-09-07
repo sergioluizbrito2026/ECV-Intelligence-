@@ -60,10 +60,15 @@ footer {
 }
 
 [data-testid="stSidebar"] {
-    background: #0b1120;
-    border-right: 1px solid rgba(255,255,255,.08);
-    min-width: 270px !important;
-    max-width: 270px !important;
+    background: linear-gradient(180deg, #0b1220 0%, #0a1020 100%);
+    border-right: 1px solid rgba(148,163,184,.12);
+    min-width: 280px !important;
+    max-width: 280px !important;
+    box-shadow: 8px 0 30px rgba(0,0,0,.18);
+}
+
+[data-testid="stSidebar"] > div:first-child {
+    padding: 1.15rem .9rem 1.2rem;
 }
 
 [data-testid="stSidebar"] * {
@@ -71,53 +76,104 @@ footer {
 }
 
 .sidebar-brand {
-    padding: 8px 4px 18px;
+    padding: .7rem .75rem 1rem;
+    margin-bottom: .35rem;
+    border: 1px solid rgba(148,163,184,.12);
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(30,41,59,.88), rgba(15,23,42,.72));
+    box-shadow: 0 10px 25px rgba(0,0,0,.20);
 }
 
 .sidebar-brand h2 {
     margin: 0;
-    font-size: 1.25rem;
-    font-weight: 750;
+    font-size: 1.08rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
 }
 
 .sidebar-brand p {
-    margin: 5px 0 0;
-    font-size: .76rem;
+    margin: 6px 0 0;
+    font-size: .72rem;
+    line-height: 1.45;
     color: #94a3b8;
 }
 
 .sidebar-section {
-    margin-top: 15px;
+    margin-top: 17px;
     margin-bottom: 6px;
-    padding-left: 5px;
-    font-size: .68rem;
+    padding: 0 .65rem;
+    font-size: .62rem;
     font-weight: 800;
-    letter-spacing: .10em;
+    letter-spacing: .13em;
     color: #64748b !important;
     text-transform: uppercase;
 }
 
 [data-testid="stSidebar"] .stButton {
-    margin-bottom: 3px;
+    margin-bottom: 4px;
 }
 
 [data-testid="stSidebar"] .stButton > button {
     width: 100%;
-    min-height: 40px;
-    border: 1px solid transparent;
-    border-radius: 9px;
-    background: transparent;
+    min-height: 42px;
+    border: 1px solid transparent !important;
+    border-radius: 11px !important;
+    background: transparent !important;
     color: #cbd5e1 !important;
     text-align: left !important;
-    font-size: .88rem;
-    font-weight: 500;
-    padding: 0 12px;
+    font-size: .84rem;
+    font-weight: 600;
+    padding: 0 12px !important;
+    box-shadow: none;
+    transition: all .18s ease;
 }
 
 [data-testid="stSidebar"] .stButton > button:hover {
-    background: #172033;
-    border-color: rgba(255,255,255,.06);
+    background: rgba(51,65,85,.42) !important;
+    border-color: rgba(148,163,184,.13) !important;
     color: #ffffff !important;
+    transform: translateX(2px);
+    box-shadow: 0 5px 14px rgba(0,0,0,.16);
+}
+
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    border-color: rgba(96,165,250,.45) !important;
+    color: #ffffff !important;
+    box-shadow: 0 7px 18px rgba(37,99,235,.28);
+}
+
+[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    box-shadow: 0 9px 22px rgba(37,99,235,.34);
+    transform: translateY(-1px);
+}
+
+.sidebar-data-card {
+    margin: .7rem 0 .8rem;
+    padding: .85rem .9rem;
+    border: 1px solid rgba(148,163,184,.14);
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(30,41,59,.86), rgba(15,23,42,.82));
+    box-shadow: 0 8px 20px rgba(0,0,0,.18);
+}
+
+.sidebar-data-card .label {
+    color: #94a3b8;
+    font-size: .68rem;
+    margin-bottom: .2rem;
+}
+
+.sidebar-data-card .value {
+    color: #ffffff;
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+
+.sidebar-data-card .hint {
+    color: #64748b;
+    font-size: .66rem;
+    margin-top: .25rem;
 }
 
 .hero {
@@ -657,6 +713,7 @@ def sidebar_button(label, page_name):
         label,
         key=f"sidebar_{page_name}",
         use_container_width=True,
+        type="primary" if st.session_state.page == page_name else "secondary",
     )
 
     if clicked:
@@ -717,26 +774,23 @@ st.sidebar.markdown(
 
 sidebar_button("⚙️  Configurações", "Configurações")
 
-st.sidebar.divider()
-
-st.sidebar.caption("Limite de dados")
-
-st.sidebar.metric(
-    "Vistorias máximas",
-    number(MAX_VISTORIAS),
-)
-
-st.sidebar.caption(
-    f"A API será consultada com limite de "
-    f"{number(MAX_VISTORIAS)} registros."
+st.sidebar.markdown(
+    f'''
+<div class="sidebar-data-card">
+    <div class="label">LIMITE DE DADOS</div>
+    <div class="value">{number(MAX_VISTORIAS)}</div>
+    <div class="hint">vistorias por consulta</div>
+</div>
+''',
+    unsafe_allow_html=True,
 )
 
 if st.sidebar.button(
-    "🔄 Atualizar dados",
+    "↻  Atualizar dados",
     use_container_width=True,
     key="refresh_data",
+    type="secondary",
 ):
-
     st.cache_data.clear()
     st.rerun()
 
