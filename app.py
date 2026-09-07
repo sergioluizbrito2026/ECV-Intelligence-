@@ -2705,21 +2705,25 @@ detalhada das inspeções realizadas.
                 "quantidade",
             ]
 
+            # ALTERAÇÃO AQUI: Adicionado color="tipo_vistoria" e color_discrete_sequence
             fig_type = px.bar(
                 type_chart,
                 x="tipo_vistoria",
                 y="quantidade",
+                color="tipo_vistoria",  # Garante cores diferentes para cada barra
                 text_auto=True,
                 title="Vistorias por tipo",
+                color_discrete_sequence=px.colors.qualitative.Set2  # Ou outra paleta (ex: Vivid, Bold, Safe)
             )
 
-            fig_type.update_traces(marker_color=CHART_PALETTE)
+            # ALTERAÇÃO AQUI: Adicionado cornerradius para o visual moderno
+            fig_type.update_traces(marker_cornerradius=6)
 
             fig_type.update_layout(
                 plot_bgcolor="#1e293b",
                 paper_bgcolor="#1e293b",
                 font=dict(color="#94a3b8"),
-                showlegend=False,
+                showlegend=False,  # Oculta a legenda lateral já que o eixo X identifica
             )
 
             g2.plotly_chart(
@@ -2755,21 +2759,25 @@ detalhada das inspeções realizadas.
                     unsafe_allow_html=True,
                 )
 
+                # ALTERAÇÃO AQUI: Adicionado color="ecv" e uma paleta moderna personalizada de tons de azul/ciano
                 fig_ecv = px.bar(
                     ecv_analysis,
                     x="ecv",
                     y="vistorias",
+                    color="ecv",  # Cada ECV terá uma cor diferente
                     text_auto=True,
                     title="Volume de vistorias por ECV",
+                    color_discrete_sequence=["#00d2ff", "#3a7bd5", "#00f2fe", "#4facfe", "#00c6ff", "#0072ff", "#2b580c", "#6832a8"]
                 )
 
-                fig_ecv.update_traces(marker_color=CHART_CYAN)
+                # ALTERAÇÃO AQUI: Cantos arredondados nas barras
+                fig_ecv.update_traces(marker_cornerradius=6)
 
                 fig_ecv.update_layout(
                     plot_bgcolor="#1e293b",
                     paper_bgcolor="#1e293b",
                     font=dict(color="#94a3b8"),
-                    showlegend=False,
+                    showlegend=False,  # Oculta a legenda desnecessária
                 )
 
                 st.plotly_chart(
