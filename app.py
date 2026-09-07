@@ -3466,33 +3466,240 @@ elif page == "ECVs":
     st.markdown(
         """
 <div class="hero">
-<h1>Gestão de ECVs</h1>
-<p>
-Visão consolidada das Empresas Credenciadas de Vistoria.
-</p>
+    <h1>🏢 Gestão de ECVs</h1>
+    <p>
+        Gestão e monitoramento das Empresas Credenciadas de Vistoria,
+        com visão operacional e indicadores de desempenho.
+    </p>
 </div>
 """,
         unsafe_allow_html=True,
     )
 
+    # ========================================================
+    # VERIFICAÇÃO DOS DADOS
+    # ========================================================
+
     if ecvs_df.empty:
 
-        st.info(
-            "A API não retornou ECVs."
+        st.warning(
+            """
+            **Nenhuma ECV disponível no momento.**
+
+            A API não retornou registros de ECVs para esta consulta.
+            Verifique a conexão com a API e o endpoint `/ecvs`.
+            """
         )
 
     else:
 
-        st.metric(
-            "ECVs cadastradas",
-            number(len(ecvs_df)),
+        # ====================================================
+        # PREPARAÇÃO DOS DADOS
+        # ====================================================
+
+        df_ecvs = ecvs_df.copy()
+
+        # Normaliza nomes das colunas
+        df_ecvs.columns = [
+            str(col).strip().lower()
+            for col in df_ecvs.columns
+        ]
+
+        # ====================================================
+        # INDICADORES
+        # ====================================================
+
+        total_ecvs = len(df_ecvs)
+
+        # Identifica possíveis colunas de status
+        coluna_status = None
+
+        for coluna in [
+            "status",
+            "situacao",
+            "situação",
+            "ativo",
+            "status_ecv",
+        ]:
+            if coluna in df_ecvs.columns:
+                coluna_status = coluna
+                break
+
+        ecvs_ativas = None
+        ecvs_inativas = None
+
+        if coluna_status:
+
+            status = (
+                df_ecvs[coluna_status]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+                .str.lower()
+            )
+
+            ativos = [
+                "ativo",
+                "ativa",
+                "true",
+                "1",
+                "sim",
+            ]
+
+            inativos = [
+                "inativo",
+                "inativa",
+                "false",
+                "0",
+                "não",
+                "nao",
+            ]
+
+            ecvs_ativas = int(status.isin(ativos).sum())
+            ecvs_inativas = int(status.isin(inativos).sum())
+
+        # ====================================================
+        # CARDS PRINCIPAIS
+        # ====================================================
+
+        if coluna_status:
+
+            c1, c2, c3, c4 = st.columns(4)
+
+            c1.metric(
+                "Total de ECVs",
+                number(total_ecvs),
+            )
+
+            c2.metric(
+                "ECVs ativas",
+                number(ecvs_ativas),
+            )
+
+            c3.metric(
+                "ECVs inativas",
+                number(ecvs_inativas),
+            )
+
+            c4.metric(
+                "Dados recebidos",
+                "API",
+            )
+
+        else:
+
+            c1, c2 = st.columns(2)
+
+            c1.metric(
+                "Total de ECVs",
+                number(total_ecvs),
+            )
+
+            c2.metric(
+                "Dados recebidos",
+                "API",
+            )
+
+        # ====================================================
+        # TÍTULO
+        # ====================================================
+
+        st.markdown(
+            '<div class="section-title">🏢 Empresas credenciadas</div>',
+            unsafe_allow_html=True,
         )
 
+        # ====================================================
+        # BUSCA
+        # ====================================================
+
+        busca = st.text_input(
+            "🔎 Buscar ECV",
+            placeholder="Digite o nome ou informação da ECV...",
+        )
+
+        df_exibicao = df_ecvs.copy()
+
+        if busca:
+
+            mascara = (
+                df_exibicao
+                .astype(str)
+                .apply(
+                    lambda coluna: coluna.str.contains(
+                        busca,
+                        case=False,
+                        na=False,
+                    )
+                )
+                .any(axis=1)
+            )
+
+            df_exibicao = df_exibicao[mascara]
+
+        # ====================================================
+        # RESULTADO DA BUSCA
+        # ====================================================
+
+        st.caption(
+            f"Exibindo {number(len(df_exibicao))} "
+            f"de {number(total_ecvs)} ECVs."
+        )
+
+        # ====================================================
+        # TABELA
+        # ====================================================
+
         st.dataframe(
-            ecvs_df,
+            df_exibicao,
             use_container_width=True,
             hide_index=True,
         )
+
+        # ====================================================
+        # RESUMO
+        # ====================================================
+
+        st.markdown(
+            '<div class="section-title">📊 Resumo operacional</div>',
+            unsafe_allow_html=True,
+        )
+
+        r1, r2 = st.columns(2)
+
+        with r1:
+
+            st.markdown(
+                """
+<div class="card">
+    <h3>🏢 Base de ECVs</h3>
+    <p>
+        Relação consolidada das empresas credenciadas
+        disponibilizadas pela API.
+    </p>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+
+        with r2:
+
+            st.markdown(
+                """
+<div class="card">
+    <h3>🔎 Monitoramento</h3>
+    <p>
+        Utilize a busca para localizar rapidamente
+        uma ECV e consultar seus dados cadastrados.
+    </p>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+
+    st.caption(
+        "ECV Intelligence • Gestão de Empresas Credenciadas"
+    )
 
 
 # ============================================================
