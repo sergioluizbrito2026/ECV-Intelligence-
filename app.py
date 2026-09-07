@@ -868,6 +868,15 @@ elif page == "Qualidade":
     quality_response = get_api_quality()
 
 
+elif page == "ECVs":
+
+    ecvs_response = get_api_ecvs()
+
+
+elif page == "Automações":
+
+    automations_response = get_api_automations()
+
 
 # ============================================================
 # IA & INSIGHTS
@@ -3520,240 +3529,202 @@ elif page == "ECVs":
     st.markdown(
         """
 <div class="hero">
-    <h1>🏢 Gestão de ECVs</h1>
-    <p>
-        Gestão e monitoramento das Empresas Credenciadas de Vistoria,
-        com visão operacional e indicadores de desempenho.
-    </p>
+<h1>🏢 Gestão de ECVs</h1>
+<p>
+Gestão e monitoramento das Empresas Credenciadas de Vistoria,
+com visão operacional da base cadastrada.
+</p>
 </div>
 """,
         unsafe_allow_html=True,
     )
 
-    # ========================================================
-    # VERIFICAÇÃO DOS DADOS
-    # ========================================================
+    if not ecvs_response.get("ok", False):
 
-    if ecvs_df.empty:
+        st.error("Não foi possível carregar a base de ECVs.")
 
-        st.warning(
-            """
-            **Nenhuma ECV disponível no momento.**
-
-            A API não retornou registros de ECVs para esta consulta.
-            Verifique a conexão com a API e o endpoint `/ecvs`.
-            """
-        )
+        if ecvs_response.get("error"):
+            st.caption(str(ecvs_response.get("error")))
 
     else:
 
-        # ====================================================
-        # PREPARAÇÃO DOS DADOS
-        # ====================================================
+        df_ecvs = build_ecvs_dataframe(
+            ecvs_response.get("data") or {}
+        )
 
-        df_ecvs = ecvs_df.copy()
+        if df_ecvs.empty:
 
-        # Normaliza nomes das colunas
-        df_ecvs.columns = [
-            str(col).strip().lower()
-            for col in df_ecvs.columns
-        ]
-
-        # ====================================================
-        # INDICADORES
-        # ====================================================
-
-        total_ecvs = len(df_ecvs)
-
-        # Identifica possíveis colunas de status
-        coluna_status = None
-
-        for coluna in [
-            "status",
-            "situacao",
-            "situação",
-            "ativo",
-            "status_ecv",
-        ]:
-            if coluna in df_ecvs.columns:
-                coluna_status = coluna
-                break
-
-        ecvs_ativas = None
-        ecvs_inativas = None
-
-        if coluna_status:
-
-            status = (
-                df_ecvs[coluna_status]
-                .fillna("")
-                .astype(str)
-                .str.strip()
-                .str.lower()
-            )
-
-            ativos = [
-                "ativo",
-                "ativa",
-                "true",
-                "1",
-                "sim",
-            ]
-
-            inativos = [
-                "inativo",
-                "inativa",
-                "false",
-                "0",
-                "não",
-                "nao",
-            ]
-
-            ecvs_ativas = int(status.isin(ativos).sum())
-            ecvs_inativas = int(status.isin(inativos).sum())
-
-        # ====================================================
-        # CARDS PRINCIPAIS
-        # ====================================================
-
-        if coluna_status:
-
-            c1, c2, c3, c4 = st.columns(4)
-
-            c1.metric(
-                "Total de ECVs",
-                number(total_ecvs),
-            )
-
-            c2.metric(
-                "ECVs ativas",
-                number(ecvs_ativas),
-            )
-
-            c3.metric(
-                "ECVs inativas",
-                number(ecvs_inativas),
-            )
-
-            c4.metric(
-                "Dados recebidos",
-                "API",
+            st.info(
+                "Nenhuma ECV foi retornada pela API nesta consulta."
             )
 
         else:
 
-            c1, c2 = st.columns(2)
+            df_ecvs = df_ecvs.copy()
+            df_ecvs.columns = [
+                str(col).strip().lower()
+                for col in df_ecvs.columns
+            ]
 
-            c1.metric(
-                "Total de ECVs",
-                number(total_ecvs),
+            total_ecvs = len(df_ecvs)
+
+            coluna_status = next(
+                (
+                    col
+                    for col in [
+                        "status", "situacao", "situação",
+                        "ativo", "status_ecv",
+                    ]
+                    if col in df_ecvs.columns
+                ),
+                None,
             )
 
-            c2.metric(
-                "Dados recebidos",
-                "API",
-            )
+            ativas = 0
+            inativas = 0
 
-        # ====================================================
-        # TÍTULO
-        # ====================================================
+            if coluna_status:
 
-        st.markdown(
-            '<div class="section-title">🏢 Empresas credenciadas</div>',
-            unsafe_allow_html=True,
-        )
-
-        # ====================================================
-        # BUSCA
-        # ====================================================
-
-        busca = st.text_input(
-            "🔎 Buscar ECV",
-            placeholder="Digite o nome ou informação da ECV...",
-        )
-
-        df_exibicao = df_ecvs.copy()
-
-        if busca:
-
-            mascara = (
-                df_exibicao
-                .astype(str)
-                .apply(
-                    lambda coluna: coluna.str.contains(
-                        busca,
-                        case=False,
-                        na=False,
-                    )
+                status = (
+                    df_ecvs[coluna_status]
+                    .fillna("")
+                    .astype(str)
+                    .str.strip()
+                    .str.lower()
                 )
-                .any(axis=1)
-            )
 
-            df_exibicao = df_exibicao[mascara]
+                ativas = int(
+                    status.isin([
+                        "ativo", "ativa", "true", "1", "sim"
+                    ]).sum()
+                )
 
-        # ====================================================
-        # RESULTADO DA BUSCA
-        # ====================================================
+                inativas = int(
+                    status.isin([
+                        "inativo", "inativa", "false", "0",
+                        "não", "nao"
+                    ]).sum()
+                )
 
-        st.caption(
-            f"Exibindo {number(len(df_exibicao))} "
-            f"de {number(total_ecvs)} ECVs."
-        )
-
-        # ====================================================
-        # TABELA
-        # ====================================================
-
-        st.dataframe(
-            df_exibicao,
-            use_container_width=True,
-            hide_index=True,
-        )
-
-        # ====================================================
-        # RESUMO
-        # ====================================================
-
-        st.markdown(
-            '<div class="section-title">📊 Resumo operacional</div>',
-            unsafe_allow_html=True,
-        )
-
-        r1, r2 = st.columns(2)
-
-        with r1:
+            if coluna_status:
+                c1, c2, c3 = st.columns(3)
+                c1.metric("ECVs cadastradas", number(total_ecvs))
+                c2.metric("ECVs ativas", number(ativas))
+                c3.metric("ECVs inativas", number(inativas))
+            else:
+                c1, c2 = st.columns(2)
+                c1.metric("ECVs cadastradas", number(total_ecvs))
+                c2.metric("Fonte", "API")
 
             st.markdown(
-                """
-<div class="card">
-    <h3>🏢 Base de ECVs</h3>
-    <p>
-        Relação consolidada das empresas credenciadas
-        disponibilizadas pela API.
-    </p>
-</div>
-""",
+                '<div class="section-title">🔎 Consulta da base</div>',
                 unsafe_allow_html=True,
             )
 
-        with r2:
+            f1, f2 = st.columns([2, 1])
 
-            st.markdown(
-                """
-<div class="card">
-    <h3>🔎 Monitoramento</h3>
-    <p>
-        Utilize a busca para localizar rapidamente
-        uma ECV e consultar seus dados cadastrados.
-    </p>
-</div>
-""",
-                unsafe_allow_html=True,
+            with f1:
+                busca_ecv = st.text_input(
+                    "Buscar ECV",
+                    placeholder="Nome, CNPJ, cidade ou outro dado...",
+                    key="busca_ecv_gestao",
+                )
+
+            with f2:
+                filtro_status = "Todos"
+                if coluna_status:
+                    filtro_status = st.selectbox(
+                        "Status",
+                        ["Todos", "Ativas", "Inativas"],
+                        key="filtro_status_ecv_gestao",
+                    )
+
+            df_exibicao = df_ecvs.copy()
+
+            if busca_ecv.strip():
+                termo = busca_ecv.strip()
+                mascara = (
+                    df_exibicao.astype(str)
+                    .apply(
+                        lambda coluna: coluna.str.contains(
+                            termo, case=False, na=False, regex=False
+                        )
+                    )
+                    .any(axis=1)
+                )
+                df_exibicao = df_exibicao[mascara]
+
+            if coluna_status and filtro_status != "Todos":
+                status_view = (
+                    df_exibicao[coluna_status]
+                    .fillna("")
+                    .astype(str)
+                    .str.strip()
+                    .str.lower()
+                )
+
+                if filtro_status == "Ativas":
+                    df_exibicao = df_exibicao[
+                        status_view.isin([
+                            "ativo", "ativa", "true", "1", "sim"
+                        ])
+                    ]
+                else:
+                    df_exibicao = df_exibicao[
+                        status_view.isin([
+                            "inativo", "inativa", "false", "0",
+                            "não", "nao"
+                        ])
+                    ]
+
+            st.caption(
+                f"Exibindo {number(len(df_exibicao))} "
+                f"de {number(total_ecvs)} ECVs."
             )
 
-    st.caption(
-        "ECV Intelligence • Gestão de Empresas Credenciadas"
-    )
+            st.dataframe(
+                df_exibicao,
+                use_container_width=True,
+                hide_index=True,
+            )
+
+            if coluna_status:
+
+                st.markdown(
+                    '<div class="section-title">📊 Status das ECVs</div>',
+                    unsafe_allow_html=True,
+                )
+
+                status_chart = (
+                    df_ecvs[coluna_status]
+                    .fillna("Não informado")
+                    .astype(str)
+                    .str.strip()
+                    .replace("", "Não informado")
+                    .value_counts()
+                    .reset_index()
+                )
+                status_chart.columns = ["status", "quantidade"]
+
+                fig_ecv = px.bar(
+                    status_chart,
+                    x="status",
+                    y="quantidade",
+                    text_auto=True,
+                    title="Distribuição das ECVs por status",
+                )
+                fig_ecv.update_layout(
+                    plot_bgcolor="#1e293b",
+                    paper_bgcolor="#1e293b",
+                    font=dict(color="#94a3b8"),
+                    showlegend=False,
+                )
+                st.plotly_chart(
+                    fig_ecv,
+                    use_container_width=True,
+                )
+
+    st.caption("ECV Intelligence • Gestão de Empresas Credenciadas")
 
 
 # ============================================================
@@ -3765,9 +3736,10 @@ elif page == "Automações":
     st.markdown(
         """
 <div class="hero">
-<h1>Central de Automações</h1>
+<h1>⚙️ Central de Automações</h1>
 <p>
-Monitoramento das regras e execuções automatizadas.
+Monitore execuções, resultados e atividades automatizadas
+do ECV Intelligence.
 </p>
 </div>
 """,
@@ -3789,32 +3761,199 @@ Monitoramento das regras e execuções automatizadas.
                 "items",
                 "results",
                 "logs",
+                "records",
             ],
         )
     )
 
-    if logs.empty:
+    if not automations_response.get("ok", False):
+
+        st.error("Não foi possível carregar as automações.")
+
+        if automations_response.get("error"):
+            st.caption(str(automations_response.get("error")))
+
+    elif logs.empty:
 
         st.info(
-            "Nenhuma execução registrada pela API."
+            "Nenhuma execução de automação foi registrada pela API."
         )
 
     else:
 
-        st.metric(
-            "Execuções",
-            number(len(logs)),
+        logs.columns = [
+            str(col).strip().lower()
+            for col in logs.columns
+        ]
+
+        total_execucoes = len(logs)
+
+        coluna_status_auto = next(
+            (
+                col
+                for col in [
+                    "status",
+                    "resultado",
+                    "situacao",
+                    "situação",
+                    "status_execucao",
+                    "status_execução",
+                ]
+                if col in logs.columns
+            ),
+            None,
+        )
+
+        sucesso = 0
+        falhas = 0
+        pendentes = 0
+
+        if coluna_status_auto:
+
+            status_auto = (
+                logs[coluna_status_auto]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+                .str.lower()
+            )
+
+            sucesso = int(
+                status_auto.isin(
+                    [
+                        "sucesso", "success", "ok",
+                        "concluido", "concluído",
+                        "executado", "executada",
+                    ]
+                ).sum()
+            )
+
+            falhas = int(
+                status_auto.isin(
+                    [
+                        "erro", "error", "falha",
+                        "failed", "falhou",
+                    ]
+                ).sum()
+            )
+
+            pendentes = int(
+                status_auto.isin(
+                    [
+                        "pendente", "pending",
+                        "processando", "em andamento",
+                    ]
+                ).sum()
+            )
+
+        c1, c2, c3, c4 = st.columns(4)
+
+        c1.metric("Execuções", number(total_execucoes))
+        c2.metric("Sucessos", number(sucesso))
+        c3.metric("Falhas", number(falhas))
+        c4.metric("Pendentes", number(pendentes))
+
+        st.markdown(
+            '<div class="section-title">📡 Monitoramento</div>',
+            unsafe_allow_html=True,
+        )
+
+        logs_exibicao = logs.copy()
+
+        if coluna_status_auto:
+
+            filtro = st.selectbox(
+                "Filtrar por status",
+                ["Todos", "Sucesso", "Falha", "Pendente"],
+                key="filtro_automacoes_status",
+            )
+
+            if filtro != "Todos":
+
+                status_view = (
+                    logs_exibicao[coluna_status_auto]
+                    .fillna("")
+                    .astype(str)
+                    .str.strip()
+                    .str.lower()
+                )
+
+                if filtro == "Sucesso":
+                    logs_exibicao = logs_exibicao[
+                        status_view.isin([
+                            "sucesso", "success", "ok",
+                            "concluido", "concluído",
+                            "executado", "executada",
+                        ])
+                    ]
+
+                elif filtro == "Falha":
+                    logs_exibicao = logs_exibicao[
+                        status_view.isin([
+                            "erro", "error", "falha",
+                            "failed", "falhou",
+                        ])
+                    ]
+
+                elif filtro == "Pendente":
+                    logs_exibicao = logs_exibicao[
+                        status_view.isin([
+                            "pendente", "pending",
+                            "processando", "em andamento",
+                        ])
+                    ]
+
+        st.caption(
+            f"Exibindo {number(len(logs_exibicao))} "
+            f"de {number(total_execucoes)} execuções."
         )
 
         st.dataframe(
-            logs,
+            logs_exibicao,
             use_container_width=True,
             hide_index=True,
         )
 
+        if coluna_status_auto:
 
+            st.markdown(
+                '<div class="section-title">📊 Distribuição</div>',
+                unsafe_allow_html=True,
+            )
 
+            status_chart = (
+                logs[coluna_status_auto]
+                .fillna("Não informado")
+                .astype(str)
+                .str.strip()
+                .replace("", "Não informado")
+                .value_counts()
+                .reset_index()
+            )
 
+            status_chart.columns = ["status", "quantidade"]
+
+            fig_auto = px.bar(
+                status_chart,
+                x="status",
+                y="quantidade",
+                text_auto=True,
+                title="Execuções por status",
+            )
+
+            fig_auto.update_layout(
+                plot_bgcolor="#1e293b",
+                paper_bgcolor="#1e293b",
+                font=dict(color="#94a3b8"),
+                showlegend=False,
+            )
+
+            st.plotly_chart(
+                fig_auto,
+                use_container_width=True,
+            )
+
+    st.caption("ECV Intelligence • Central de Automações")
 
 
 # ============================================================
