@@ -1,31 +1,40 @@
+```python
 """
-ECV Intelligence V3
+ECV Intelligence V4
 services/ai_service.py
 
-Serviço de Inteligência Artificial do ECV Intelligence.
+Motor de Inteligência Artificial do ECV Intelligence.
 
 Responsabilidades:
 - integração com Google Gemini;
 - análise executiva dos KPIs;
 - Copilot de dados;
-- respostas baseadas nos dados reais;
-- fallback local quando a API não estiver disponível;
+- análise estatística da operação;
+- ranking de ECVs;
+- análise de resultados;
+- análise de faturamento;
+- análise de tempo operacional;
+- análise por cidade e tipo de vistoria;
+- detecção básica de anomalias;
+- recomendações gerenciais;
+- fallback determinístico;
 - proteção contra respostas inventadas;
-- tratamento de erros;
-- controle básico de tamanho do contexto.
+- controle de contexto;
+- tratamento robusto de erros.
 
-Compatível com:
-    app.py V3
-    services/analytics.py V3
+Compatibilidade:
+    app.py V3/V4
+    services/analytics.py
 """
 
 import json
 import os
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import streamlit as st
+
 from google import genai
 
 
@@ -35,8 +44,13 @@ from google import genai
 
 DEFAULT_MODEL = "gemini-2.5-flash"
 
-MAX_ROWS_CONTEXT = 120
+MAX_ROWS_CONTEXT = 80
 MAX_TEXT_LENGTH = 12000
+MAX_PERFORMANCE_ROWS = 50
+MAX_RANKING_ROWS = 20
+
+DEFAULT_TEMPO_ALERTA = 60.0
+DEFAULT_APROVACAO_ALERTA = 75.0
 
 
 # ============================================================
@@ -45,7 +59,7 @@ MAX_TEXT_LENGTH = 12000
 
 def _get_api_key() -> Optional[str]:
     """
-    Obtém a chave do Gemini.
+    Obtém a chave da API Gemini.
 
     Prioridade:
     1. Streamlit Secrets
@@ -53,13 +67,16 @@ def _get_api_key() -> Optional[str]:
     """
 
     try:
+
         if (
             hasattr(st, "secrets")
             and "GEMINI_API_KEY" in st.secrets
         ):
+
             key = st.secrets["GEMINI_API_KEY"]
 
             if key:
+
                 return str(key).strip()
 
     except Exception:
@@ -68,6 +85,7 @@ def _get_api_key() -> Optional[str]:
     key = os.getenv("GEMINI_API_KEY")
 
     if key:
+
         return key.strip()
 
     return None
@@ -75,37 +93,41 @@ def _get_api_key() -> Optional[str]:
 
 def _get_model() -> str:
     """
-    Permite alterar o modelo através de variável de ambiente.
+    Retorna o modelo configurado.
     """
 
-    return (
-        os.getenv(
-            "GEMINI_MODEL",
-            DEFAULT_MODEL,
-        ).strip()
-        or DEFAULT_MODEL
+    model = os.getenv(
+        "GEMINI_MODEL",
+        DEFAULT_MODEL,
     )
+
+    model = str(model).strip()
+
+    return model or DEFAULT_MODEL
 
 
 def _get_gemini_client():
     """
-    Cria o cliente Gemini.
+    Cria cliente Gemini.
 
     Retorna:
-        genai.Client ou None
+        Cliente Gemini ou None.
     """
 
     api_key = _get_api_key()
 
     if not api_key:
+
         return None
 
     try:
+
         return genai.Client(
             api_key=api_key
         )
 
     except Exception:
+
         return None
 
 
@@ -113,24 +135,49 @@ def _get_gemini_client():
 # UTILITÁRIOS
 # ============================================================
 
-def _safe_float(value, default=0.0):
+def _safe_float(
+    value,
+    default=0.0,
+):
+    """
+    Conversão numérica segura.
+    """
+
     try:
-        return float(value)
-    except (TypeError, ValueError):
+
+        value = float(value)
+
+        if pd.isna(value):
+
+            return default
+
+        return value
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+
         return default
 
 
 def _format_number(value):
     """
-    Formata números no padrão brasileiro.
+    Formata número no padrão brasileiro.
     """
 
     try:
-        return f"{float(value):,.0f}".replace(
-            ",",
-            ".",
+
+        return (
+            f"{float(value):,.0f}"
+            .replace(",", ".")
         )
-    except (TypeError, ValueError):
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+
         return "0"
 
 
@@ -140,79 +187,640 @@ def _format_money(value):
     """
 
     try:
+
         return (
             f"R$ {float(value):,.2f}"
             .replace(",", "X")
             .replace(".", ",")
             .replace("X", ".")
         )
-    except (TypeError, ValueError):
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+
         return "R$ 0,00"
 
 
 def _clean_text(text):
     """
-    Limita tamanho da resposta.
+    Limita tamanho da resposta da LLM.
     """
 
     if not text:
+
         return ""
 
     text = str(text).strip()
 
     if len(text) > MAX_TEXT_LENGTH:
-        return text[:MAX_TEXT_LENGTH].rstrip() + "..."
+
+        return (
+            text[:MAX_TEXT_LENGTH]
+            .rstrip()
+            + "..."
+        )
 
     return text
 
 
 def _normalize_question(question):
     """
-    Normaliza a pergunta do usuário.
+    Normaliza pergunta do usuário.
     """
 
     return re.sub(
         r"\s+",
         " ",
-        str(question or "").strip().lower(),
+        str(question or "")
+        .strip()
+        .lower(),
+    )
+
+
+def _safe_json(data):
+    """
+    Converte objetos para JSON de forma segura.
+    """
+
+    try:
+
+        return json.dumps(
+            data,
+            ensure_ascii=False,
+            default=str,
+        )
+
+    except Exception:
+
+        return "{}"
+
+
+# ============================================================
+# PREPARAÇÃO DA BASE
+# ============================================================
+
+def _prepare_dataframe(df):
+    """
+    Cria uma cópia segura da base.
+
+    Não altera o DataFrame original.
+    """
+
+    if df is None:
+
+        return pd.DataFrame()
+
+    if not isinstance(
+        df,
+        pd.DataFrame,
+    ):
+
+        try:
+
+            df = pd.DataFrame(df)
+
+        except Exception:
+
+            return pd.DataFrame()
+
+    if df.empty:
+
+        return pd.DataFrame()
+
+    work = df.copy()
+
+    return work
+
+
+# ============================================================
+# KPIs
+# ============================================================
+
+def _calculate_kpis(df):
+    """
+    Calcula indicadores diretamente sobre a base.
+    """
+
+    work = _prepare_dataframe(df)
+
+    if work.empty:
+
+        return {
+            "total": 0,
+            "aprovadas": 0,
+            "reprovadas": 0,
+            "taxa_aprovacao": 0.0,
+            "taxa_reprovacao": 0.0,
+            "tempo_medio": 0.0,
+            "faturamento": 0.0,
+            "ecvs": 0,
+            "cidades": 0,
+        }
+
+    total = len(work)
+
+    aprovadas = 0
+    reprovadas = 0
+
+    if "resultado" in work.columns:
+
+        resultado = (
+            work["resultado"]
+            .fillna("")
+            .astype(str)
+            .str.lower()
+            .str.strip()
+        )
+
+        aprovadas = int(
+            resultado
+            .str.contains(
+                "aprov",
+                na=False,
+            )
+            .sum()
+        )
+
+        reprovadas = int(
+            resultado
+            .str.contains(
+                "reprov",
+                na=False,
+            )
+            .sum()
+        )
+
+    taxa_aprovacao = (
+        aprovadas
+        / total
+        * 100
+        if total
+        else 0.0
+    )
+
+    taxa_reprovacao = (
+        reprovadas
+        / total
+        * 100
+        if total
+        else 0.0
+    )
+
+    tempo_medio = 0.0
+
+    if "tempo_minutos" in work.columns:
+
+        tempo = pd.to_numeric(
+            work["tempo_minutos"],
+            errors="coerce",
+        )
+
+        if tempo.notna().any():
+
+            tempo_medio = _safe_float(
+                tempo.mean()
+            )
+
+    faturamento = 0.0
+
+    if "valor" in work.columns:
+
+        valor = pd.to_numeric(
+            work["valor"],
+            errors="coerce",
+        )
+
+        faturamento = _safe_float(
+            valor.sum()
+        )
+
+    ecvs = 0
+
+    if "ecv" in work.columns:
+
+        ecvs = int(
+            work["ecv"]
+            .dropna()
+            .astype(str)
+            .nunique()
+        )
+
+    cidades = 0
+
+    if "cidade" in work.columns:
+
+        cidades = int(
+            work["cidade"]
+            .dropna()
+            .astype(str)
+            .nunique()
+        )
+
+    return {
+        "total": total,
+        "aprovadas": aprovadas,
+        "reprovadas": reprovadas,
+        "taxa_aprovacao": round(
+            taxa_aprovacao,
+            2,
+        ),
+        "taxa_reprovacao": round(
+            taxa_reprovacao,
+            2,
+        ),
+        "tempo_medio": round(
+            tempo_medio,
+            2,
+        ),
+        "faturamento": round(
+            faturamento,
+            2,
+        ),
+        "ecvs": ecvs,
+        "cidades": cidades,
+    }
+
+
+# ============================================================
+# RANKING ECV
+# ============================================================
+
+def _calculate_ecv_performance(df):
+    """
+    Calcula desempenho por ECV.
+    """
+
+    work = _prepare_dataframe(df)
+
+    if work.empty:
+
+        return pd.DataFrame()
+
+    required = {
+        "ecv",
+        "resultado",
+    }
+
+    if not required.issubset(
+        set(work.columns)
+    ):
+
+        return pd.DataFrame()
+
+    work["resultado_normalizado"] = (
+        work["resultado"]
+        .fillna("")
+        .astype(str)
+        .str.lower()
+        .str.strip()
+    )
+
+    grouped = []
+
+    for ecv, group in work.groupby(
+        "ecv",
+        dropna=True,
+    ):
+
+        total = len(group)
+
+        aprovadas = int(
+            group["resultado_normalizado"]
+            .str.contains(
+                "aprov",
+                na=False,
+            )
+            .sum()
+        )
+
+        reprovadas = int(
+            group["resultado_normalizado"]
+            .str.contains(
+                "reprov",
+                na=False,
+            )
+            .sum()
+        )
+
+        taxa = (
+            aprovadas
+            / total
+            * 100
+            if total
+            else 0
+        )
+
+        tempo_medio = 0.0
+
+        if "tempo_minutos" in group.columns:
+
+            tempo = pd.to_numeric(
+                group["tempo_minutos"],
+                errors="coerce",
+            )
+
+            if tempo.notna().any():
+
+                tempo_medio = _safe_float(
+                    tempo.mean()
+                )
+
+        faturamento = 0.0
+
+        if "valor" in group.columns:
+
+            valor = pd.to_numeric(
+                group["valor"],
+                errors="coerce",
+            )
+
+            faturamento = _safe_float(
+                valor.sum()
+            )
+
+        grouped.append(
+            {
+                "ecv": str(ecv),
+                "vistorias": total,
+                "aprovadas": aprovadas,
+                "reprovadas": reprovadas,
+                "taxa_aprovacao": round(
+                    taxa,
+                    2,
+                ),
+                "tempo_medio": round(
+                    tempo_medio,
+                    2,
+                ),
+                "faturamento": round(
+                    faturamento,
+                    2,
+                ),
+            }
+        )
+
+    result = pd.DataFrame(
+        grouped
+    )
+
+    if result.empty:
+
+        return result
+
+    return result.sort_values(
+        "taxa_aprovacao",
+        ascending=False,
+    ).reset_index(
+        drop=True
     )
 
 
 # ============================================================
-# PAYLOAD EXECUTIVO
+# DISTRIBUIÇÕES
 # ============================================================
 
-def _build_analysis_payload(kpi, perf):
+def _value_distribution(
+    df,
+    column,
+    limit=20,
+):
     """
-    Constrói payload seguro para análise da IA.
+    Retorna distribuição de uma coluna.
     """
 
-    performance = []
+    if (
+        df.empty
+        or column not in df.columns
+    ):
 
-    if isinstance(perf, pd.DataFrame):
+        return []
 
-        for row in perf.to_dict(
-            orient="records"
+    values = (
+        df[column]
+        .fillna("Não informado")
+        .astype(str)
+        .value_counts()
+        .head(limit)
+    )
+
+    return [
+        {
+            "nome": str(index),
+            "quantidade": int(value),
+        }
+        for index, value in values.items()
+    ]
+
+
+# ============================================================
+# ANOMALIAS
+# ============================================================
+
+def _detect_anomalies(df):
+    """
+    Detecta sinais simples de anomalia operacional.
+
+    Não utiliza IA para cálculo.
+    """
+
+    work = _prepare_dataframe(df)
+
+    if work.empty:
+
+        return []
+
+    anomalies = []
+
+    # --------------------------------------------------------
+    # TEMPO
+    # --------------------------------------------------------
+
+    if "tempo_minutos" in work.columns:
+
+        tempo = pd.to_numeric(
+            work["tempo_minutos"],
+            errors="coerce",
+        )
+
+        tempo_medio = tempo.mean()
+
+        if (
+            pd.notna(tempo_medio)
+            and tempo_medio > DEFAULT_TEMPO_ALERTA
         ):
 
-            performance.append(
+            anomalies.append(
                 {
-                    key: (
-                        value.item()
-                        if hasattr(value, "item")
-                        else value
-                    )
-                    for key, value in row.items()
+                    "tipo": "tempo_operacional",
+                    "severidade": "alta",
+                    "indicador": "tempo_medio",
+                    "valor": round(
+                        float(tempo_medio),
+                        2,
+                    ),
+                    "mensagem": (
+                        "O tempo médio das vistorias "
+                        "está acima do limite operacional "
+                        f"de {DEFAULT_TEMPO_ALERTA:.0f} minutos."
+                    ),
                 }
             )
 
-    elif isinstance(perf, list):
+    # --------------------------------------------------------
+    # APROVAÇÃO
+    # --------------------------------------------------------
 
-        performance = perf
+    if "resultado" in work.columns:
+
+        resultado = (
+            work["resultado"]
+            .fillna("")
+            .astype(str)
+            .str.lower()
+        )
+
+        total = len(resultado)
+
+        aprovadas = (
+            resultado
+            .str.contains(
+                "aprov",
+                na=False,
+            )
+            .sum()
+        )
+
+        taxa = (
+            aprovadas
+            / total
+            * 100
+            if total
+            else 0
+        )
+
+        if taxa < DEFAULT_APROVACAO_ALERTA:
+
+            anomalies.append(
+                {
+                    "tipo": "qualidade",
+                    "severidade": "alta",
+                    "indicador": "taxa_aprovacao",
+                    "valor": round(
+                        float(taxa),
+                        2,
+                    ),
+                    "mensagem": (
+                        "A taxa de aprovação está abaixo "
+                        f"do limite de {DEFAULT_APROVACAO_ALERTA:.0f}%."
+                    ),
+                }
+            )
+
+    # --------------------------------------------------------
+    # ECVs
+    # --------------------------------------------------------
+
+    performance = _calculate_ecv_performance(
+        work
+    )
+
+    if not performance.empty:
+
+        low_performance = performance[
+            performance["taxa_aprovacao"]
+            < DEFAULT_APROVACAO_ALERTA
+        ]
+
+        for _, row in low_performance.head(5).iterrows():
+
+            anomalies.append(
+                {
+                    "tipo": "ecv",
+                    "severidade": "media",
+                    "indicador": "taxa_aprovacao",
+                    "ecv": str(row["ecv"]),
+                    "valor": float(
+                        row["taxa_aprovacao"]
+                    ),
+                    "mensagem": (
+                        f"A ECV {row['ecv']} apresenta "
+                        "taxa de aprovação abaixo do "
+                        "limite de referência."
+                    ),
+                }
+            )
+
+    return anomalies
+
+
+# ============================================================
+# RESUMO INTELIGENTE DA BASE
+# ============================================================
+
+def _build_data_summary(df):
+    """
+    Gera um resumo matemático completo da operação.
+
+    A LLM recebe indicadores calculados,
+    rankings e distribuições.
+    """
+
+    work = _prepare_dataframe(df)
+
+    if work.empty:
+
+        return {
+            "kpis": _calculate_kpis(work),
+            "performance_ecv": [],
+            "resultados": [],
+            "tipos_vistoria": [],
+            "cidades": [],
+            "anomalias": [],
+        }
+
+    kpis = _calculate_kpis(
+        work
+    )
+
+    performance = _calculate_ecv_performance(
+        work
+    )
+
+    performance_records = []
+
+    if not performance.empty:
+
+        performance_records = (
+            performance
+            .head(MAX_PERFORMANCE_ROWS)
+            .to_dict(
+                orient="records"
+            )
+        )
 
     return {
-        "kpis": kpi or {},
-        "performance": performance,
+        "kpis": kpis,
+        "performance_ecv": performance_records,
+        "resultados": _value_distribution(
+            work,
+            "resultado",
+            10,
+        ),
+        "tipos_vistoria": _value_distribution(
+            work,
+            "tipo_vistoria",
+            10,
+        ),
+        "cidades": _value_distribution(
+            work,
+            "cidade",
+            15,
+        ),
+        "anomalias": _detect_anomalies(
+            work
+        ),
     }
 
 
@@ -220,75 +828,93 @@ def _build_analysis_payload(kpi, perf):
 # ANÁLISE EXECUTIVA
 # ============================================================
 
-def analyze_data(kpi, perf):
+def analyze_data(
+    kpi,
+    perf,
+):
     """
-    Gera uma análise executiva utilizando os KPIs e
-    desempenho das ECVs.
+    Gera análise executiva.
 
-    Se Gemini estiver indisponível, utiliza análise local.
+    Mantém compatibilidade com o app atual.
     """
-
-    payload = _build_analysis_payload(
-        kpi,
-        perf,
-    )
 
     client = _get_gemini_client()
+
+    payload = {
+        "kpis": kpi or {},
+        "performance": [],
+    }
+
+    if isinstance(
+        perf,
+        pd.DataFrame,
+    ):
+
+        payload["performance"] = (
+            perf
+            .head(MAX_PERFORMANCE_ROWS)
+            .to_dict(
+                orient="records"
+            )
+        )
+
+    elif isinstance(
+        perf,
+        list,
+    ):
+
+        payload["performance"] = perf
 
     if client:
 
         prompt = f"""
-Você é o módulo de Inteligência de Dados do ECV Intelligence,
-uma plataforma SaaS de gestão e análise operacional para
-Empresas Credenciadas de Vistoria (ECVs).
+Você é o Diretor de Inteligência Operacional
+do ECV Intelligence.
 
-Analise EXCLUSIVAMENTE os dados fornecidos.
+Analise exclusivamente os dados fornecidos.
 
-REGRAS IMPORTANTES:
+REGRAS:
 
-1. Não invente números.
-2. Não crie informações que não estejam nos dados.
-3. Não faça afirmações que não possam ser sustentadas pelos dados.
-4. Se alguma informação não estiver disponível, diga claramente
-   que ela não está disponível.
-5. Use os nomes reais das ECVs.
-6. Utilize os percentuais exatamente conforme os dados.
-7. Seja objetivo e profissional.
-8. Não mencione que você é um modelo de IA.
-9. Não inclua informações jurídicas ou regulatórias que não
-   estejam presentes nos dados.
+1. Nunca invente números.
+2. Nunca invente nomes de ECV.
+3. Não faça previsões sem dados suficientes.
+4. Diferencie claramente fatos de interpretações.
+5. Utilize somente indicadores fornecidos.
+6. Seja objetivo e executivo.
+7. Responda em português do Brasil.
+8. Não mencione que é um modelo de IA.
+9. Não inclua legislação ou informações externas.
+10. Se os dados forem insuficientes, informe isso.
 
-Estruture a resposta em Markdown:
+Estruture:
 
 ### 📊 Visão Geral
 
-Apresente:
-- volume de vistorias;
+Mostre:
+- vistorias;
 - aprovação;
 - reprovação;
 - tempo médio;
 - faturamento.
 
-### 🔎 Destaques Operacionais
+### 🏆 Performance
 
 Identifique:
 - melhor ECV;
 - pior ECV;
-- diferença de desempenho;
-- possíveis pontos de atenção.
+- diferença entre elas.
 
-### 💡 Recomendação Gerencial
+### 🚨 Pontos de Atenção
 
-Apresente até 3 recomendações práticas baseadas
-exclusivamente nos indicadores.
+Identifique indicadores que merecem acompanhamento.
 
-Dados:
+### 🎯 Recomendações
 
-{json.dumps(
-    payload,
-    ensure_ascii=False,
-    default=str,
-)}
+Apresente até 3 ações gerenciais.
+
+DADOS:
+
+{_safe_json(payload)}
 """
 
         try:
@@ -298,13 +924,22 @@ Dados:
                 contents=prompt,
             )
 
-            if response and response.text:
+            if response:
 
-                return _clean_text(
-                    response.text
+                text = getattr(
+                    response,
+                    "text",
+                    None,
                 )
 
+                if text:
+
+                    return _clean_text(
+                        text
+                    )
+
         except Exception:
+
             pass
 
     return _local_executive_analysis(
@@ -317,16 +952,21 @@ Dados:
 # FALLBACK EXECUTIVO
 # ============================================================
 
-def _local_executive_analysis(kpi, perf):
+def _local_executive_analysis(
+    kpi,
+    perf,
+):
     """
-    Análise local caso Gemini não esteja disponível.
+    Análise executiva sem LLM.
     """
 
     kpi = kpi or {}
 
-    total = kpi.get(
-        "total",
-        0,
+    total = _safe_float(
+        kpi.get(
+            "total",
+            0,
+        )
     )
 
     taxa_aprovacao = _safe_float(
@@ -357,13 +997,10 @@ def _local_executive_analysis(kpi, perf):
         )
     )
 
-    if (
-        not isinstance(
-            perf,
-            pd.DataFrame,
-        )
-        or perf.empty
-    ):
+    if not isinstance(
+        perf,
+        pd.DataFrame,
+    ) or perf.empty:
 
         return f"""
 ### 📊 Visão Geral
@@ -375,13 +1012,13 @@ Foram analisadas **{_format_number(total)} vistorias**.
 - **Tempo médio:** {tempo_medio:.1f} minutos
 - **Faturamento:** {_format_money(faturamento)}
 
-### 🔎 Destaques Operacionais
+### 🔎 Performance
 
-Não existem dados suficientes de desempenho por ECV para gerar um ranking.
+Não existem dados suficientes para gerar um ranking por ECV.
 
-### 💡 Recomendação Gerencial
+### 🎯 Recomendação
 
-Ampliar a análise por ECV, tipo de vistoria e período para identificar oportunidades operacionais.
+Ampliar a análise por ECV, período e tipo de vistoria.
 """
 
     required = {
@@ -403,9 +1040,9 @@ Foram analisadas **{_format_number(total)} vistorias**.
 - **Tempo médio:** {tempo_medio:.1f} minutos
 - **Faturamento:** {_format_money(faturamento)}
 
-### 💡 Recomendação Gerencial
+### 🎯 Recomendação
 
-Os dados de desempenho por ECV ainda não possuem todas as informações necessárias para um ranking.
+Os dados de desempenho por ECV estão incompletos.
 """
 
     ranking = perf.copy()
@@ -422,7 +1059,10 @@ Os dados de desempenho por ECV ainda não possuem todas as informações necess�
 
     if ranking.empty:
 
-        return "Não existem dados suficientes para gerar a análise."
+        return (
+            "Não existem dados suficientes "
+            "para gerar a análise."
+        )
 
     best = ranking.iloc[0]
     worst = ranking.iloc[-1]
@@ -443,228 +1083,50 @@ Os dados de desempenho por ECV ainda não possuem todas as informações necess�
     return f"""
 ### 📊 Visão Geral
 
-Foram analisadas **{_format_number(total)} vistorias** no período disponível.
+Foram analisadas **{_format_number(total)} vistorias**.
 
 - **Taxa de aprovação:** {taxa_aprovacao:.1f}%
 - **Taxa de reprovação:** {taxa_reprovacao:.1f}%
 - **Tempo médio:** {tempo_medio:.1f} minutos
 - **Faturamento:** {_format_money(faturamento)}
 
-### 🔎 Destaques Operacionais
+### 🏆 Performance
 
-- **Melhor desempenho:** {best["ecv"]} — {best_rate:.1f}% de aprovação.
-- **Menor desempenho:** {worst["ecv"]} — {worst_rate:.1f}% de aprovação.
+- **Melhor ECV:** {best["ecv"]} — {best_rate:.1f}%.
+- **Menor desempenho:** {worst["ecv"]} — {worst_rate:.1f}%.
 - **Diferença:** {difference:.1f} pontos percentuais.
 
-### 💡 Recomendação Gerencial
+### 🎯 Recomendações
 
-1. Avaliar os fatores associados às reprovações da unidade com menor desempenho.
-2. Comparar o tempo médio de atendimento entre as ECVs.
-3. Acompanhar periodicamente os indicadores para identificar tendências.
+1. Avaliar ECVs abaixo da média.
+2. Acompanhar tempo operacional.
+3. Monitorar a evolução da aprovação.
 """
-
-
-# ============================================================
-# RESUMO DOS DADOS
-# ============================================================
-
-def _build_data_summary(df):
-    """
-    Gera um resumo matemático da base.
-
-    A IA recebe o resumo + amostra.
-    Isso reduz o risco de responder com base somente
-    nas primeiras linhas.
-    """
-
-    if df is None or df.empty:
-
-        return {
-            "total": 0,
-            "ecvs": [],
-            "resultados": {},
-            "tipos_vistoria": {},
-            "faturamento": 0,
-            "tempo_medio": 0,
-            "performance_ecv": [],
-        }
-
-    work = df.copy()
-
-    total = len(work)
-
-    # --------------------------------------------------------
-    # RESULTADOS
-    # --------------------------------------------------------
-
-    resultados = {}
-
-    if "resultado" in work.columns:
-
-        resultados = (
-            work["resultado"]
-            .fillna("Não informado")
-            .astype(str)
-            .value_counts()
-            .to_dict()
-        )
-
-    # --------------------------------------------------------
-    # TIPOS
-    # --------------------------------------------------------
-
-    tipos = {}
-
-    if "tipo_vistoria" in work.columns:
-
-        tipos = (
-            work["tipo_vistoria"]
-            .fillna("Não informado")
-            .astype(str)
-            .value_counts()
-            .to_dict()
-        )
-
-    # --------------------------------------------------------
-    # FATURAMENTO
-    # --------------------------------------------------------
-
-    faturamento = 0.0
-
-    if "valor" in work.columns:
-
-        faturamento = _safe_float(
-            pd.to_numeric(
-                work["valor"],
-                errors="coerce",
-            ).sum()
-        )
-
-    # --------------------------------------------------------
-    # TEMPO
-    # --------------------------------------------------------
-
-    tempo_medio = 0.0
-
-    if "tempo_minutos" in work.columns:
-
-        tempo = pd.to_numeric(
-            work["tempo_minutos"],
-            errors="coerce",
-        )
-
-        if tempo.notna().any():
-
-            tempo_medio = _safe_float(
-                tempo.mean()
-            )
-
-    # --------------------------------------------------------
-    # ECVs
-    # --------------------------------------------------------
-
-    ecvs = []
-
-    if "ecv" in work.columns:
-
-        ecvs = sorted(
-            work["ecv"]
-            .dropna()
-            .astype(str)
-            .unique()
-            .tolist()
-        )
-
-    # --------------------------------------------------------
-    # PERFORMANCE
-    # --------------------------------------------------------
-
-    performance = []
-
-    if (
-        "ecv" in work.columns
-        and "resultado" in work.columns
-    ):
-
-        grouped = (
-            work.groupby("ecv")
-        )
-
-        for ecv, group in grouped:
-
-            total_ecv = len(group)
-
-            approved = int(
-                group["resultado"]
-                .astype(str)
-                .str.strip()
-                .str.lower()
-                .eq("aprovado")
-                .sum()
-            )
-
-            rate = (
-                approved
-                / total_ecv
-                * 100
-                if total_ecv
-                else 0
-            )
-
-            performance.append(
-                {
-                    "ecv": str(ecv),
-                    "vistorias": total_ecv,
-                    "aprovadas": approved,
-                    "taxa_aprovacao": round(
-                        rate,
-                        2,
-                    ),
-                }
-            )
-
-        performance.sort(
-            key=lambda x: x["taxa_aprovacao"],
-            reverse=True,
-        )
-
-    return {
-        "total": total,
-        "ecvs": ecvs,
-        "resultados": resultados,
-        "tipos_vistoria": tipos,
-        "faturamento": round(
-            faturamento,
-            2,
-        ),
-        "tempo_medio": round(
-            tempo_medio,
-            2,
-        ),
-        "performance_ecv": performance,
-    }
 
 
 # ============================================================
 # COPILOT
 # ============================================================
 
-def ask_data(question, df):
+def ask_data(
+    question,
+    df,
+):
     """
-    Responde perguntas sobre a base operacional.
+    Copilot de Dados.
 
     Estratégia:
 
-    1. Calcula resumo real da base.
-    2. Tenta responder diretamente perguntas comuns.
-    3. Se necessário, utiliza Gemini.
-    4. Mantém fallback local.
+    1. Valida a pergunta.
+    2. Calcula os dados reais.
+    3. Tenta responder perguntas determinísticas.
+    4. Utiliza Gemini para perguntas analíticas.
+    5. Utiliza fallback local.
     """
 
-    question = (
-        str(question or "")
-        .strip()
-    )
+    question = str(
+        question or ""
+    ).strip()
 
     if not question:
 
@@ -673,7 +1135,11 @@ def ask_data(question, df):
             "os dados operacionais."
         )
 
-    if df is None or df.empty:
+    work = _prepare_dataframe(
+        df
+    )
+
+    if work.empty:
 
         return (
             "Não existem dados disponíveis "
@@ -685,11 +1151,11 @@ def ask_data(question, df):
     )
 
     summary = _build_data_summary(
-        df
+        work
     )
 
     # ========================================================
-    # PERGUNTAS DETERMINÍSTICAS
+    # RESPOSTAS DETERMINÍSTICAS
     # ========================================================
 
     local_answer = _answer_common_question(
@@ -711,48 +1177,58 @@ def ask_data(question, df):
 
         try:
 
-            sample = df.head(
+            sample = work.head(
                 MAX_ROWS_CONTEXT
             ).copy()
-
-            sample_text = sample.to_string(
-                index=False
-            )
 
             prompt = f"""
 Você é o Copilot de Dados do ECV Intelligence.
 
-Responda à pergunta do usuário usando EXCLUSIVAMENTE
-os dados operacionais fornecidos.
+Sua função é analisar dados operacionais de ECVs.
 
-REGRAS:
+REGRA FUNDAMENTAL:
 
-- Não invente números.
-- Não estime valores que não estejam disponíveis.
-- Não crie nomes de ECVs.
-- Não faça afirmações sem evidência nos dados.
-- Para totais, utilize o resumo calculado.
-- Se a pergunta não puder ser respondida pelos dados,
-  explique isso claramente.
-- Seja direto.
-- Responda em português do Brasil.
-- Utilize Markdown quando melhorar a leitura.
+Você só pode responder utilizando os dados fornecidos.
 
-RESUMO CALCULADO DA BASE:
+Nunca invente:
+- números;
+- ECVs;
+- cidades;
+- resultados;
+- tendências;
+- causas;
+- valores financeiros.
 
-{json.dumps(
-    summary,
-    ensure_ascii=False,
-    default=str,
-)}
+O resumo matemático possui prioridade sobre
+a amostra de registros.
 
-AMOSTRA DOS REGISTROS:
+Se não houver dados suficientes,
+responda claramente:
 
-{sample_text}
+"Os dados disponíveis não permitem responder
+essa pergunta com segurança."
 
-PERGUNTA DO USUÁRIO:
+Responda em português do Brasil.
+
+Se possível, estruture:
+
+### Resposta
+
+### Evidências
+
+### Insight
+
+PERGUNTA:
 
 {question}
+
+RESUMO CALCULADO:
+
+{_safe_json(summary)}
+
+AMOSTRA:
+
+{sample.to_string(index=False)}
 """
 
             response = client.models.generate_content(
@@ -760,18 +1236,23 @@ PERGUNTA DO USUÁRIO:
                 contents=prompt,
             )
 
-            if response and response.text:
+            if response:
 
-                return _clean_text(
-                    response.text
+                text = getattr(
+                    response,
+                    "text",
+                    None,
                 )
 
-        except Exception:
-            pass
+                if text:
 
-    # ========================================================
-    # FALLBACK
-    # ========================================================
+                    return _clean_text(
+                        text
+                    )
+
+        except Exception:
+
+            pass
 
     return _fallback_question_answer(
         normalized,
@@ -780,7 +1261,7 @@ PERGUNTA DO USUÁRIO:
 
 
 # ============================================================
-# PERGUNTAS COMUNS
+# PERGUNTAS DETERMINÍSTICAS
 # ============================================================
 
 def _answer_common_question(
@@ -788,14 +1269,17 @@ def _answer_common_question(
     summary,
 ):
     """
-    Responde perguntas que podem ser calculadas
-    sem IA generativa.
+    Responde perguntas que não precisam de LLM.
     """
 
-    total = summary["total"]
+    kpis = summary["kpis"]
+
+    performance = summary[
+        "performance_ecv"
+    ]
 
     # --------------------------------------------------------
-    # TOTAL DE VISTORIAS
+    # TOTAL
     # --------------------------------------------------------
 
     if (
@@ -808,12 +1292,13 @@ def _answer_common_question(
     ):
 
         return (
-            f"O conjunto atual possui "
-            f"**{_format_number(total)} vistorias**."
+            f"A base possui "
+            f"**{_format_number(kpis['total'])} "
+            f"vistorias**."
         )
 
     # --------------------------------------------------------
-    # QUANTIDADE DE ECV
+    # QUANTIDADE DE ECVs
     # --------------------------------------------------------
 
     if (
@@ -826,7 +1311,7 @@ def _answer_common_question(
 
         return (
             f"A base possui "
-            f"**{len(summary['ecvs'])} ECVs**."
+            f"**{_format_number(kpis['ecvs'])} ECVs**."
         )
 
     # --------------------------------------------------------
@@ -839,8 +1324,55 @@ def _answer_common_question(
     ):
 
         return (
-            f"O faturamento registrado na base é "
-            f"**{_format_money(summary['faturamento'])}**."
+            f"O faturamento registrado é "
+            f"**{_format_money(kpis['faturamento'])}**."
+        )
+
+    # --------------------------------------------------------
+    # TEMPO MÉDIO
+    # --------------------------------------------------------
+
+    if (
+        "tempo" in question
+        and (
+            "médio" in question
+            or "medio" in question
+        )
+    ):
+
+        return (
+            f"O tempo médio das vistorias é "
+            f"**{kpis['tempo_medio']:.1f} minutos**."
+        )
+
+    # --------------------------------------------------------
+    # APROVAÇÃO
+    # --------------------------------------------------------
+
+    if (
+        "taxa de aprovação" in question
+        or "taxa aprovação" in question
+        or "aprovação" in question
+        or "aprovacao" in question
+    ):
+
+        return (
+            f"A taxa de aprovação da base é "
+            f"**{kpis['taxa_aprovacao']:.1f}%**."
+        )
+
+    # --------------------------------------------------------
+    # REPROVAÇÃO
+    # --------------------------------------------------------
+
+    if (
+        "reprovação" in question
+        or "reprovacao" in question
+    ):
+
+        return (
+            f"A taxa de reprovação da base é "
+            f"**{kpis['taxa_reprovacao']:.1f}%**."
         )
 
     # --------------------------------------------------------
@@ -849,24 +1381,16 @@ def _answer_common_question(
 
     if (
         "melhor" in question
-        and (
-            "ecv" in question
-            or "desempenho" in question
-            or "aprovação" in question
-        )
+        and "ecv" in question
     ):
-
-        performance = summary[
-            "performance_ecv"
-        ]
 
         if performance:
 
             row = performance[0]
 
             return (
-                f"**{row['ecv']}** apresentou a "
-                f"maior taxa de aprovação: "
+                f"🏆 A ECV com maior taxa de aprovação é "
+                f"**{row['ecv']}**, com "
                 f"**{row['taxa_aprovacao']:.1f}%**."
             )
 
@@ -876,32 +1400,48 @@ def _answer_common_question(
 
     if (
         "pior" in question
-        and (
-            "ecv" in question
-            or "desempenho" in question
-            or "reprovação" in question
-        )
+        and "ecv" in question
     ):
-
-        performance = summary[
-            "performance_ecv"
-        ]
 
         if performance:
 
             row = performance[-1]
 
             return (
-                f"**{row['ecv']}** apresentou a "
-                f"menor taxa de aprovação: "
+                f"⚠️ A ECV com menor taxa de aprovação é "
+                f"**{row['ecv']}**, com "
                 f"**{row['taxa_aprovacao']:.1f}%**."
+            )
+
+    # --------------------------------------------------------
+    # MAIS VISTORIAS
+    # --------------------------------------------------------
+
+    if (
+        "mais" in question
+        and "vistoria" in question
+        and "ecv" in question
+    ):
+
+        if performance:
+
+            row = max(
+                performance,
+                key=lambda x: x["vistorias"],
+            )
+
+            return (
+                f"🏢 A ECV com maior volume é "
+                f"**{row['ecv']}**, com "
+                f"**{_format_number(row['vistorias'])} "
+                f"vistorias**."
             )
 
     return None
 
 
 # ============================================================
-# FALLBACK DO COPILOT
+# FALLBACK
 # ============================================================
 
 def _fallback_question_answer(
@@ -909,23 +1449,53 @@ def _fallback_question_answer(
     summary,
 ):
     """
-    Resposta segura quando Gemini não está disponível
-    e a pergunta não pertence às regras determinísticas.
+    Fallback seguro sem LLM.
     """
+
+    kpis = summary["kpis"]
 
     performance = summary[
         "performance_ecv"
     ]
 
+    anomalies = summary[
+        "anomalias"
+    ]
+
+    # --------------------------------------------------------
+    # ANOMALIAS
+    # --------------------------------------------------------
+
     if (
-        "tempo" in question
-        and "médio" in question
+        "anomalia" in question
+        or "problema" in question
+        or "alerta" in question
     ):
 
+        if anomalies:
+
+            linhas = []
+
+            for item in anomalies[:5]:
+
+                linhas.append(
+                    f"- **{item['severidade'].upper()}** — "
+                    f"{item['mensagem']}"
+                )
+
+            return (
+                "### 🚨 Alertas identificados\n\n"
+                + "\n".join(linhas)
+            )
+
         return (
-            f"O tempo médio registrado é "
-            f"**{summary['tempo_medio']:.1f} minutos**."
+            "Não foram identificadas anomalias "
+            "pelas regras operacionais configuradas."
         )
+
+    # --------------------------------------------------------
+    # RESULTADOS
+    # --------------------------------------------------------
 
     if (
         "resultado" in question
@@ -941,40 +1511,207 @@ def _fallback_question_answer(
 
             linhas = []
 
-            for nome, quantidade in resultados.items():
+            for item in resultados:
 
                 linhas.append(
-                    f"- **{nome}:** "
-                    f"{_format_number(quantidade)}"
+                    f"- **{item['nome']}:** "
+                    f"{_format_number(item['quantidade'])}"
                 )
 
             return (
-                "### Distribuição dos resultados\n\n"
+                "### 📊 Distribuição dos resultados\n\n"
                 + "\n".join(linhas)
             )
+
+    # --------------------------------------------------------
+    # CIDADES
+    # --------------------------------------------------------
+
+    if "cidade" in question:
+
+        cidades = summary[
+            "cidades"
+        ]
+
+        if cidades:
+
+            maior = cidades[0]
+
+            return (
+                f"📍 A cidade com maior volume "
+                f"é **{maior['nome']}**, com "
+                f"**{_format_number(maior['quantidade'])} "
+                f"vistorias**."
+            )
+
+    # --------------------------------------------------------
+    # TIPOS
+    # --------------------------------------------------------
+
+    if (
+        "tipo" in question
+        and "vistoria" in question
+    ):
+
+        tipos = summary[
+            "tipos_vistoria"
+        ]
+
+        if tipos:
+
+            maior = tipos[0]
+
+            return (
+                f"📋 O tipo de vistoria com maior "
+                f"volume é **{maior['nome']}**, com "
+                f"**{_format_number(maior['quantidade'])} "
+                f"registros**."
+            )
+
+    # --------------------------------------------------------
+    # RESUMO
+    # --------------------------------------------------------
 
     if performance:
 
         best = performance[0]
+
         worst = performance[-1]
 
         return (
-            "Consigo analisar os dados operacionais. "
-            "Alguns indicadores disponíveis são:\n\n"
-            f"- Total: **{_format_number(summary['total'])} vistorias**\n"
-            f"- ECVs: **{len(summary['ecvs'])}**\n"
-            f"- Faturamento: **{_format_money(summary['faturamento'])}**\n"
-            f"- Melhor ECV: **{best['ecv']}** "
-            f"({best['taxa_aprovacao']:.1f}% aprovação)\n"
-            f"- Menor ECV: **{worst['ecv']}** "
-            f"({worst['taxa_aprovacao']:.1f}% aprovação)"
+            "### 📊 Resumo operacional\n\n"
+            f"- Vistorias: **{_format_number(kpis['total'])}**\n"
+            f"- ECVs: **{_format_number(kpis['ecvs'])}**\n"
+            f"- Aprovação: **{kpis['taxa_aprovacao']:.1f}%**\n"
+            f"- Reprovação: **{kpis['taxa_reprovacao']:.1f}%**\n"
+            f"- Tempo médio: **{kpis['tempo_medio']:.1f} min**\n"
+            f"- Faturamento: **{_format_money(kpis['faturamento'])}**\n\n"
+            f"🏆 Melhor ECV: **{best['ecv']}** "
+            f"({best['taxa_aprovacao']:.1f}%)\n\n"
+            f"⚠️ Menor desempenho: **{worst['ecv']}** "
+            f"({worst['taxa_aprovacao']:.1f}%)"
         )
 
     return (
-        "Não foi possível encontrar uma resposta "
-        "determinística para essa pergunta com os "
-        "dados disponíveis."
+        "Não foi possível responder à pergunta "
+        "com segurança utilizando os dados disponíveis."
     )
+
+
+# ============================================================
+# INSIGHTS AUTOMÁTICOS
+# ============================================================
+
+def generate_insights(
+    df,
+) -> Dict[str, Any]:
+    """
+    Gera indicadores e insights estruturados.
+
+    Essa função não depende da LLM.
+    """
+
+    summary = _build_data_summary(
+        df
+    )
+
+    kpis = summary[
+        "kpis"
+    ]
+
+    performance = summary[
+        "performance_ecv"
+    ]
+
+    insights = []
+
+    # --------------------------------------------------------
+    # APROVAÇÃO
+    # --------------------------------------------------------
+
+    if kpis["taxa_aprovacao"] < 75:
+
+        insights.append(
+            {
+                "tipo": "qualidade",
+                "nivel": "alto",
+                "titulo": "Taxa de aprovação abaixo do esperado",
+                "mensagem": (
+                    f"A taxa atual é de "
+                    f"{kpis['taxa_aprovacao']:.1f}%."
+                ),
+            }
+        )
+
+    elif kpis["taxa_aprovacao"] >= 90:
+
+        insights.append(
+            {
+                "tipo": "qualidade",
+                "nivel": "baixo",
+                "titulo": "Excelente taxa de aprovação",
+                "mensagem": (
+                    f"A operação apresenta "
+                    f"{kpis['taxa_aprovacao']:.1f}% "
+                    "de aprovação."
+                ),
+            }
+        )
+
+    # --------------------------------------------------------
+    # TEMPO
+    # --------------------------------------------------------
+
+    if kpis["tempo_medio"] > DEFAULT_TEMPO_ALERTA:
+
+        insights.append(
+            {
+                "tipo": "operacao",
+                "nivel": "alto",
+                "titulo": "Tempo operacional elevado",
+                "mensagem": (
+                    f"O tempo médio está em "
+                    f"{kpis['tempo_medio']:.1f} minutos."
+                ),
+            }
+        )
+
+    # --------------------------------------------------------
+    # PERFORMANCE
+    # --------------------------------------------------------
+
+    if performance:
+
+        best = performance[0]
+
+        worst = performance[-1]
+
+        difference = (
+            best["taxa_aprovacao"]
+            - worst["taxa_aprovacao"]
+        )
+
+        insights.append(
+            {
+                "tipo": "performance",
+                "nivel": "informativo",
+                "titulo": "Diferença de desempenho entre ECVs",
+                "mensagem": (
+                    f"A diferença entre a melhor e a menor "
+                    f"taxa de aprovação é de "
+                    f"{difference:.1f} pontos percentuais."
+                ),
+            }
+        )
+
+    return {
+        "kpis": kpis,
+        "insights": insights,
+        "anomalias": summary[
+            "anomalias"
+        ],
+        "performance_ecv": performance,
+    }
 
 
 # ============================================================
@@ -983,9 +1720,7 @@ def _fallback_question_answer(
 
 def get_ai_status() -> Dict[str, Any]:
     """
-    Retorna informações do estado do serviço de IA.
-
-    Útil para futuras telas de administração.
+    Retorna status do motor de IA.
     """
 
     api_key = _get_api_key()
@@ -999,4 +1734,13 @@ def get_ai_status() -> Dict[str, Any]:
             if api_key
             else "not_configured"
         ),
+        "features": {
+            "copilot": True,
+            "executive_analysis": True,
+            "automatic_insights": True,
+            "anomaly_detection": True,
+            "ecv_ranking": True,
+            "fallback_local": True,
+        },
     }
+```
